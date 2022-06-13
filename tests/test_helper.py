@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 import helper
@@ -8,3 +9,22 @@ def test_find_columns():
     columns = helper.find_columns(df, 'Test')
     assert len(columns) == 3
     assert columns == ['Test', 'Test A', 'Test B']
+
+
+def test_gaussian_imputation():
+    table = pd.DataFrame({
+        'A': [90000, 100000, 110000, np.nan],
+        'B': [1, 1, 1, np.nan],
+    })
+    median_downshift = 1
+    std_width = 1
+    imputed = helper.gaussian_imputation(
+        table, median_downshift, std_width
+    )
+
+    number_missing_values = imputed.isna().sum().sum()
+    assert number_missing_values == 0
+
+    imputed_column_A = imputed['A'][3]
+    imputed_column_B = imputed['B'][3]
+    assert imputed_column_A >= imputed_column_B

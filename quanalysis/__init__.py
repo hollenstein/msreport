@@ -74,40 +74,18 @@ Use cases
 mqreader = reader.MQReader(search_dir, contaminant_tag='contam_')
 table = mqreader.import_proteins(special_proteins=['ups'])
 qtable = quantable.Qtable(table, design=design)
-qtable.set_expression_by_tag('LFQ intensity')
+qtable.set_expression_by_tag('LFQ intensity', log2=True)
 
 validate_protein_quantification(
     qtable, min_peptides=2, min_group_quantification=2
 )
-impute_missing_values(qtable)
+qtable.impute_missing_values()
 analyse_differential_expression(qtable)
 """
 
-import numpy as np
 import pandas as pd
 import quantable
-
-
-def add_experiment_means(qtable: quantable.Qtable):
-    raise NotImplementedError
-
-
-def impute_missing_values(qtable: quantable.Qtable) -> None:
-    """ Impute missing expression values.
-
-    Missing values are imputed independently for each column by drawing
-    random values from a normal distribution. The parameters of the normal
-    distribution are calculated from the observed values. Mu is the observed
-    median, downshifted by 1.8 standard deviations. Sigma is the observed
-    standard deviation multiplied by 0.3
-
-    """
-    median_downshift = 1.8
-    std_width = 0.3
-
-    expr = qtable.get_expression_table(zerotonan=True)
-    imputed = gaussian_imputation(expr, median_downshift, std_width)
-    qtable.data[expr.columns] = imputed[expr.columns]
+import helper
 
 
 def count_missing_values(qtable: quantable.Qtable) -> pd.DataFrame:
@@ -118,9 +96,7 @@ def count_missing_values(qtable: quantable.Qtable) -> pd.DataFrame:
     ! Requires expression columns to be set
     """
     missingness = pd.DataFrame()
-    expr_table = qtable.get_expression_table(
-        samples_as_columns=True, zerotonan=True
-    )
+    expr_table = qtable.make_expression_table(samples_as_columns=True)
     num_missing = expr_table.isna().sum(axis=1)
     missingness['Missing total'] = num_missing
     for experiment in qtable.get_experiments():
@@ -129,35 +105,3 @@ def count_missing_values(qtable: quantable.Qtable) -> pd.DataFrame:
         column_name = ' '.join(['Missing', experiment])
         missingness[column_name] = num_missing
     return missingness
-
-
-def gaussian_imputation(table: pd.DataFrame, median_downshift: float,
-                        std_width: float) -> pd.DataFrame:
-    """ Imput missing values by drawing values from a normal distribution.
-
-    Imputation is performed column wise, and the parameters for the normal
-    distribution are calculated independently for each column.
-
-    Attributes:
-        table: table containing missing values that will be replaced
-        median_downshift: number of standard deviations the median of the
-            measured values is downshifted for the normal distribution
-        std_width: width of the normal distribution relative to the
-            standard deviation of the measured values
-
-    Returns:
-        A new pandas.DataFrame containing imputed values
-    """
-    imputed_table = table.copy()
-    for column in imputed_table:
-        median = np.nanmedian(imputed_table[column])
-        std = np.nanstd(imputed_table[column])
-
-        mu = median - (std * median_downshift)
-        sigma = std * std_width
-        missing_values = imputed_table[column].isnull()
-        num_missing_values = missing_values.sum()
-        imputed_values = np.random.normal(mu, sigma, num_missing_values)
-
-        imputed_table.loc[missing_values, column] = imputed_values
-    return imputed_table
