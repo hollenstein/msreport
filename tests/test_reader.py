@@ -1,0 +1,203 @@
+import numpy as np
+import os
+import pandas as pd
+import pytest
+import reader
+
+
+@pytest.fixture
+def example_mqreader():
+    return reader.MQReader('./tests/testdata/maxquant_results')
+
+
+@pytest.fixture
+def example_fpreader():
+    return reader.FPReader('./tests/testdata/fragpipe_results')
+
+
+def test_that_always_passes():
+    assert True
+
+
+def test_extract_sample_names(example_mqreader):
+    protein_table = example_mqreader._read_file('proteins')
+    sample_names = reader.extract_sample_names(protein_table, 'Intensity')
+    assert len(sample_names) == 18
+
+
+def test_replace_column_tag():
+    df = pd.DataFrame(columns=['Tag', 'Tag A', 'Tag B', 'Something else'])
+    old_tag = 'Tag'
+    new_tag = 'New'
+    new_df = reader._replace_column_tag(df, old_tag, new_tag)
+    new_columns = new_df.columns.tolist()
+    assert new_columns == ['New', 'New A', 'New B', 'Something else']
+
+
+def test_rearrange_column_tag():
+    df = pd.DataFrame(columns=['Tag1 Text1', 'Tag1 Text2', 'Tag1',
+                               'Text1 Tag2', 'Text2 Tag2', 'Tag2'])
+    tag = 'Tag1'
+    prefixed = False
+    new_df = reader._rearrange_column_tag(df, tag, prefixed)
+    new_columns = new_df.columns.tolist()
+    assert new_columns == ['Text1 Tag1', 'Text2 Tag1', 'Tag1',
+                           'Text1 Tag2', 'Text2 Tag2', 'Tag2']
+
+    tag = 'Tag2'
+    prefixed = True
+    new_df = reader._rearrange_column_tag(df, tag, prefixed)
+    new_columns = new_df.columns.tolist()
+    assert new_columns == ['Tag1 Text1', 'Tag1 Text2', 'Tag1',
+                           'Tag2 Text1', 'Tag2 Text2', 'Tag2']
+
+
+def test_find_remaining_substrings():
+    strings_list = [
+        ['Test Sub1', 'Test Sub2', 'Test Sub3', 'Test', 'Test Sub3'],
+        ['Sub1 Test', 'Sub2 Test', 'Sub3 Test', 'Test']
+    ]
+    split_with = 'Test'
+    for strings in strings_list:
+        substrings = reader._find_remaining_substrings(strings, split_with)
+        assert len(substrings) == 3
+        assert substrings == ['Sub1', 'Sub2', 'Sub3']
+
+
+def test_sort_fasta_entries():
+    # Single entry
+    fasta_headers = ['x|A|a']
+    fastas, proteins, names = reader._sort_fasta_entries(fasta_headers)
+    assert fastas == ['x|A|a']
+    assert proteins == ['A']
+    assert names == ['a']
+
+    fasta_headers = ['x|A|a something else']
+    fastas, proteins, names = reader._sort_fasta_entries(fasta_headers)
+    assert fastas == ['x|A|a something else']
+    assert proteins == ['A']
+    assert names == ['a']
+
+    # Multiple entries
+    fasta_headers = ['x|A|a', 'x|B|b']
+    fastas, proteins, names = reader._sort_fasta_entries(fasta_headers)
+    assert fastas == ['x|A|a', 'x|B|b']
+    assert proteins == ['A', 'B']
+    assert names == ['a', 'b']
+
+    # Multiple unsorted entries
+    fasta_headers = ['x|B|b', 'x|A|a']
+    fastas, proteins, names = reader._sort_fasta_entries(fasta_headers)
+    assert fastas == ['x|A|a', 'x|B|b']
+    assert proteins == ['A', 'B']
+    assert names == ['a', 'b']
+
+    # Sorting with sort tags
+    fasta_headers = ['x|B|b', 'x|A_end|a_end', 'x|C_A|c_a']
+    sorting_tags = {'C_': -1, '_end': 1}
+    fastas, proteins, names = reader._sort_fasta_entries(
+        fasta_headers, sorting_tags
+    )
+    assert fastas == ['x|C_A|c_a', 'x|B|b', 'x|A_end|a_end']
+    assert proteins == ['C_A', 'B', 'A_end']
+    assert names == ['c_a', 'b', 'a_end']
+
+
+def test_mqreader_setup(example_mqreader):
+    assert os.path.isdir(example_mqreader.data_directory)
+
+
+def test_mqreader_read_file(example_mqreader):
+    # Todo: change test to parental class ResultReader
+    protein_table = example_mqreader._read_file('proteins')
+    assert isinstance(protein_table, pd.DataFrame)
+    assert protein_table.shape == (7, 200)
+
+
+def test_mqreader_rename_columns(example_mqreader):
+    # Todo: change test to parental class ResultReader
+    protein_table = example_mqreader._read_file('proteins')
+    assert sum(protein_table.columns.str.count('MS/MS count')) > 0
+    assert sum(protein_table.columns.str.count('Spectral count')) == 0
+    assert ('Peptides' in protein_table.columns)
+
+    old_column_name = 'Peptides'
+    new_column_name = 'Total peptides'
+    example_mqreader.column_mapping = {old_column_name: new_column_name}
+    old_column_tag = 'MS/MS count'
+    new_column_tag = 'Spectral count'
+    example_mqreader.column_tag_mapping = {old_column_tag: new_column_tag}
+    prefixed = False
+
+    protein_table = example_mqreader._rename_columns(protein_table,
+                                                     prefixed)
+
+    assert ('Peptides' not in protein_table.columns)
+    assert ('Total peptides' in protein_table.columns)
+
+    assert sum(protein_table.columns.str.count('MS/MS count')) == 0
+    assert sum(protein_table.columns.str.count('Spectral count')) == 19
+
+    columns_ending_with_new_tag = [
+        c.endswith(new_column_tag) for c in protein_table.columns]
+    assert sum(columns_ending_with_new_tag) == 19
+
+
+def test_mqreader_drop_decoy(example_mqreader):
+    protein_table = example_mqreader._read_file('proteins')
+    protein_table = example_mqreader._drop_decoy(protein_table)
+    is_decoy = protein_table['Majority protein IDs'].str.contains('REV__')
+    assert not is_decoy.any()
+
+
+def test_mqreader_drop_idbysite(example_mqreader):
+    protein_table = example_mqreader._read_file('proteins')
+    protein_table = example_mqreader._drop_idbysite(protein_table)
+    is_idbysite = (protein_table['Only identified by site'] == '+')
+    assert not is_idbysite.any()
+
+
+def test_mqreader_rearrange_proteins(example_mqreader):
+    df = pd.DataFrame({
+        'Fasta headers': [
+            'x|B|b;x|A|a;x|C|c', 'x|D|d', 'x|E|e;x|F|f', 'x|G|g;x|H|h;x|I|i'
+        ],
+        'Peptide counts (all)': ['5;5;3', '3', '6;3', '6;6;6'],
+    })
+    leading_proteins = ['A;B', 'D', 'E', 'G;H;I']
+    representative_protein = ['A', 'D', 'E', 'G']
+
+    df = example_mqreader._rearrange_proteins(df)
+    assert df['Leading proteins'].tolist() == leading_proteins
+    assert df['Representative protein'].tolist() == representative_protein
+
+
+def test_fpreader_rearrange_proteins(example_fpreader):
+    df = pd.DataFrame({
+        'Protein': [
+            'x|B|b', 'x|D|d', 'x|E|e', 'x|G|g'],
+        'Indistinguishable Proteins': [
+            'x|A|a', '', '', 'x|H|h, x|I|i'],
+    })
+    leading_proteins = ['A;B', 'D', 'E', 'G;H;I']
+    representative_protein = ['A', 'D', 'E', 'G']
+
+    df = example_fpreader._rearrange_proteins(df)
+    assert df['Leading proteins'].tolist() == leading_proteins
+    assert df['Representative protein'].tolist() == representative_protein
+
+
+# def test_mqreader_import_peptides(example_mqreader):
+#    example_mqreader.import_ions()
+
+# def test_mqreader_import_ions(example_mqreader):
+    #example_mqreader.import_ions()
+
+# def test_mqreader_import_proteins(example_mqreader):
+#    example_mqreader.import_proteins()
+
+def test_fpreader_setup(example_fpreader):
+    assert os.path.isdir(example_fpreader.data_directory)
+
+# def test_fpreader_import_proteins(example_fpreader):
+#    example_fpreader.import_proteins()
