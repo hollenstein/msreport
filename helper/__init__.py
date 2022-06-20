@@ -2,6 +2,7 @@ import itertools
 import numpy as np
 import pandas as pd
 from typing import Iterable
+import re
 
 
 def find_columns(df: pd.DataFrame, substring: str) -> list[str]:
@@ -9,6 +10,31 @@ def find_columns(df: pd.DataFrame, substring: str) -> list[str]:
     matched_columns = [substring in col for col in df.columns]
     matched_column_names = np.array(df.columns)[matched_columns].tolist()
     return matched_column_names
+
+
+def rename_mq_reporter_channels(
+        table: pd.DataFrame, channel_names: list[str]) -> None:
+    """ Renames reporter channel numbers with sample names.
+
+    MaxQuant writes reporter channel names either in the format
+    'Reporter intensity 1' or 'Reporter intensity 1 Experiment Name',
+    depending on if an experiment name was specified.
+
+    NOTE: This might not work for the peptides.txt table, as there are columns
+    present with the experiment name and without it.
+    """
+    pattern = re.compile('Reporter intensity [0-9]+')
+    reporter_columns = list(filter(pattern.match, table.columns.tolist()))
+    assert len(reporter_columns) == len(channel_names)
+
+    column_mapping = {}
+    base_name = 'Reporter intensity '
+    for column, channel_name in zip(reporter_columns, channel_names):
+        for tag in ['', 'count ', 'corrected ']:
+            old_column = column.replace(f'{base_name}', f'{base_name}{tag}')
+            new_column = f'{base_name}{tag}{channel_name}'
+            column_mapping[old_column] = new_column
+    table.rename(columns=column_mapping, inplace=True)
 
 
 def gaussian_imputation(table: pd.DataFrame, median_downshift: float,
