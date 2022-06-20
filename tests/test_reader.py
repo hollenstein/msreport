@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import pytest
 import reader
+#Reporter intensity 1 TMT    Reporter intensity 2 TMT    Reporter intensity 3 TMT    Reporter intensity 4 TMT    Reporter intensity 5 TMT
 
 
 @pytest.fixture
@@ -64,7 +65,7 @@ def test_find_remaining_substrings():
         assert substrings == ['Sub1', 'Sub2', 'Sub3']
 
 
-def test_sort_fasta_entries():
+def test_sort_fasta_entries_with_single_entry():
     # Single entry
     fasta_headers = ['x|A|a']
     fastas, proteins, names = reader._sort_fasta_entries(fasta_headers)
@@ -78,6 +79,8 @@ def test_sort_fasta_entries():
     assert proteins == ['A']
     assert names == ['a']
 
+
+def test_sort_fasta_entries_with_multiple_entries():
     # Multiple entries
     fasta_headers = ['x|A|a', 'x|B|b']
     fastas, proteins, names = reader._sort_fasta_entries(fasta_headers)
@@ -85,6 +88,8 @@ def test_sort_fasta_entries():
     assert proteins == ['A', 'B']
     assert names == ['a', 'b']
 
+
+def test_sort_fasta_entries_with_multiple_unsorted_entries():
     # Multiple unsorted entries
     fasta_headers = ['x|B|b', 'x|A|a']
     fastas, proteins, names = reader._sort_fasta_entries(fasta_headers)
@@ -92,6 +97,8 @@ def test_sort_fasta_entries():
     assert proteins == ['A', 'B']
     assert names == ['a', 'b']
 
+
+def test_sort_fasta_entries_with_sorting_by_tag():
     # Sorting with sort tags
     fasta_headers = ['x|B|b', 'x|A_end|a_end', 'x|C_A|c_a']
     sorting_tags = {'C_': -1, '_end': 1}
