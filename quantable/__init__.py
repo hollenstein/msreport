@@ -45,7 +45,8 @@ class Qtable():
             self, features: list[str] = None,
             samples_as_columns: bool = False,
         ) -> pd.DataFrame:
-        """ Returns a new dataframe containing the expression data.
+        """ Returns a new dataframe containing the expression data and
+        additional expression related features.
 
         Attributes:
             features: A list of additional feature columns that will be added
@@ -132,8 +133,10 @@ class Qtable():
             columns = [self.get_expression_column(s) for s in samples]
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore', category=RuntimeWarning)
-                self.data[experiment] = np.nanmean(self.data[columns], axis=1)
-        self._expression_features.extend(self.get_experiments())
+                row_means = np.nanmean(self.data[columns], axis=1)
+            self.data[experiment] = row_means
+            if experiment not in self._expression_features:
+                self._expression_features.append(experiment)
 
     def impute_missing_values(self) -> None:
         """ Impute missing expression values.

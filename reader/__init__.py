@@ -227,7 +227,8 @@ class FPReader(ResultReader):
         'Intensity', 'MaxLFQ Intensity'
     ]
     column_mapping: dict[str, str] = dict([
-        ('Combined Total Peptides', 'Total peptides'),
+        ('Combined Total Peptides', 'Total peptides'),  # From LFQ
+        ('Total Peptides', 'Total peptides'),  # From TMT
     ])
     column_tag_mapping: OrderedDict[str, str] = OrderedDict([
         ('MaxLFQ Intensity', 'LFQ intensity'),

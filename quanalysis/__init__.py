@@ -82,10 +82,12 @@ validate_protein_quantification(
 qtable.impute_missing_values()
 analyse_differential_expression(qtable)
 """
-
+import itertools
+import numpy as np
 import pandas as pd
-import quantable
+
 import helper
+import quantable
 
 
 def count_missing_values(qtable: quantable.Qtable) -> pd.DataFrame:
@@ -105,3 +107,25 @@ def count_missing_values(qtable: quantable.Qtable) -> pd.DataFrame:
         column_name = ' '.join(['Missing', experiment])
         missingness[column_name] = num_missing
     return missingness
+
+
+def median_normalize_samples(qtable: quantable.Qtable) -> None:
+    """ Normalize samples with median profiles. """
+    samples = qtable.get_samples()
+    num_samples = len(samples)
+    expr_table = qtable.make_expression_table(samples_as_columns=True)
+
+    # calculate ratio matrix
+    sample_combinations = list(itertools.combinations(range(num_samples), 2))
+    matrix = np.full((num_samples, num_samples), np.nan)
+    for i, j in sample_combinations:
+        ratios = expr_table[samples[i]] - expr_table[samples[j]]
+        ratios = ratios[np.isfinite(ratios)]
+        median = np.nanmedian(ratios)
+        matrix[i, j] = median
+
+    # Correct intensities
+    profile = helper.solve_ratio_matrix(matrix)
+    for i, sample in enumerate(samples):
+        col = qtable.get_expression_column(sample)
+        qtable.data[col] -= profile[i]
