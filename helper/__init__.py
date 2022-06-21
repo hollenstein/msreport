@@ -93,14 +93,15 @@ def solve_ratio_matrix(matrix: np.ndarray) -> np.ndarray:
 
 
 import scipy.stats
+import scipy.optimize
+
+
 def mode(values: Iterable) -> float:
     # Not tested #
     kde = scipy.stats.gaussian_kde(values)
-    sampling_dist = 0.001
-    sampling_num = int(np.ceil((max(values) - min(values)) / sampling_dist))
-    sampling_points = np.linspace(min(values), max(values), sampling_num)
-
-    mode = sampling_points[np.argmax(kde(sampling_points))]
+    optimize_result = scipy.optimize.minimize_scalar(lambda x: -kde(x))
+    mode = optimize_result.x[0]
+    # Maybe add fallback function if optimize was not successful
     return mode
 
 
