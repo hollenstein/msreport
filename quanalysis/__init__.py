@@ -121,8 +121,32 @@ def median_normalize_samples(qtable: quantable.Qtable) -> None:
     for i, j in sample_combinations:
         ratios = expr_table[samples[i]] - expr_table[samples[j]]
         ratios = ratios[np.isfinite(ratios)]
-        median = np.nanmedian(ratios)
+        median = np.median(ratios)
         matrix[i, j] = median
+
+    # Correct intensities
+    profile = helper.solve_ratio_matrix(matrix)
+    for i, sample in enumerate(samples):
+        col = qtable.get_expression_column(sample)
+        qtable.data[col] -= profile[i]
+
+
+def mode_normalize_samples(qtable: quantable.Qtable) -> None:
+    """ Normalize samples with median profiles. """
+    # Not tested #
+    # Is a duplication of mean_normalize_samples -> create common function #
+    samples = qtable.get_samples()
+    num_samples = len(samples)
+    expr_table = qtable.make_expression_table(samples_as_columns=True)
+
+    # calculate ratio matrix
+    sample_combinations = list(itertools.combinations(range(num_samples), 2))
+    matrix = np.full((num_samples, num_samples), np.nan)
+    for i, j in sample_combinations:
+        ratios = expr_table[samples[i]] - expr_table[samples[j]]
+        ratios = ratios[np.isfinite(ratios)]
+        mode = helper.mode(ratios)
+        matrix[i, j] = mode
 
     # Correct intensities
     profile = helper.solve_ratio_matrix(matrix)
