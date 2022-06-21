@@ -195,7 +195,7 @@ def ratio_dist_per_category(
                 ax.set_xlim(xlim)
                 ax.set_ylim(line_y)
             ax.set_yticks([])
-            ax.set_ylabel(f'{category}: density')
+            ax.set_ylabel(f'{category}: Protein density')
             ax.spines['bottom'].set_color('#000000')
             ax.spines['bottom'].set_linewidth(1.2)
             ax.grid(axis='x', linestyle='dashed', linewidth=1)
@@ -203,7 +203,7 @@ def ratio_dist_per_category(
     axes[0].legend(loc='upper right')
     sns.despine(top=True, right=True, left=True)
 
-    return fig, ax
+    return fig, axes
 
 
 def precision_tp(
@@ -222,7 +222,7 @@ def precision_tp(
     sns.set_style('whitegrid')
     fig, ax = plt.subplots(1, figsize=[6, 6], sharex=True)
     fig.suptitle(f'{exp1} vs. {exp2}')
-    for method, table in method_tables.items():
+    for method_num, (method, table) in enumerate(method_tables.items()):
         data = table[table['Valid']].copy()
         for exp in [exp1, exp2]:
             column = ' '.join(['Missing', exp])
@@ -257,11 +257,17 @@ def precision_tp(
                                          curve_values['precision'],
                                          curve_values['TP']):
             if pvalue >= -2:
-                ax.scatter(
-                    tp, precision, marker='o', s=30,
-                    color=method_colors[method],
-                    label='FDR corrected p-value at 0.01'
-                )
+                if method_num == 0:
+                    ax.scatter(
+                        tp, precision, marker='o', s=30,
+                        color=method_colors[method],
+                        label='FDR corrected p-value at 0.01'
+                    )
+                else:
+                    ax.scatter(
+                        tp, precision, marker='o', s=30,
+                        color=method_colors[method],
+                    )
                 break
     for spine in ['bottom', 'left']:
         ax.spines[spine].set_color('#000000')
@@ -275,36 +281,53 @@ def precision_tp(
     fig.tight_layout()
     return fig, ax
 
-"""
-import seaborn as sns
-from matplotlib import pyplot as plt
 
+def cumulative_pvalues(
+        method_tables: dict[str, pd.DataFrame], comparison_group: list[str],
+        exp_to_samples: dict[str, str], bg_category: str, fg_category: str,
+        max_missing: int = 10, method_colors: dict[str, str] = None):
 
+    if not method_colors:
+        color_cycler = itertools.cycle(sns.color_palette())
+        method_colors = dict(zip(method_tables, color_cycler))
 
-colors = {'MQ': '#60abc6', 'FP': '#e3782f'}
-categories = ['bg', 'fg']
+    exp1, exp2 = comparison_group
+    samples1 = exp_to_samples[exp1]
+    samples2 = exp_to_samples[exp2]
 
-experiments = qtables['MQ'].get_experiments()
-expression_tables = {}
-for software, qtable in qtables.items():
-    expression_tables[software] = qtable.make_expression_table(
-        samples_as_columns=True,
-        features=['Representative protein', 'Valid', 'Category']
-    )
+    sns.set_style('whitegrid')
+    fig, axes = plt.subplots(1, 2, figsize=[8, 4], sharex=True)
+    fig.suptitle(f'{exp1} vs. {exp2}')
+    for method, table in method_tables.items():
+        data = table[table['Valid']].copy()
+        for exp in [exp1, exp2]:
+            column = ' '.join(['Missing', exp])
+            data = data[data[column] <= max_missing]
 
-
-
-comparison_group = ['H900Y030', 'H900Y100']
-expected_ratios = {'fg': np.log2(10 / 3), 'bg': np.log2(1)}
-max_missing = 0
-categories = ['bg', 'fg']
-
-fig, ax = ratio_dist_per_category(
-    expression_tables, comparison_group, expected_ratios=expected_ratios,
-    max_missing=0, method_colors=colors
-)
-
-fig.show()
-
-"""
-
+        data['ratios'] = data[exp1] - data[exp2]
+        stats, pvalues = scipy.stats.ttest_ind(
+            data[samples1], data[samples2], axis=1
+        )
+        _, pvalues_corr, _, _ = statsmodels.stats.multitest.multipletests(
+            pvalues, method='fdr_bh', is_sorted=False
+        )
+        data['pvalues'] = np.log10(pvalues_corr)
+        for cat_num, category in enumerate([fg_category, bg_category]):
+            ax = axes[cat_num]
+            pvalues = data['pvalues'][data['Category'] == category]
+            bins = np.linspace(-10, 0.2, 200)
+            ax.hist(
+                pvalues, bins=bins, cumulative=True,
+                histtype='step', density=False, label=method,
+                color=method_colors[method],
+            )
+            for spine in ['bottom', 'left']:
+                ax.spines[spine].set_color('#000000')
+                ax.spines[spine].set_linewidth(1)
+            ax.grid(axis='both', linestyle='dotted', linewidth=1.2)
+            ax.set_xlabel('Corrected p-values [log10]')
+            ax.set_ylabel(f'{category}: # proteins')
+            ax.set_xlim(-5, 0.1)
+    axes[-1].legend(loc='upper left')
+    fig.tight_layout()
+    return fig, axes
