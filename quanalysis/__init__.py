@@ -85,6 +85,7 @@ analyse_differential_expression(qtable)
 import itertools
 import numpy as np
 import pandas as pd
+from statsmodels.nonparametric.smoothers_lowess import lowess
 
 import helper
 import quantable
@@ -153,3 +154,39 @@ def mode_normalize_samples(qtable: quantable.Qtable) -> None:
     for i, sample in enumerate(samples):
         col = qtable.get_expression_column(sample)
         qtable.data[col] -= profile[i]
+
+
+def lowess_normalize_samples(qtable: quantable.Qtable) -> None:
+    """ Normalize samples to pseudo reference with lowess. """
+    # Not tested #
+    samples = qtable.get_samples()
+    expr_table = qtable.make_expression_table(samples_as_columns=True)
+
+    ref_mask = (expr_table[samples].isna().sum(axis=1) == 0)
+    ref_intensities = expr_table.loc[ref_mask, samples].mean(axis=1)
+    lowess_delta = (ref_intensities.max() - ref_intensities.min()) * 0.05
+
+    sample_fits = {}
+    for sample in samples:
+        sample_intensities = expr_table.loc[ref_mask, sample]
+        ratios = sample_intensities - ref_intensities
+        sample_fits[sample] = lowess(
+            ratios, sample_intensities, delta=lowess_delta, it=5
+        )
+
+    for sample, fit in sample_fits.items():
+        fit_int, fit_ratio = [np.array(i) for i in zip(*fit)]
+
+        # Correct intensities
+        sample_mask = np.isfinite(expr_table[sample])
+        raw_intensities = expr_table.loc[sample_mask, sample]
+        normalized_intensities = []
+        for intensity in raw_intensities:
+            norm_value = fit_ratio[np.argmin(np.abs(fit_int - intensity))]
+            normalized_intensity = intensity - norm_value
+            normalized_intensities.append(normalized_intensity)
+        expr_table.loc[sample_mask, sample] = normalized_intensities
+
+    for sample in samples:
+        expr_column = qtable.get_expression_column(sample)
+        qtable.data[expr_column] = expr_table[sample]
