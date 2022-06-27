@@ -1,10 +1,17 @@
 """ Python interface to custome R scripts. """
-
 import os
+
 import pandas as pd
-import rpy2.robjects as RO
+import rpy2.robjects as robjects
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.conversion import localconverter
+
+from .rinstaller import _install_missing_r_packages
+from .rinstaller import _install_missing_bioconductor_packages
+
+
+_install_missing_r_packages(['BiocManager'])
+_install_missing_bioconductor_packages(['limma'])
 
 
 def two_group_limma(table: pd.DataFrame, column_groups: list[str],
@@ -14,11 +21,11 @@ def two_group_limma(table: pd.DataFrame, column_groups: list[str],
     Returns:
         A dataframe containing 'logFC', 'P-value', and 'Adjusted p-value'
     """
-    script_path = _get_rscript_paths()['limma']
-    RO.r['source'](script_path)
-    R_two_group_limma = RO.globalenv['.two_group_limma']
+    rscript_path = _find_rscript_paths()['limma.R']
+    robjects.r['source'](rscript_path)
+    R_two_group_limma = robjects.globalenv['.two_group_limma']
 
-    with localconverter(RO.default_converter + pandas2ri.converter):
+    with localconverter(robjects.default_converter + pandas2ri.converter):
         limma_result = R_two_group_limma(
             table, column_groups, group1, group2, trend
         )
@@ -30,13 +37,12 @@ def two_group_limma(table: pd.DataFrame, column_groups: list[str],
     return limma_result[keep_columns].rename(columns=column_mapping)
 
 
-def _get_rscript_paths():
+def _find_rscript_paths():
     """ Returns a mapping of files from the 'r_scripts' folder. """
     script_paths = {}
     _module_path = os.path.dirname(os.path.realpath(__file__))
     _scripts_path = os.path.join(_module_path, 'rscripts')
     for filename in os.listdir(_scripts_path):
         filepath = os.path.join(_scripts_path, filename)
-        genericname, extension = os.path.splitext(filename)
-        script_paths[genericname] = filepath
+        script_paths[filename] = filepath
     return script_paths
