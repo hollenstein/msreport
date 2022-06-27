@@ -32,7 +32,6 @@ Required test data
 Interface
 ---------
 
-
 quanalysis.add_missing_value_count(qtable)
 --> Adds missing value counts as columns to "data"; and corresponding entries
     to expression_features.
@@ -89,6 +88,7 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 import helper
 import quantable
+import rinterface
 
 
 def count_missing_values(qtable: quantable.Qtable) -> pd.DataFrame:
@@ -190,3 +190,49 @@ def lowess_normalize_samples(qtable: quantable.Qtable) -> None:
     for sample in samples:
         expr_column = qtable.get_expression_column(sample)
         qtable.data[expr_column] = expr_table[sample]
+
+
+def calculate_two_group_limma(qtable, groups: list[str],
+                              filter_valid: bool = True,
+                              limma_trend: bool = True) -> pd.DataFrame:
+    """ Use limma to calculate two sample differential expression from qtable.
+
+    Uses the qtable.data column 'Representative protein' as index.
+
+    Attributes:
+        qtable
+        groups: two experiments to compare
+        filter_valid: if true, use column 'Valid' to filter rows
+        limma_trend: if true, an intensity-dependent trend is fitted to the
+            prior variances
+
+    Returns:
+        A dataframe containing 'logFC', 'P-value', and 'Adjusted p-value'
+        The logFC is calculated as group2 - group1
+    """
+    # Not tested #
+    expression_table = qtable.make_expression_table(
+        samples_as_columns=True,
+        features=['Representative protein', 'Valid']
+    )
+    # TODO: filtering should be able via "make_expression_table"
+    if filter_valid:
+        expression_table = expression_table[expression_table['Valid']]
+
+    samples_to_group = {}
+    for group in groups:
+        samples_to_group.update({s: group for s in qtable.get_samples(group)})
+
+    table_columns = ['Representative protein']
+    table_columns.extend(samples_to_group.keys())
+    table = expression_table[table_columns]
+    table = table.set_index('Representative protein')
+
+    column_groups = list(samples_to_group.values())
+    group1 = groups[0]
+    group2 = groups[1]
+
+    limma_result = rinterface.two_group_limma(
+        table, column_groups, group1, group2, limma_trend
+    )
+    return limma_result
