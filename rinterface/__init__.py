@@ -21,8 +21,8 @@ def two_group_limma(table: pd.DataFrame, column_groups: list[str],
     Attributes:
         column_groups: A list that contains a group name for each column.
             Group names must correspond either to 'group1' or 'group2'.
-        group1: Experimental group 1, corresponds to the coefficient
-        group2: Experimental group 2
+        group1: Experimental group 1
+        group2: Experimental group 2, used as the coefficient
 
     Returns:
         A dataframe containing 'logFC', 'P-value', and 'Adjusted p-value'

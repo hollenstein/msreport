@@ -8,7 +8,7 @@ library(limma)
 
     fit_lm <- lmFit(data_frame, design)
     fit_ebayes <- eBayes(fit_lm, trend = trend)
-    limma_results <- topTable(fit_ebayes, number = Inf, coef = group1,
+    limma_results <- topTable(fit_ebayes, number = Inf, coef = group2,
                               adjust = "BH", sort.by = "none")
     limma_results <- cbind(rownames(limma_results), limma_results)
     colnames(limma_results)[1] <- "id"
