@@ -18,6 +18,12 @@ def two_group_limma(table: pd.DataFrame, column_groups: list[str],
                     group1: str, group2: str, trend: bool) -> pd.DataFrame:
     """ Use limma to calculate differential expression of two groups.
 
+    Attributes:
+        column_groups: A list that contains a group name for each column.
+            Group names must correspond either to 'group1' or 'group2'.
+        group1: Experimental group 1, corresponds to the coefficient
+        group2: Experimental group 2
+
     Returns:
         A dataframe containing 'logFC', 'P-value', and 'Adjusted p-value'
     """

@@ -208,7 +208,7 @@ def calculate_two_group_limma(qtable, groups: list[str],
 
     Returns:
         A dataframe containing 'logFC', 'P-value', and 'Adjusted p-value'
-        The logFC is calculated as group2 - group1
+        The logFC is calculated as the mean intensity of group1 - group2
     """
     # Not tested #
     expression_table = qtable.make_expression_table(
