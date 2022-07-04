@@ -9,7 +9,7 @@ import scipy.optimize
 
 def gaussian_imputation(table: pd.DataFrame, median_downshift: float,
                         std_width: float) -> pd.DataFrame:
-    """ Imput missing values by drawing values from a normal distribution.
+    """ Impute missing values by drawing values from a normal distribution.
 
     Imputation is performed column wise, and the parameters for the normal
     distribution are calculated independently for each column.
@@ -40,7 +40,7 @@ def gaussian_imputation(table: pd.DataFrame, median_downshift: float,
 
 
 def solve_ratio_matrix(matrix: np.ndarray) -> np.ndarray:
-    """ Solve a square matrix containing pair wise ratios. """
+    """ Solve a square matrix containing pair wise log ratios. """
     # Not tested #
     assert matrix.shape[0] == matrix.shape[1]
     num_groups = matrix.shape[0]
@@ -63,6 +63,7 @@ def solve_ratio_matrix(matrix: np.ndarray) -> np.ndarray:
 
 
 def mode(values: Iterable) -> float:
+    """ Calculate the mode by using kernel-density estimation. """
     median = np.median(values)
     bounds = (median - 1.5, median + 1.5)
     kde = scipy.stats.gaussian_kde(values)

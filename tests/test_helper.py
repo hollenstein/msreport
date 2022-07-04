@@ -11,32 +11,16 @@ def test_find_columns():
     assert columns == ['Test', 'Test A', 'Test B']
 
 
-def test_gaussian_imputation():
-    table = pd.DataFrame({
-        'A': [90000, 100000, 110000, np.nan],
-        'B': [1, 1, 1, np.nan],
-    })
-    median_downshift = 1
-    std_width = 1
-    imputed = helper.gaussian_imputation(
-        table, median_downshift, std_width
-    )
-
-    number_missing_values = imputed.isna().sum().sum()
-    assert number_missing_values == 0
-
-    imputed_column_A = imputed['A'][3]
-    imputed_column_B = imputed['B'][3]
-    assert imputed_column_A >= imputed_column_B
-
-
 def test_rename_mq_reporter_channels_only_intensity():
     table = pd.DataFrame(columns=[
         'Reporter intensity 1',
         'Reporter intensity 2',
     ])
     channel_names = ['Channel 1', 'Channel 2']
-    expected_columns = [f'Reporter intensity {i}' for i in channel_names]
+    expected_columns = [
+        'Reporter intensity Channel 1',
+        'Reporter intensity Channel 2',
+    ]
     helper.rename_mq_reporter_channels(table, channel_names)
     assert table.columns.tolist() == expected_columns
 
@@ -83,3 +67,46 @@ def test_rename_mq_reporter_channels_with_count_and_corrected():
     ]
     helper.rename_mq_reporter_channels(table, channel_names)
     assert table.columns.tolist() == expected_columns
+
+
+def test_guess_design():
+    table = pd.DataFrame(columns=[
+        'Intensity ExperimentA_R1',
+        'Intensity ExperimentB_R1',
+        'Intensity ExperimentB_R2',
+        'Other columns',
+    ])
+    tag = 'Intensity'
+    expected_design = pd.DataFrame({
+        'Sample': ['ExperimentA_R1', 'ExperimentB_R1', 'ExperimentB_R2'],
+        'Experiment': ['ExperimentA', 'ExperimentB', 'ExperimentB']
+    })
+
+    design = helper.guess_design(table, tag)
+    assert expected_design.equals(design)
+
+
+def test_mode():
+    values = np.random.normal(size=100)
+    mode = helper.mode(values)
+    assert isinstance(mode, float)
+    assert mode < 1 and mode > -1
+
+
+def test_gaussian_imputation():
+    table = pd.DataFrame({
+        'A': [90000, 100000, 110000, np.nan],
+        'B': [1, 1, 1, np.nan],
+    })
+    median_downshift = 1
+    std_width = 1
+    imputed = helper.gaussian_imputation(
+        table, median_downshift, std_width
+    )
+
+    number_missing_values = imputed.isna().sum().sum()
+    assert number_missing_values == 0
+
+    imputed_column_A = imputed['A'][3]
+    imputed_column_B = imputed['B'][3]
+    assert imputed_column_A >= imputed_column_B

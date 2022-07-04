@@ -3,9 +3,28 @@ import pandas as pd
 import re
 
 
-def guess_design(table, tag):
-    """ Extract sample names and experiments from intensity columns. """
-    # Not tested #
+def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
+    """ Extract sample names and experiments from intensity columns.
+
+    First a subset of columns containing a column tag are identified. Then
+    sample names are extracted by removing the column tag from each column
+    name. And finally, experiment names are extracted from sample names
+    by splitting sample names at the last underscore.
+
+    This requires that the sample naming follows a specific convention. It must
+    start with the experiment name, followed by an underscore and a unique
+    identifier of the sample, for example the replicate number. The experiment
+    name can also contain underscores, as it is split only by the last
+    underscore. Example of valid samples names are "ExperimentA_r1" or
+    "Experiment_A_r1".
+
+    Args:
+        table: Table that contains intensity columns with sample names.
+        tag: Columns containing the tag are selected for sample extraction.
+
+    Returns:
+        A new DataFrame containing the columns "Sample" and "Experiment"
+    """
     sample_entries = []
     for column in find_columns(table, tag):
         sample = column.replace(tag, '').strip()
