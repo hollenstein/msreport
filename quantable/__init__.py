@@ -7,18 +7,17 @@ import helper
 
 class Qtable():
     def __init__(self, table: pd.DataFrame, design: pd.DataFrame = None):
-        self._design: pd.DataFrame
+        self.design: pd.DataFrame
         self._expression_columns: list[str]
-        self._expression_tag: str
         self._expression_sample_mapping: dict[str, str]
 
         self.data: pd.DataFrame = table.copy()
         self._expression_features: list[str] = []
         if design is not None:
-            self._design = design
+            self.design = design
 
     def get_design(self) -> pd.DataFrame:
-        return self._design
+        return self.design
 
     def get_samples(self, experiment: str = None) -> pd.DataFrame:
         design = self.get_design()
@@ -43,8 +42,7 @@ class Qtable():
 
     def make_expression_table(
             self, features: list[str] = None,
-            samples_as_columns: bool = False,
-        ) -> pd.DataFrame:
+            samples_as_columns: bool = False) -> pd.DataFrame:
         """ Returns a new dataframe containing the expression data and
         additional expression related features.
 
@@ -66,7 +64,6 @@ class Qtable():
                 columns=self._expression_sample_mapping,
                 inplace=True
             )
-
         return expr_table
 
     def add_design(self, design_matrix: pd.DataFrame) -> None:
@@ -87,7 +84,7 @@ class Qtable():
                 ', '.join(f'"{c}"' for c in matrix_columns), '.'
             ])
             raise ValueError(exception_message)
-        self._design = design_matrix
+        self.design = design_matrix
 
     def set_expression_by_tag(self, tag: str,
                               zerotonan: bool = False,
@@ -164,28 +161,43 @@ class Qtable():
             log2: If true, expression column values are log2 transformed and 0
                 are replaced by NaN.
         """
-        table_columns = self.data.columns.tolist()
-        expression_columns = [e for e in expr_sample_mapping.keys()]
-        sample_columns = [s for s in expr_sample_mapping.values()]
+        data_columns = self.data.columns.tolist()
+        expression_columns = list(expr_sample_mapping.keys())
+        sample_columns = list(expr_sample_mapping.values())
 
-        if not all([e in table_columns for e in expression_columns]):
+        if not all([e in data_columns for e in expression_columns]):
             exception_message = ('Not all expression columns from'
-                                 ' "expr_sample_mapping" are present as'
-                                 ' columns in the data table')
+                                 f' {expression_columns} are present as'
+                                 ' columns in the data table!')
             raise ValueError(exception_message)
         if not all([s in self.get_samples() for s in sample_columns]):
-            exception_message = ('Note all samples from "expr_sample_mapping"'
-                                 ' are present in self.design')
+            exception_message = (f'Not all samples from {sample_columns}'
+                                 ' are present in the qtable design!')
             raise ValueError(exception_message)
+
         self._expression_columns = expression_columns
         self._expression_sample_mapping = expr_sample_mapping
-
         if zerotonan or log2:
             values = self.data[expression_columns].replace({0: np.nan})
             self.data[expression_columns] = values
         if log2:
             values = np.log2(self.data[expression_columns])
             self.data[expression_columns] = values
+
+    def copy(self):
+        # NOT TESTED #
+        return self.__copy__()
+
+    def __copy__(self):
+        # NOT TESTED #
+        new_instance = Qtable(self.data, self.design)
+        # Copy all private attributes
+        for attr in dir(self):
+            if (not callable(getattr(self, attr))
+                    and attr.startswith('_')
+                    and not attr.startswith('__')):
+                new_instance.__setattr__(attr, self.__getattribute__(attr))
+        return new_instance
 
 
 def _str_to_substr_mapping(strings, substrings) -> dict[str, str]:
