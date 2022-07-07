@@ -3,7 +3,6 @@ import os
 import pandas as pd
 import pytest
 import reader
-#Reporter intensity 1 TMT    Reporter intensity 2 TMT    Reporter intensity 3 TMT    Reporter intensity 4 TMT    Reporter intensity 5 TMT
 
 
 @pytest.fixture

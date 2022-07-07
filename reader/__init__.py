@@ -17,9 +17,8 @@ Todos:
 
 
 FP reader:
-
-For LFQ the most relevant files are combined_protein.tsv, combined_ion.tsv
-For TMT the relevant files are protein.tsv, psm.tsv (might be in folders)
+- For LFQ the most relevant files are combined_protein.tsv, combined_ion.tsv
+- For TMT the relevant files are protein.tsv, psm.tsv (might be in folders)
 """
 
 
@@ -51,8 +50,8 @@ class ResultReader():
         return df
 
     def _rename_columns(self, df: pd.DataFrame,
-                        prefixed: bool) -> pd.DataFrame:
-        """ Rename columns to match a common format between programs.
+                        prefix_tag: bool) -> pd.DataFrame:
+        """ Change column names to match a common format between programs
 
         First rename columns according to self.column_mapping. Next, replace
         tags in columns according to self.column_tag_mapping. Then, for
@@ -67,7 +66,7 @@ class ResultReader():
         for tag in self.sample_column_tags:
             if tag in self.column_tag_mapping:
                 tag = self.column_tag_mapping[tag]
-            df = _rearrange_column_tag(df, tag, prefixed)
+            df = _rearrange_column_tag(df, tag, prefix_tag)
         return df
 
 
@@ -126,7 +125,7 @@ class MQReader(ResultReader):
                         rename_columns: bool = True,
                         drop_decoy: bool = True,
                         drop_idbysite: bool = True,
-                        column_tags_prefixed: bool = True,
+                        prefix_column_tags: bool = True,
                         special_proteins: list[str] = []) -> pd.DataFrame:
         """ Read and process 'proteinGroups.txt' file """
         df = self._read_file('proteins')
@@ -135,17 +134,17 @@ class MQReader(ResultReader):
         if drop_idbysite:
             df = self._drop_idbysite(df)
         if rename_columns:
-            df = self._rename_columns(df, column_tags_prefixed)
+            df = self._rename_columns(df, prefix_column_tags)
         df = self._rearrange_proteins(df, special_proteins)
         return df
 
     def import_peptides(self, drop_decoy: bool = True,
-                        column_tags_prefixed: bool = True) -> pd.DataFrame:
+                        prefix_column_tags: bool = True) -> pd.DataFrame:
         """ Read and process 'proteinGroups.txt' file """
         df = self._read_file('peptides')
         if drop_decoy:
             df = self._drop_decoy(df)
-        df = self._rename_columns(df, column_tags_prefixed)
+        df = self._rename_columns(df, prefix_column_tags)
         return df
 
     def import_ions(self, drop_decoy: bool = True) -> pd.DataFrame:
@@ -276,7 +275,7 @@ class FPReader(ResultReader):
             self.filenames = self.filenames_isobar
 
     def import_proteins(self, rename_columns: bool = True,
-                        column_tags_prefixed: bool = True,
+                        prefix_column_tags: bool = True,
                         special_proteins: list[str] = []) -> pd.DataFrame:
         """ Read and process 'proteinGroups.txt' file """
         # Note that is is essential to rename column names before attempting
@@ -285,7 +284,7 @@ class FPReader(ResultReader):
         """ Read and process 'proteinGroups.txt' file """
         df = self._read_file('proteins')
         if rename_columns:
-            df = self._rename_columns(df, column_tags_prefixed)
+            df = self._rename_columns(df, prefix_column_tags)
         df = self._rearrange_proteins(df, special_proteins)
         return df
 
@@ -351,21 +350,21 @@ def _replace_column_tag(df: pd.DataFrame,
 
 
 def _rearrange_column_tag(df: pd.DataFrame, tag: str,
-                          prefixed: bool) -> pd.DataFrame:
+                          prefix: bool) -> pd.DataFrame:
     """ Moves the column tag to the beginning or end of each column.
 
     Args:
         df: Rearrange columns in this DataFrame
         tag: A substring that when found in column names should be moved
             to the beginning or end of the column name
-        prefixed: if true, the tag string is moved to the beginning of the
+        prefix: if true, the tag string is moved to the beginning of the
             new column names, else to the end.
     """
     old_columns = helper.find_columns(df, tag)
     new_columns = []
     for column_name in old_columns:
         column_name = column_name.replace(tag, '').strip()
-        if prefixed:
+        if prefix:
             new_column_name = ' '.join([tag, column_name]).strip()
         else:
             new_column_name = ' '.join([column_name, tag]).strip()
