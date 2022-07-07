@@ -8,11 +8,11 @@ import helper
 class Qtable():
     def __init__(self, table: pd.DataFrame, design: pd.DataFrame = None):
         self.design: pd.DataFrame
-        self._expression_columns: list[str]
-        self._expression_sample_mapping: dict[str, str]
+        self._expression_columns: list[str] = []
+        self._expression_features: list[str] = []
+        self._expression_sample_mapping: dict[str, str] = {}
 
         self.data: pd.DataFrame = table.copy()
-        self._expression_features: list[str] = []
         if design is not None:
             self.design = design
 
@@ -163,26 +163,48 @@ class Qtable():
         """
         data_columns = self.data.columns.tolist()
         expression_columns = list(expr_sample_mapping.keys())
-        sample_columns = list(expr_sample_mapping.values())
+        samples = list(expr_sample_mapping.values())
 
         if not all([e in data_columns for e in expression_columns]):
             exception_message = ('Not all expression columns from'
                                  f' {expression_columns} are present as'
                                  ' columns in the data table!')
             raise ValueError(exception_message)
-        if not all([s in self.get_samples() for s in sample_columns]):
-            exception_message = (f'Not all samples from {sample_columns}'
+        if not all([s in self.get_samples() for s in samples]):
+            exception_message = (f'Not all samples from {samples}'
                                  ' are present in the qtable design!')
             raise ValueError(exception_message)
 
-        self._expression_columns = expression_columns
-        self._expression_sample_mapping = expr_sample_mapping
+        self._reset_expression()
+        new_column_names = [f'Expression {sample}' for sample in samples]
+        new_sample_mapping = dict(zip(new_column_names, samples))
+
+        self._expression_columns = new_column_names
+        self._expression_sample_mapping = new_sample_mapping
+        expression_data = self.data[expression_columns].copy()
+        expression_data.columns = new_column_names
+
         if zerotonan or log2:
-            values = self.data[expression_columns].replace({0: np.nan})
-            self.data[expression_columns] = values
+            expression_data = expression_data.replace({0: np.nan})
         if log2:
-            values = np.log2(self.data[expression_columns])
-            self.data[expression_columns] = values
+            expression_data = np.log2(expression_data)
+        self.data[new_column_names] = expression_data
+
+    def _reset_expression(self):
+        """ Remove previously added expression and expression feature data."""
+        # NOT TESTED #
+        no_expression_columns = []
+        for col in self.data.columns:
+            if col in self._expression_columns:
+                continue
+            elif col in self._expression_features:
+                continue
+            else:
+                no_expression_columns.append(col)
+        self.data = self.data[no_expression_columns]
+        self._expression_columns = []
+        self._expression_features = []
+        self._expression_sample_mapping = {}
 
     def copy(self):
         # NOT TESTED #

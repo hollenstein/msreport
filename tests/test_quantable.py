@@ -26,15 +26,29 @@ def example_data():
         'data': data,
         'design': design,
         'expression_tag': 'Intensity',
-        'expression_columns': [
-            'Intensity Sample_A1', 'Intensity Sample_A2',
-            'Intensity Sample_B1', 'Intensity Sample_B2'
+        'intensity_columns': [
+            'Intensity Sample_A1',
+            'Intensity Sample_A2',
+            'Intensity Sample_B1',
+            'Intensity Sample_B2'
         ],
-        'expr_sample_mapping': {
+        'expression_columns': [
+            'Expression Sample_A1',
+            'Expression Sample_A2',
+            'Expression Sample_B1',
+            'Expression Sample_B2'
+        ],
+        'intensity_cols_to_samples': {
             'Intensity Sample_A1': 'Sample_A1',
             'Intensity Sample_A2': 'Sample_A2',
             'Intensity Sample_B1': 'Sample_B1',
             'Intensity Sample_B2': 'Sample_B2'
+        },
+        'expr_cols_to_samples': {
+            'Expression Sample_A1': 'Sample_A1',
+            'Expression Sample_A2': 'Sample_A2',
+            'Expression Sample_B1': 'Sample_B1',
+            'Expression Sample_B2': 'Sample_B2'
         },
     }
     return example_data
@@ -104,6 +118,43 @@ def test_qtable_get_experiments(example_data, example_qtable):
     assert set(example_qtable.get_experiments()) == experiment_set
 
 
+class TestQtableResetExpression:
+    @pytest.fixture(autouse=True)
+    def _init_qtable(self, example_data):
+        self.qtable = quantable.Qtable(
+            example_data['data'], design=example_data['design']
+        )
+
+    def test_reset_expression_parameters(self):
+        self.qtable._expression_columns = ['test']
+        self.qtable._expression_features = ['test']
+        self.qtable._expression_sample_mapping = {'test': 'test'}
+
+        self.qtable._reset_expression()
+        assert self.qtable._expression_columns == []
+        assert self.qtable._expression_features == []
+        assert self.qtable._expression_sample_mapping == {}
+
+    def test_reset_expression_data_columns(self, example_data):
+        self.qtable._set_expression(example_data['intensity_cols_to_samples'])
+
+        self.qtable._reset_expression()
+        data_columns = self.qtable.data.columns
+        all_expression_columns_absent_in_data = not any(
+            [c in data_columns for c in example_data['expression_columns']]
+        )
+        assert all_expression_columns_absent_in_data
+
+    def test_reset_expression_feature_columns(self, example_data):
+        # TODO: do this via add_expression_features function, once implemented
+        self.qtable.data['Feature'] = ''
+        self.qtable._expression_features.append('Feature')
+
+        self.qtable._reset_expression()
+        data_columns = self.qtable.data.columns.to_list()
+        assert 'Feature' not in data_columns
+
+
 class TestQtableSetExpression:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
@@ -112,14 +163,14 @@ class TestQtableSetExpression:
         )
 
     def test_set_expression(self, example_data):
-        self.qtable._set_expression(example_data['expr_sample_mapping'])
+        self.qtable._set_expression(example_data['intensity_cols_to_samples'])
 
         assert self.qtable._expression_columns == example_data['expression_columns']
-        assert self.qtable._expression_sample_mapping == example_data['expr_sample_mapping']
+        assert self.qtable._expression_sample_mapping == example_data['expr_cols_to_samples']
 
     def test_with_zerotonan_false(self, example_data):
         self.qtable._set_expression(
-            example_data['expr_sample_mapping'], zerotonan=False
+            example_data['intensity_cols_to_samples'], zerotonan=False
         )
 
         expr_table = self.qtable.data[example_data['expression_columns']]
@@ -130,7 +181,7 @@ class TestQtableSetExpression:
 
     def test_with_zerotonan(self, example_data):
         self.qtable._set_expression(
-            example_data['expr_sample_mapping'], zerotonan=True
+            example_data['intensity_cols_to_samples'], zerotonan=True
         )
 
         expr_table = self.qtable.data[example_data['expression_columns']]
@@ -141,13 +192,13 @@ class TestQtableSetExpression:
 
     def test_with_log2(self, example_data):
         self.qtable._set_expression(
-            example_data['expr_sample_mapping'], log2=True
+            example_data['intensity_cols_to_samples'], log2=True
         )
 
-        expected_table = example_data['data'][example_data['expression_columns']]
-        expected_table = np.log2(expected_table.replace({0: np.nan}))
         expr_table = self.qtable.data[example_data['expression_columns']]
-        assert expr_table.equals(expected_table)
+        expected = example_data['data'][example_data['intensity_columns']]
+        expected = np.log2(expected.replace({0: np.nan}))
+        assert np.array_equal(expr_table.to_numpy(), expected.to_numpy(), equal_nan=True)
 
     def test_raises_value_errors(self, example_data):
         # Raise error when expression columns are not present in the data table
@@ -170,7 +221,7 @@ class TestQtableSetExpressionByTag:
         self.qtable.set_expression_by_tag(example_data['expression_tag'])
 
         assert self.qtable._expression_columns == example_data['expression_columns']
-        assert self.qtable._expression_sample_mapping == example_data['expr_sample_mapping']
+        assert self.qtable._expression_sample_mapping == example_data['expr_cols_to_samples']
 
     def test_with_zerotonan(self, example_data):
         self.qtable.set_expression_by_tag(example_data['expression_tag'], zerotonan=True)
@@ -183,9 +234,9 @@ class TestQtableSetExpressionByTag:
         self.qtable.set_expression_by_tag(example_data['expression_tag'], log2=True)
 
         expr_table = self.qtable.data[example_data['expression_columns']]
-        expected_table = example_data['data'][example_data['expression_columns']]
-        expected_table = np.log2(expected_table.replace({0: np.nan}))
-        assert expr_table.equals(expected_table)
+        expected = example_data['data'][example_data['intensity_columns']]
+        expected = np.log2(expected.replace({0: np.nan}))
+        assert np.array_equal(expr_table.to_numpy(), expected.to_numpy(), equal_nan=True)
 
 
 class TestQtableSetExpressionByColumn:
@@ -196,13 +247,13 @@ class TestQtableSetExpressionByColumn:
         )
 
     def test_set_expression_by_column(self, example_data):
-        self.qtable.set_expression_by_column(example_data['expr_sample_mapping'])
+        self.qtable.set_expression_by_column(example_data['intensity_cols_to_samples'])
         assert self.qtable._expression_columns == example_data['expression_columns']
-        assert self.qtable._expression_sample_mapping == example_data['expr_sample_mapping']
+        assert self.qtable._expression_sample_mapping == example_data['expr_cols_to_samples']
 
     def test_with_zerotonan(self, example_data):
         self.qtable.set_expression_by_column(
-            example_data['expr_sample_mapping'], zerotonan=True
+            example_data['intensity_cols_to_samples'], zerotonan=True
         )
 
         expr_table = self.qtable.data[example_data['expression_columns']]
@@ -211,18 +262,18 @@ class TestQtableSetExpressionByColumn:
 
     def test_with_log2(self, example_data):
         self.qtable.set_expression_by_column(
-            example_data['expr_sample_mapping'], log2=True
+            example_data['intensity_cols_to_samples'], log2=True
         )
 
         expr_table = self.qtable.data[example_data['expression_columns']]
-        expected_table = example_data['data'][example_data['expression_columns']]
-        expected_table = np.log2(expected_table.replace({0: np.nan}))
-        assert expr_table.equals(expected_table)
+        expected = example_data['data'][example_data['intensity_columns']]
+        expected = np.log2(expected.replace({0: np.nan}))
+        assert np.array_equal(expr_table.to_numpy(), expected.to_numpy(), equal_nan=True)
 
 
 def test_qtable_get_expression_column(example_data, example_qtable):
-    expected_columns = [c for c in example_data['expr_sample_mapping']]
-    samples = [example_data['expr_sample_mapping'][e] for e in expected_columns]
+    expected_columns = [c for c in example_data['expr_cols_to_samples']]
+    samples = [example_data['expr_cols_to_samples'][e] for e in expected_columns]
     columns = [example_qtable.get_expression_column(s) for s in samples]
     assert expected_columns == columns
 
@@ -233,11 +284,11 @@ class TestQtableMakeExpressionTable:
         self.qtable = example_qtable
 
     def test_make_expression_table(self, example_data):
-        expected_table = example_data['data'][example_data['expression_columns']]
+        expected = example_data['data'][example_data['intensity_columns']]
 
         # Test for correct values in dataframe
         expr_table = self.qtable.make_expression_table()
-        assert expr_table.equals(expected_table)
+        assert np.array_equal(expr_table.to_numpy(), expected.to_numpy(), equal_nan=True)
 
     def test_with_samples_as_columns(self, example_data):
         expr_table = self.qtable.make_expression_table(samples_as_columns=True)
