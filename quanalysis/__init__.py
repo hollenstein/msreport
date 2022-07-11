@@ -110,8 +110,28 @@ def count_missing_values(qtable: quantable.Qtable) -> pd.DataFrame:
     return missingness
 
 
+def validate_proteins(qtable: quantable.Qtable, min_peptides: int = 0,
+                      max_missing: int = 0) -> None:
+    """ Validate protein entries and add a 'Valid' column to the qtable.
+
+    Attributes:
+        min_peptides: minimum number of unique peptides
+        max_missing: requires at least one experiment with this maximum number
+            of missing values.
+    """
+    # NOT TESTED #
+    valid_entries = (qtable.data['Total peptides'] >= min_peptides)
+    qtable.data['Valid'] = valid_entries
+
+    missing_values = count_missing_values(qtable)
+    cols = [' '.join(['Missing', e]) for e in qtable.get_experiments()]
+    min_two_quant_events = np.any(missing_values[cols] <= max_missing, axis=1)
+    qtable.data['Valid'] = min_two_quant_events & qtable.data['Valid']
+
+
 def median_normalize_samples(qtable: quantable.Qtable) -> None:
     """ Normalize samples with median profiles. """
+    # NOT TESTED #
     samples = qtable.get_samples()
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
@@ -134,8 +154,8 @@ def median_normalize_samples(qtable: quantable.Qtable) -> None:
 
 def mode_normalize_samples(qtable: quantable.Qtable) -> None:
     """ Normalize samples with median profiles. """
-    # Not tested #
-    # Is a duplication of mean_normalize_samples -> create common function #
+    # NOT TESTED #
+    # Is a duplication of median_normalize_samples -> create common function #
     samples = qtable.get_samples()
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
@@ -158,7 +178,7 @@ def mode_normalize_samples(qtable: quantable.Qtable) -> None:
 
 def lowess_normalize_samples(qtable: quantable.Qtable) -> None:
     """ Normalize samples to pseudo reference with lowess. """
-    # Not tested #
+    # NOT TESTED #
     samples = qtable.get_samples()
     expr_table = qtable.make_expression_table(samples_as_columns=True)
 
@@ -197,7 +217,9 @@ def calculate_two_group_limma(qtable, groups: list[str],
                               limma_trend: bool = True) -> pd.DataFrame:
     """ Use limma to calculate two sample differential expression from qtable.
 
-    Uses the qtable.data column 'Representative protein' as index.
+    Requires that expression columns are set. All rows with missing values are
+    ignored, use imputation of missing values to prevent this. The qtable.data
+    column 'Representative protein' is used as the index.
 
     Attributes:
         qtable
@@ -210,25 +232,30 @@ def calculate_two_group_limma(qtable, groups: list[str],
         A dataframe containing 'logFC', 'P-value', and 'Adjusted p-value'
         The logFC is calculated as the mean intensity of group2 - group1
     """
-    # Not tested #
+    # NOT TESTED #
+    feature_cols = ['Representative protein']
+    if filter_valid:
+        feature_cols.append('Valid')
+
     expression_table = qtable.make_expression_table(
-        samples_as_columns=True,
-        features=['Representative protein', 'Valid']
+        samples_as_columns=True, features=feature_cols
     )
     # TODO: filtering should be able via "make_expression_table"
     if filter_valid:
         expression_table = expression_table[expression_table['Valid']]
 
-    samples_to_group = {}
-    for group in groups:
-        samples_to_group.update({s: group for s in qtable.get_samples(group)})
+    samples_to_experiment = {}
+    for experiment in groups:
+        mapping = {s: experiment for s in qtable.get_samples(experiment)}
+        samples_to_experiment.update(mapping)
 
     table_columns = ['Representative protein']
-    table_columns.extend(samples_to_group.keys())
+    table_columns.extend(samples_to_experiment.keys())
     table = expression_table[table_columns]
     table = table.set_index('Representative protein')
+    table = table[table.isna().sum(axis=1) <= 0]  # Remove rows with nan values
 
-    column_groups = list(samples_to_group.values())
+    column_groups = list(samples_to_experiment.values())
     group1 = groups[0]
     group2 = groups[1]
 
