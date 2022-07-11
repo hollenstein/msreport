@@ -27,7 +27,6 @@ def missing_values_per_category(
         )
         ylabel = axes[0].yaxis.get_label().get_text()
         axes[0].set_ylabel(f'{category}: {ylabel}')
-        fig.tight_layout()
         figures.append([fig, axes])
     return figures
 
@@ -44,7 +43,11 @@ def missing_values(
     num_experiments = len(experiments)
 
     barwidth = 0.8 / num_methods
-    figsize = (num_experiments * 2.1, 3.5)
+    legendwidth = 1.5
+    # figwidth = max(num_experiments * num_methods * 0.8 + 0.5 + legendwidth, 5)
+    figwidth = (num_experiments * 0.8) + (num_experiments * num_methods * 0.6)
+    figwidth = max(figwidth, 1.5) + legendwidth
+    figsize = (figwidth, 3.5)
     xtick_labels = ['No missing', 'Some missing', 'All missing']
 
     sns.set_style('whitegrid')
@@ -53,7 +56,9 @@ def missing_values(
         for method_num, method in enumerate(method_tables):
             ax = axes[exp_num]
             table = method_tables[method]
-            data = table[table['Valid']]
+            data = table
+            if 'Valid' in data.columns:
+                data = data[data['Valid']]
 
             exp_missing = data[f'Missing {exp}']
             missing_none = (exp_missing == 0).sum()
@@ -77,14 +82,22 @@ def missing_values(
         ax.grid(False, axis='x')
         ax.grid(axis='y', linestyle='dashed', linewidth=1)
     sns.despine(top=True, right=True)
-    ax.legend()
+
+    # Add a legend below the figure
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles, labels, bbox_to_anchor=(1, 0.91), ncol=1
+    )
+    figure_space_for_legend = 1 - (1.5 / figwidth)
+    fig.tight_layout(rect=[0, 0, figure_space_for_legend, 1])
+
     return fig, axes
 
 
 def cv_distribution_per_category(
         method_tables: dict[str, pd.DataFrame], exp_to_samples: dict[str, str],
-        categories: list[str] = None, max_missing: int = 10,
-        method_colors: dict[str, str] = None):
+        categories: list[str] = None, normed: bool = False,
+        max_missing: int = 10, method_colors: dict[str, str] = None):
     """ Plot analysis of missing values per experiment """
     if not categories:
         categories = set()
@@ -98,8 +111,8 @@ def cv_distribution_per_category(
         for method, expr in method_tables.items():
             tables[method] = expr[expr['Category'] == category]
         fig, axes = cv_distribution(
-            tables, exp_to_samples, max_missing=max_missing,
-            method_colors=method_colors
+            tables, exp_to_samples, normed=normed,
+            max_missing=max_missing, method_colors=method_colors
         )
         ylabel = axes[0].yaxis.get_label().get_text()
         axes[0].set_ylabel(f'{category}: {ylabel}')
@@ -110,7 +123,8 @@ def cv_distribution_per_category(
 
 def cv_distribution(
         method_tables: dict[str, pd.DataFrame], exp_to_samples: dict[str, str],
-        max_missing: int = 10, method_colors: dict[str, str] = None):
+        normed: bool = False, max_missing: int = 10,
+        method_colors: dict[str, str] = None):
 
     if not method_colors:
         color_cycler = itertools.cycle(sns.color_palette())
@@ -135,8 +149,9 @@ def cv_distribution(
             cv = std / mean * 100
             bins = np.linspace(0, 2, 400)
             ax.hist(
-                cv, bins=bins, cumulative=True, histtype='step', density=False,
-                lw=1.2, color=method_colors[method], label=method)
+                cv, bins=bins, cumulative=True, histtype='step',
+                density=normed, lw=1.2, color=method_colors[method],
+                label=method)
             ax.set_title(exp)
             ax.legend(loc='lower right')
             ax.set_xlabel('Cv of protein intensities [log2]')
@@ -228,7 +243,6 @@ def precision_tp(
             column = ' '.join(['Missing', exp])
             data = data[data[column] <= max_missing]
 
-        data['ratios'] = data[exp1] - data[exp2]
         stats, pvalues = scipy.stats.ttest_ind(
             data[samples1], data[samples2], axis=1
         )
@@ -259,14 +273,14 @@ def precision_tp(
             if pvalue >= -2:
                 if method_num == 0:
                     ax.scatter(
-                        tp, precision, marker='o', s=30,
-                        color=method_colors[method],
+                        tp, precision, marker='D', s=35, zorder=3, lw=1.8,
+                        edgecolor=method_colors[method], color='#f0f0f0',
                         label='FDR corrected p-value at 0.01'
                     )
                 else:
                     ax.scatter(
-                        tp, precision, marker='o', s=30,
-                        color=method_colors[method],
+                        tp, precision, marker='D', s=35, zorder=3, lw=1.8,
+                        edgecolor=method_colors[method], color='#f0f0f0',
                     )
                 break
     for spine in ['bottom', 'left']:
@@ -304,7 +318,6 @@ def cumulative_pvalues(
             column = ' '.join(['Missing', exp])
             data = data[data[column] <= max_missing]
 
-        data['ratios'] = data[exp1] - data[exp2]
         stats, pvalues = scipy.stats.ttest_ind(
             data[samples1], data[samples2], axis=1
         )
