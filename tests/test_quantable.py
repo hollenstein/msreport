@@ -13,7 +13,7 @@ def example_data():
     )
 
     data = pd.DataFrame({
-        'id': [11, 11, 11],
+        'id': ['1', '2', '3'],
         'Total peptides': [2, 1, 2],
         'Representative protein': ['A', 'B', 'C'],
         'Intensity Sample_A1': [10, np.nan, 6],
@@ -125,7 +125,7 @@ class TestQtableResetExpression:
             example_data['data'], design=example_data['design']
         )
 
-    def test_reset_expression_parameters(self):
+    def test_reset_of_parameters(self):
         self.qtable._expression_columns = ['test']
         self.qtable._expression_features = ['test']
         self.qtable._expression_sample_mapping = {'test': 'test'}
@@ -135,7 +135,7 @@ class TestQtableResetExpression:
         assert self.qtable._expression_features == []
         assert self.qtable._expression_sample_mapping == {}
 
-    def test_reset_expression_data_columns(self, example_data):
+    def test_reset_of_data_columns(self, example_data):
         self.qtable._set_expression(example_data['intensity_cols_to_samples'])
 
         self.qtable._reset_expression()
@@ -145,14 +145,16 @@ class TestQtableResetExpression:
         )
         assert all_expression_columns_absent_in_data
 
-    def test_reset_expression_feature_columns(self, example_data):
+    def test_reset_of_expression_features(self, example_data):
         # TODO: do this via add_expression_features function, once implemented
-        self.qtable.data['Feature'] = ''
-        self.qtable._expression_features.append('Feature')
-
+        new_feature = example_data['data']['id']
+        new_feature.name = 'Feature'
+        
+        self.qtable.add_expression_features(new_feature)
+        assert 'Feature' in self.qtable.data.columns
+        
         self.qtable._reset_expression()
-        data_columns = self.qtable.data.columns.to_list()
-        assert 'Feature' not in data_columns
+        assert 'Feature' not in self.qtable.data.columns
 
 
 class TestQtableSetExpression:
@@ -271,6 +273,45 @@ class TestQtableSetExpressionByColumn:
         assert np.array_equal(expr_table.to_numpy(), expected.to_numpy(), equal_nan=True)
 
 
+class TestQtableAddExpressionFeature:
+    @pytest.fixture(autouse=True)
+    def _init_qtable(self, example_data):
+        self.qtable = quantable.Qtable(
+            example_data['data'], design=example_data['design']
+        )
+
+    def test_with_series(self):
+        new_data = self.qtable.data['id'].copy()
+        new_data.name = 'Feature'
+        self.qtable.add_expression_features(new_data)
+
+        qtable_columns = self.qtable.data.columns.to_list()
+        assert 'Feature' in qtable_columns
+        assert 'Feature' in self.qtable._expression_features
+
+    def test_with_dataframe(self):
+        new_data = self.qtable.data[['id', 'id']].copy()
+        new_data.columns = ['Feature 1', 'Feature 2']
+        self.qtable.add_expression_features(new_data)
+
+        qtable_columns = self.qtable.data.columns.to_list()
+        for new_column in new_data.columns:
+            assert new_column in qtable_columns
+            assert new_column in self.qtable._expression_features        
+
+    def test_qtable_data_integrity(self):
+        old_columns = self.qtable.data.columns.to_list()
+        old_shape = self.qtable.data.shape
+
+        new_data = self.qtable.data['id'].copy()
+        new_data.name = 'Feature'
+        self.qtable.add_expression_features(new_data)
+
+        assert [column in self.qtable.data for column in old_columns]
+        assert self.qtable.data.shape[0] == old_shape[0]
+        assert self.qtable.data.shape[1] == old_shape[1] + 1
+
+
 def test_qtable_get_expression_column(example_data, example_qtable):
     expected_columns = [c for c in example_data['expr_cols_to_samples']]
     samples = [example_data['expr_cols_to_samples'][e] for e in expected_columns]
@@ -278,12 +319,32 @@ def test_qtable_get_expression_column(example_data, example_qtable):
     assert expected_columns == columns
 
 
+class TestQtableMakeExpressionMatrix:
+    @pytest.fixture(autouse=True)
+    def _init_qtable(self, example_qtable):
+        self.qtable = example_qtable
+
+    def test_default_args(self, example_data):
+        expected = example_data['data'][example_data['intensity_columns']]
+
+        # Test for correct values in dataframe
+        expr_matrix = self.qtable.make_expression_matrix()
+        assert np.array_equal(expr_matrix.to_numpy(), expected.to_numpy(), equal_nan=True)
+    
+    def test_with_samples_as_columns(self, example_data):
+        expr_matrix = self.qtable.make_expression_matrix(samples_as_columns=True)
+        expr_matrix_columns = expr_matrix.columns.tolist()
+
+        sample_names = example_data['design']['Sample'].tolist()
+        assert expr_matrix_columns == sample_names
+
+
 class TestQtableMakeExpressionTable:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_qtable):
         self.qtable = example_qtable
 
-    def test_make_expression_table(self, example_data):
+    def test_default_args(self, example_data):
         expected = example_data['data'][example_data['intensity_columns']]
 
         # Test for correct values in dataframe
@@ -312,9 +373,8 @@ class TestQtableMakeExpressionTable:
 def test_qtable_impute_missing_values(example_qtable):
     example_qtable.impute_missing_values()
 
-    samples = example_qtable.get_samples()
-    expr_table = example_qtable.make_expression_table(samples_as_columns=True)
-    number_missing_values = expr_table[samples].isna().sum().sum()
+    expr_matrix = example_qtable.make_expression_matrix()
+    number_missing_values = expr_matrix.isna().sum().sum()
     assert number_missing_values == 0
 
 
