@@ -111,7 +111,7 @@ def count_missing_values(qtable: quantable.Qtable) -> pd.DataFrame:
 
 
 def validate_proteins(qtable: quantable.Qtable, min_peptides: int = 0,
-                      max_missing: int = 0) -> None:
+                      max_missing: int = None) -> None:
     """ Validate protein entries and add a 'Valid' column to the qtable.
 
     Attributes:
@@ -119,14 +119,15 @@ def validate_proteins(qtable: quantable.Qtable, min_peptides: int = 0,
         max_missing: requires at least one experiment with this maximum number
             of missing values.
     """
-    # NOT TESTED #
     valid_entries = (qtable.data['Total peptides'] >= min_peptides)
     qtable.data['Valid'] = valid_entries
 
-    missing_values = count_missing_values(qtable)
-    cols = [' '.join(['Missing', e]) for e in qtable.get_experiments()]
-    min_two_quant_events = np.any(missing_values[cols] <= max_missing, axis=1)
-    qtable.data['Valid'] = min_two_quant_events & qtable.data['Valid']
+    # NOT TESTED from here #
+    if max_missing is not None:
+        missing_values = count_missing_values(qtable)
+        cols = [' '.join(['Missing', e]) for e in qtable.get_experiments()]
+        min_two_quant_events = np.any(missing_values[cols] <= max_missing, axis=1)
+        qtable.data['Valid'] = min_two_quant_events & qtable.data['Valid']
 
 
 def median_normalize_samples(qtable: quantable.Qtable) -> None:
@@ -212,7 +213,27 @@ def lowess_normalize_samples(qtable: quantable.Qtable) -> None:
         qtable.data[expr_column] = expr_table[sample]
 
 
-def calculate_two_group_limma(qtable, groups: list[str],
+def impute_missing_values(qtable: quantable.Qtable) -> None:
+    """ Impute missing expression values.
+
+    Imputes missing values (nan) from expression columns and thus requires that
+    expression columns are defined.
+
+    Missing values are imputed independently for each column by drawing
+    random values from a normal distribution. The parameters of the normal
+    distribution are calculated from the observed values. Mu is the
+    observed median, downshifted by 1.8 standard deviations. Sigma is the
+    observed standard deviation multiplied by 0.3.
+    """
+    median_downshift = 1.8
+    std_width = 0.3
+
+    expr = qtable.make_expression_matrix()
+    imputed = helper.gaussian_imputation(expr, median_downshift, std_width)
+    qtable.data[expr.columns] = imputed[expr.columns]
+
+
+def calculate_two_group_limma(qtable: quantable.Qtable, groups: list[str],
                               filter_valid: bool = True,
                               limma_trend: bool = True) -> pd.DataFrame:
     """ Use limma to calculate two sample differential expression from qtable.
@@ -233,16 +254,15 @@ def calculate_two_group_limma(qtable, groups: list[str],
         The logFC is calculated as the mean intensity of group2 - group1
     """
     # NOT TESTED #
-    feature_cols = ['Representative protein']
-    if filter_valid:
-        feature_cols.append('Valid')
-
     expression_table = qtable.make_expression_table(
-        samples_as_columns=True, features=feature_cols
+        samples_as_columns=True, features=['Representative protein']
     )
+
     # TODO: filtering should be able via "make_expression_table"
     if filter_valid:
-        expression_table = expression_table[expression_table['Valid']]
+        valid = qtable.data['Valid']
+    else:
+        valid = np.full(expression_table.shape[0], True)
 
     samples_to_experiment = {}
     for experiment in groups:
@@ -253,13 +273,26 @@ def calculate_two_group_limma(qtable, groups: list[str],
     table_columns.extend(samples_to_experiment.keys())
     table = expression_table[table_columns]
     table = table.set_index('Representative protein')
-    table = table[table.isna().sum(axis=1) <= 0]  # Remove rows with nan values
+    not_nan = (table.isna().sum(axis=1) == 0)
 
+    mask = np.all([valid, not_nan], axis=0)
     column_groups = list(samples_to_experiment.values())
     group1 = groups[0]
     group2 = groups[1]
 
     limma_result = rinterface.two_group_limma(
-        table, column_groups, group1, group2, limma_trend
+        table[mask], column_groups, group1, group2, limma_trend
     )
+
+    # For adding expression features to the qtable it is necessary that the
+    # the limma_results have the same number of rows.
+    limma_table = pd.DataFrame(index=table.index, columns=limma_result.columns)
+    limma_table[mask] = limma_result
+    limma_table.fillna(np.nan, inplace=True)
+
+    group_name = f'{group2} vs {group1}'
+    mapping = {col: f'{col}: {group_name}' for col in limma_table.columns}
+    limma_table.rename(columns=mapping, inplace=True)
+    qtable.add_expression_features(limma_table)
+
     return limma_result
