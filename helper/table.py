@@ -29,16 +29,10 @@ def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
     for column in find_columns(table, tag):
         sample = column.replace(tag, '').strip()
         experiment = '_'.join(sample.split('_')[:-1])
-        sample_entries.append([sample, experiment])
+        if sample:
+            sample_entries.append([sample, experiment])
     design = pd.DataFrame(sample_entries, columns=['Sample', 'Experiment'])
     return design
-
-
-def find_columns(df: pd.DataFrame, substring: str) -> list[str]:
-    """ Returns a list column names containing the substring """
-    matched_columns = [substring in col for col in df.columns]
-    matched_column_names = np.array(df.columns)[matched_columns].tolist()
-    return matched_column_names
 
 
 def rename_mq_reporter_channels(
@@ -64,3 +58,10 @@ def rename_mq_reporter_channels(
             new_column = f'{base_name}{tag}{channel_name}'
             column_mapping[old_column] = new_column
     table.rename(columns=column_mapping, inplace=True)
+
+
+def find_columns(df: pd.DataFrame, substring: str) -> list[str]:
+    """ Returns a list column names containing the substring """
+    matched_columns = [substring in col for col in df.columns]
+    matched_column_names = np.array(df.columns)[matched_columns].tolist()
+    return matched_column_names

@@ -149,10 +149,10 @@ class TestQtableResetExpression:
         # TODO: do this via add_expression_features function, once implemented
         new_feature = example_data['data']['id']
         new_feature.name = 'Feature'
-        
+
         self.qtable.add_expression_features(new_feature)
         assert 'Feature' in self.qtable.data.columns
-        
+
         self.qtable._reset_expression()
         assert 'Feature' not in self.qtable.data.columns
 
@@ -297,7 +297,7 @@ class TestQtableAddExpressionFeature:
         qtable_columns = self.qtable.data.columns.to_list()
         for new_column in new_data.columns:
             assert new_column in qtable_columns
-            assert new_column in self.qtable._expression_features        
+            assert new_column in self.qtable._expression_features
 
     def test_qtable_data_integrity(self):
         old_columns = self.qtable.data.columns.to_list()
@@ -330,7 +330,7 @@ class TestQtableMakeExpressionMatrix:
         # Test for correct values in dataframe
         expr_matrix = self.qtable.make_expression_matrix()
         assert np.array_equal(expr_matrix.to_numpy(), expected.to_numpy(), equal_nan=True)
-    
+
     def test_with_samples_as_columns(self, example_data):
         expr_matrix = self.qtable.make_expression_matrix(samples_as_columns=True)
         expr_matrix_columns = expr_matrix.columns.tolist()

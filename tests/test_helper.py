@@ -74,6 +74,7 @@ def test_guess_design():
         'Intensity ExperimentA_R1',
         'Intensity ExperimentB_R1',
         'Intensity ExperimentB_R2',
+        'Intensity',
         'Other columns',
     ])
     tag = 'Intensity'
@@ -123,7 +124,7 @@ def test_calculate_tryptic_ibaq_peptides():
         'YVR',
         'QVSR',
         'EVLEPILILLQSQDPQIQVAACAALGNLAVNNENK',
-        'EVLEPILILLQSQDPQIQVAACAALGNLAK'
+        'EVLEPILILLQSQDPQIQVAACAALGNLAK',
         'LEAPQE',
     ]
     protein_sequence = ''.join(peptides)
