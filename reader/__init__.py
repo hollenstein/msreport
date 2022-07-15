@@ -26,6 +26,7 @@ from collections import OrderedDict
 import pandas as pd
 import os
 import helper
+import maspy._proteindb_refactoring as ProtDB
 
 
 class ResultReader():
@@ -140,7 +141,7 @@ class MQReader(ResultReader):
 
     def import_peptides(self, drop_decoy: bool = True,
                         prefix_column_tags: bool = True) -> pd.DataFrame:
-        """ Read and process 'proteinGroups.txt' file """
+        """ Read and process 'peptides.txt' file """
         df = self._read_file('peptides')
         if drop_decoy:
             df = self._drop_decoy(df)
@@ -148,7 +149,7 @@ class MQReader(ResultReader):
         return df
 
     def import_ions(self, drop_decoy: bool = True) -> pd.DataFrame:
-        """ Read and process 'proteinGroups.txt' file """
+        """ Read and process 'evidence.txt' file """
         df = self._read_file('ions')
         if drop_decoy:
             df = self._drop_decoy(df)
@@ -331,6 +332,63 @@ class FPReader(ResultReader):
         df['Representative protein'] = representative_protein_entries
 
         return df
+
+
+def add_protein_annotations(
+        table: pd.DataFrame, fasta_path: str,
+        id_column: str = 'Representative protein') -> None:
+    """ Adds descriptive columns for the representative protein.
+
+    The added columns always includes "Fasta header", "Protein length",
+    "iBAQ peptides", and if possible "Protein entry name" and "Gene id".
+    """
+    # Not tested #
+    protein_db = ProtDB.importProteinDatabase(
+        fasta_path, contaminationTag='contam_'
+    )
+
+    new_columns = {
+        'Representative entry name': [], 'Gene name': [], 'Fasta header': [],
+        'Protein length': [], 'iBAQ peptides': [],
+    }
+    for protein_id in table[id_column]:
+        sequence = protein_db[protein_id].sequence
+        header_info = protein_db[protein_id].headerInfo
+
+        entry_name = header_info['entry'] if 'entry' in header_info else ''
+        gene_name = header_info['gene_id'] if 'gene_id' in header_info else ''
+        fasta_header = protein_db[protein_id].fastaHeader
+        length = protein_db[protein_id].length()
+        ibaq_peptides = helper.calculate_tryptic_ibaq_peptides(sequence)
+
+        new_columns['Representative entry name'].append(entry_name)
+        new_columns['Gene name'].append(gene_name)
+        new_columns['Fasta header'].append(fasta_header)
+        new_columns['Protein length'].append(length)
+        new_columns['iBAQ peptides'].append(ibaq_peptides)
+
+    for column in new_columns:
+        table[column] = new_columns[column]
+
+
+def add_ibaq_intensities(table: pd.DataFrame,
+                         normalize_total_intensity: bool = True,
+                         peptide_column: str = 'Total peptides',
+                         ibaq_peptide_column: str = 'iBAQ peptides',
+                         intensity_tag: str = 'Intensity',
+                         ibaq_tag: str = 'iBAQ intensity') -> None:
+    """ Calculates iBAQ intensities.
+
+    Requires a column containing the theoretical number of iBAQ peptides.
+    """
+    ibaq_factor = table[peptide_column] / table[ibaq_peptide_column]
+    for intensity_column in helper.find_columns(table, intensity_tag):
+        ibaq_column = intensity_column.replace(intensity_tag, ibaq_tag)
+        table[ibaq_column] = table[intensity_column] * ibaq_factor
+
+        if normalize_total_intensity:
+            factor = table[intensity_column].sum() / table[ibaq_column].sum()
+            table[ibaq_column] = table[ibaq_column] * factor
 
 
 def extract_sample_names(df: pd.DataFrame, tag: str) -> list[str]:

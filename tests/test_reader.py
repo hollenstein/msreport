@@ -178,6 +178,10 @@ def test_mqreader_rearrange_proteins(example_mqreader):
     assert df['Representative protein'].tolist() == representative_protein
 
 
+def test_fpreader_setup(example_fpreader):
+    assert os.path.isdir(example_fpreader.data_directory)
+
+
 def test_fpreader_rearrange_proteins(example_fpreader):
     df = pd.DataFrame({
         'Protein': [
@@ -193,17 +197,35 @@ def test_fpreader_rearrange_proteins(example_fpreader):
     assert df['Representative protein'].tolist() == representative_protein
 
 
-# def test_mqreader_import_peptides(example_mqreader):
-#    example_mqreader.import_ions()
+class TestAddIbaqIntensities:
+    @pytest.fixture(autouse=True)
+    def _init_qtable(self,):
+        self.table = pd.DataFrame({
+            'peptides': [2, 2],
+            'ibaq_petides': [2, 2],
+            'intensity': [100.0, 200.0],
+        })
 
-# def test_mqreader_import_ions(example_mqreader):
-    #example_mqreader.import_ions()
+    def test_ibaq_intensity_added(self):
+        reader.add_ibaq_intensities(
+            self.table,
+            peptide_column='peptides',
+            ibaq_peptide_column='ibaq_petides',
+            intensity_tag='intensity',
+            ibaq_tag='ibaq',
+        )
+        assert 'ibaq' in self.table.columns
 
-# def test_mqreader_import_proteins(example_mqreader):
-#    example_mqreader.import_proteins()
-
-def test_fpreader_setup(example_fpreader):
-    assert os.path.isdir(example_fpreader.data_directory)
-
-# def test_fpreader_import_proteins(example_fpreader):
-#    example_fpreader.import_proteins()
+    @pytest.mark.parametrize(
+        'compare_ibaq_intensities, num_petides, normalize_intensity',
+        [(np.equal, 2, False), (np.less, 1, False), (np.greater, 3, False),
+         (np.equal, 2, True), (np.equal, 1, True), (np.equal, 3, True)]
+    )
+    def test_correct_ibaq_intensities(self, compare_ibaq_intensities, num_petides, normalize_intensity):
+        self.table['peptides'] = num_petides
+        reader.add_ibaq_intensities(
+            self.table, normalize_total_intensity=normalize_intensity,
+            peptide_column='peptides', ibaq_peptide_column='ibaq_petides',
+            intensity_tag='intensity', ibaq_tag='ibaq',
+        )
+        assert np.all(compare_ibaq_intensities(self.table['ibaq'], self.table['intensity']))
