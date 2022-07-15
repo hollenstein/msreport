@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from typing import Iterable
 
+import maspy.peptidemethods
 import scipy.stats
 import scipy.optimize
 
@@ -73,3 +74,18 @@ def mode(values: Iterable) -> float:
     mode = optimize_result.x
     # Maybe add fallback function if optimize was not successful
     return mode
+
+
+def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
+    cleavage_rule = '[KR]'
+    missed_cleavage = 0
+    min_length = 6
+    max_length = 30
+
+    digestion_products = maspy.peptidemethods.digestInSilico(
+        protein_sequence, removeNtermM=False,
+        cleavageRule=cleavage_rule, missedCleavage=missed_cleavage,
+        minLength=min_length, maxLength=max_length
+    )
+    unique_peptide_sequences = set([p for p, i in digestion_products])
+    return len(unique_peptide_sequences)

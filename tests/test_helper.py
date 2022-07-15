@@ -110,3 +110,23 @@ def test_gaussian_imputation():
     imputed_column_A = imputed['A'][3]
     imputed_column_B = imputed['B'][3]
     assert imputed_column_A >= imputed_column_B
+
+
+def test_calculate_tryptic_ibaq_peptides():
+    peptides = [
+        'MGSCCSCLK',
+        'DSSDEASVSPIADNER',
+        'EAVTLLLGYLEDK',
+        'DQLDFYSGGPLK',
+        'ALTTLVYSDNLNLQR',
+        'SAALAFAEITEK',
+        'YVR',
+        'QVSR',
+        'EVLEPILILLQSQDPQIQVAACAALGNLAVNNENK',
+        'EVLEPILILLQSQDPQIQVAACAALGNLAK'
+        'LEAPQE',
+    ]
+    protein_sequence = ''.join(peptides)
+    expected_ibaq_peptides = sum([len(p) >= 6 and len(p) <= 30 for p in peptides])
+    ibaq_peptides = helper.calculate_tryptic_ibaq_peptides(protein_sequence)
+    assert ibaq_peptides == expected_ibaq_peptides
