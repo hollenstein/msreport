@@ -165,17 +165,17 @@ def test_mqreader_drop_idbysite(example_mqreader):
 
 def test_mqreader_rearrange_proteins(example_mqreader):
     df = pd.DataFrame({
-        'Fasta headers': [
-            'x|B|b;x|A|a;x|C|c', 'x|D|d', 'x|E|e;x|F|f', 'x|G|g;x|H|h;x|I|i'
-        ],
+        'Majority protein IDs': ['B;A;C', 'D', 'E;F', 'G;H;I'],
         'Peptide counts (all)': ['5;5;3', '3', '6;3', '6;6;6'],
     })
     leading_proteins = ['A;B', 'D', 'E', 'G;H;I']
     representative_protein = ['A', 'D', 'E', 'G']
+    representative_protein_reported_by_software = ['B', 'D', 'E', 'G']
 
     df = example_mqreader._rearrange_proteins(df)
     assert df['Leading proteins'].tolist() == leading_proteins
     assert df['Representative protein'].tolist() == representative_protein
+    assert df['Representative protein reported by software'].tolist() == representative_protein_reported_by_software
 
 
 def test_fpreader_setup(example_fpreader):
@@ -191,10 +191,12 @@ def test_fpreader_rearrange_proteins(example_fpreader):
     })
     leading_proteins = ['A;B', 'D', 'E', 'G;H;I']
     representative_protein = ['A', 'D', 'E', 'G']
+    representative_protein_reported_by_software = ['B', 'D', 'E', 'G']
 
     df = example_fpreader._rearrange_proteins(df)
     assert df['Leading proteins'].tolist() == leading_proteins
     assert df['Representative protein'].tolist() == representative_protein
+    assert df['Representative protein reported by software'].tolist() == representative_protein_reported_by_software
 
 
 class TestAddIbaqIntensities:

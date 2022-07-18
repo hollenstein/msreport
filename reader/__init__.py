@@ -35,7 +35,6 @@ class ResultReader():
     sample_column_tags: list[str]
     column_mapping: dict[str, str]
     column_tag_mapping: OrderedDict[str, str]
-    column_dtypes: dict[str: str]
 
     def _read_file(self, which: str) -> pd.DataFrame:
         """ Read a result table from the data_directory
@@ -44,10 +43,9 @@ class ResultReader():
             which: Used to lookup the file name in self.filenames
         """
         filepath = os.path.join(self.data_directory, self.filenames[which])
-        df = pd.read_csv(filepath, sep='\t', dtype=self.column_dtypes)
-        for column, dtype in self.column_dtypes.items():
-            if column in df and dtype == 'str':
-                df[column] = df[column].fillna('')
+        df = pd.read_csv(filepath, sep='\t')
+        str_cols = df.select_dtypes(include=['object']).columns
+        df.loc[:, str_cols] = df.loc[:, str_cols].fillna('')
         return df
 
     def _rename_columns(self, df: pd.DataFrame,
@@ -102,7 +100,6 @@ class MQReader(ResultReader):
     column_tag_mapping: OrderedDict[str, str] = OrderedDict([
         ('MS/MS count', 'Spectral count'),
     ])
-    column_dtypes = {'Fasta headers': 'str'}
 
     def __init__(self, directory: str, isobar: bool = False,
                  contaminant_tag: str = 'CON_') -> None:
@@ -127,6 +124,8 @@ class MQReader(ResultReader):
                         drop_decoy: bool = True,
                         drop_idbysite: bool = True,
                         prefix_column_tags: bool = True,
+                        rearrange_proteins: bool = True,
+                        drop_protein_columns: bool = False,
                         special_proteins: list[str] = []) -> pd.DataFrame:
         """ Read and process 'proteinGroups.txt' file """
         df = self._read_file('proteins')
@@ -136,7 +135,8 @@ class MQReader(ResultReader):
             df = self._drop_idbysite(df)
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
-        df = self._rearrange_proteins(df, special_proteins)
+        if rearrange_proteins:
+            df = self._rearrange_proteins(df, special_proteins)
         return df
 
     def import_peptides(self, drop_decoy: bool = True,
@@ -166,46 +166,46 @@ class MQReader(ResultReader):
     def _rearrange_proteins(self, df: pd.DataFrame,
                             special_proteins: list[str] = []
                             ) -> pd.DataFrame:
-        """ Adds two new protein columns to the protein dataframe.
+        """ Sorts proteins and adds three newcolumns to the dataframe.
 
-        'Leading proteins' will contain all protein entries from the
-        'Majority protein IDs' column that have the highest number of peptide
-        in 'Peptide counts (all)'. Multiple protein entries are separated by
-        ';'. Special proteins are listed first and Proteins containing the
-        contamination tag are listed last. Afterwards proteins are sorted
-        alphabetically ascending.
+        "Leading proteins" contains all protein entries from the
+        "Majority protein IDs" column, which have the same and highest number
+        of peptide in the "Peptide counts (all)" column.
+        Multiple protein entries are separated by ";". Special proteins are
+        listed first and proteins containing the contamination tag are listed
+        last. The other proteins are sorted alphabetically ascending.
 
-        'Representative protein' will contain only the first entry from the
-        new 'Leading proteins' column.
+        "Representative protein" contains only the first entry from the new
+        "Leading proteins" column.
+
+        "Representative protein reported by software" contains the original
+        first entry from the "Majority protein IDs" column.
         """
         sorting_tag_levels = {self._contaminant_tag: 1}
         sorting_tag_levels.update({p: -1 for p in special_proteins})
 
-        leading_entry_names = []
-        leading_protein_entries = []
-        representative_entry_names = []
-        representative_protein_entries = []
-        for fasta_entry, count_entry in zip(df['Fasta headers'],
-                                            df['Peptide counts (all)']):
-            fastas = fasta_entry.split(';')
+        reported_entries = []
+        leading_entries = []
+        representative_entries = []
+        for majority_ids_entry, count_entry in zip(df['Majority protein IDs'],
+                                                   df['Peptide counts (all)']):
+            proteins = majority_ids_entry.split(';')
             counts = [int(i) for i in count_entry.split(';')]
             highest_count = max(counts)
-            leading_fastas = [f for f, c in zip(fastas, counts)
-                              if c >= highest_count]
+            leading_proteins = [f for f, c in zip(proteins, counts)
+                                if c >= highest_count]
 
-            fastas, proteins, names = _sort_fasta_entries(
-                leading_fastas, sorting_tag_levels
+            fastas, sorted_proteins, names = _sort_fasta_entries(
+                leading_proteins, sorting_tag_levels
             )
-            leading_protein_entries.append(';'.join(proteins))
-            leading_entry_names.append(';'.join(names))
-            representative_protein_entries.append(proteins[0])
-            representative_entry_names.append(names[0])
+            reported_entries.append(leading_proteins[0])
+            leading_entries.append(';'.join(sorted_proteins))
+            representative_entries.append(sorted_proteins[0])
 
         df = df.copy()
-        df['Leading entry names'] = leading_entry_names
-        df['Leading proteins'] = leading_protein_entries
-        df['Representative entry name'] = representative_entry_names
-        df['Representative protein'] = representative_protein_entries
+        df['Representative protein reported by software'] = reported_entries
+        df['Leading proteins'] = leading_entries
+        df['Representative protein'] = representative_entries
         return df
 
 
@@ -252,7 +252,6 @@ class FPReader(ResultReader):
         ('Unique Spectral Count', 'Unique spectral count'),
         ('Spectral Count', 'Spectral count'),
     ])
-    column_dtypes = {'Indistinguishable Proteins': 'str'}
 
     def __init__(self, directory: str, isobar: bool = False,
                  contaminant_tag: str = 'contam_') -> None:
@@ -277,6 +276,8 @@ class FPReader(ResultReader):
 
     def import_proteins(self, rename_columns: bool = True,
                         prefix_column_tags: bool = True,
+                        rearrange_proteins: bool = True,
+                        drop_protein_columns: bool = False,
                         special_proteins: list[str] = []) -> pd.DataFrame:
         """ Read and process 'proteinGroups.txt' file """
         # Note that is is essential to rename column names before attempting
@@ -286,50 +287,52 @@ class FPReader(ResultReader):
         df = self._read_file('proteins')
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
-        df = self._rearrange_proteins(df, special_proteins)
+        if rearrange_proteins:
+            df = self._rearrange_proteins(df, special_proteins)
         return df
 
     def _rearrange_proteins(self, df: pd.DataFrame,
                             special_proteins: list[str] = []) -> pd.DataFrame:
-        """ Adds two new protein columns to the protein dataframe.
+        """ Sorts proteins and adds three newcolumns to the dataframe.
 
-        'Leading proteins' will contain all protein entries from the 'Protein'
-        and 'Indistinguishable Proteins' columns. Since these columns contain
-        the beginning of the fasta header, the protein id is extracted.
-        Multiple protein entries are separated by ';'. Protein entries are
-        sorted alphabetically ascending.
+        "Leading proteins" contains all protein entries from the "Protein"
+        plus "Indistinguishable Proteins" column, which have the same and
+        highest number of peptide in the "Peptide counts (all)" column.
+        Multiple protein entries are separated by ";". Special proteins are
+        listed first and proteins containing the contamination tag are listed
+        last. The other proteins are sorted alphabetically ascending.
 
-        'Representative protein' will contain only the first entry from the
-        new 'Leading proteins' column.
+        "Representative protein" contains only the first entry from the new
+        "Leading proteins" column.
 
+        "Representative protein reported by software" contains the original
+        protein id from the "Protein" column.
         """
         sorting_tag_levels = {self._contaminant_tag: 1}
         sorting_tag_levels.update({p: -1 for p in special_proteins})
 
-        leading_entry_names = []
-        leading_protein_entries = []
-        representative_entry_names = []
-        representative_protein_entries = []
+        reported_entries = []
+        leading_entries = []
+        representative_entries = []
         for protein_entry, indist_protein_entry in zip(
                 df['Protein'], df['Indistinguishable Proteins']):
-            fasta_entries = [protein_entry]
+            protein_entries = [protein_entry]
             if indist_protein_entry:
-                for fasta in indist_protein_entry.split(', '):
-                    fasta_entries.append(fasta)
+                for entry in indist_protein_entry.split(', '):
+                    protein_entries.append(entry)
+            leading_proteins = [p.split('|')[1] for p in protein_entries]
 
-            fastas, proteins, names = _sort_fasta_entries(
-                fasta_entries, sorting_tag_levels
+            fastas, sorted_proteins, names = _sort_fasta_entries(
+                leading_proteins, sorting_tag_levels
             )
-            leading_protein_entries.append(';'.join(proteins))
-            leading_entry_names.append(';'.join(names))
-            representative_protein_entries.append(proteins[0])
-            representative_entry_names.append(names[0])
+            reported_entries.append(leading_proteins[0])
+            leading_entries.append(';'.join(sorted_proteins))
+            representative_entries.append(sorted_proteins[0])
 
         df = df.copy()
-        df['Leading entry names'] = leading_entry_names
-        df['Leading proteins'] = leading_protein_entries
-        df['Representative entry name'] = representative_entry_names
-        df['Representative protein'] = representative_protein_entries
+        df['Representative protein reported by software'] = reported_entries
+        df['Leading proteins'] = leading_entries
+        df['Representative protein'] = representative_entries
 
         return df
 
