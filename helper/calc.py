@@ -79,7 +79,7 @@ def mode(values: Iterable) -> float:
 def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
     cleavage_rule = '[KR]'
     missed_cleavage = 0
-    min_length = 6
+    min_length = 7
     max_length = 30
 
     digestion_products = maspy.peptidemethods.digestInSilico(
