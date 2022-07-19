@@ -169,12 +169,12 @@ class MQReader(ResultReader):
         df = self._rename_columns(df, prefix_column_tags)
         return df
 
-    def import_ions(self, drop_decoy: bool = True) -> pd.DataFrame:
-        """ Read and process 'evidence.txt' file """
-        df = self._read_file('ions')
-        if drop_decoy:
-            df = self._drop_decoy(df)
-        return df
+    # def import_ions(self, drop_decoy: bool = True) -> pd.DataFrame:
+    #     """ Read and process 'evidence.txt' file """
+    #     df = self._read_file('ions')
+    #     if drop_decoy:
+    #         df = self._drop_decoy(df)
+    #     return df
 
     def _drop_decoy(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Removes rows with '+' in the 'Reverse' column """
@@ -309,11 +309,13 @@ class FPReader(ResultReader):
                         rearrange_proteins: bool = True,
                         drop_protein_info: bool = True,
                         special_proteins: list[str] = []) -> pd.DataFrame:
-        """ Read and process 'proteinGroups.txt' file """
-        # Note that is is essential to rename column names before attempting
-        # to rename sample columns, as the 'Intensity' substring is present in
-        # multiple columns.
-        """ Read and process 'proteinGroups.txt' file """
+        """ Read and process 'combined_protein.tsv' file.
+
+        Note that is is essential to rename column names before attempting
+        to rename sample columns, as the 'Intensity' substring is present in
+        multiple columns.
+        """
+        # Not tested #
         df = self._read_file('proteins')
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
@@ -321,6 +323,16 @@ class FPReader(ResultReader):
             df = self._rearrange_proteins(df, special_proteins)
         if drop_protein_info:
             df = self._drop_columns(df, self.protein_info_columns)
+        return df
+
+    def import_ions(self, rename_columns: bool = True,
+                    prefix_column_tags: bool = True) -> pd.DataFrame:
+        """ Read and process 'combined_ion.tsv' file. """
+        # Not tested #
+        df = self._read_file('ions')
+        if rename_columns:
+            df = self._rename_columns(df, prefix_column_tags)
+        df['Representative protein reported by software'] = df['Protein ID']
         return df
 
     def _rearrange_proteins(self, df: pd.DataFrame,
@@ -365,7 +377,6 @@ class FPReader(ResultReader):
         df['Representative protein reported by software'] = reported_entries
         df['Leading proteins'] = leading_entries
         df['Representative protein'] = representative_entries
-
         return df
 
 
