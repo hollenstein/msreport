@@ -109,6 +109,21 @@ def test_sort_fasta_entries_with_sorting_by_tag():
     assert names == ['c_a', 'b', 'a_end']
 
 
+@pytest.mark.parametrize(
+    'cols_dropped, cols_remaining',
+    [([], ['Col A', 'Col B', 'Col C']),
+     (['Col A'], ['Col B', 'Col C']),
+     (['Col B', 'Col C'], ['Col A']),
+     (['Col B'], ['Col A', 'Col C'])]
+)
+def test_result_reader_drop_columns(cols_dropped, cols_remaining):
+    df = pd.DataFrame(columns=['Col A', 'Col B', 'Col C'])
+    base_reader = reader.ResultReader()
+    df = base_reader._drop_columns(df, cols_dropped)
+
+    assert set(df.columns) == set(cols_remaining)
+
+
 def test_mqreader_setup(example_mqreader):
     assert os.path.isdir(example_mqreader.data_directory)
 
