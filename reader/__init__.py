@@ -199,7 +199,7 @@ class MQReader(ResultReader):
         "Representative protein" contains only the first entry from the new
         "Leading proteins" column.
 
-        "Representative protein reported by software" contains the original
+        "Protein reported by software" contains the original
         first entry from the "Majority protein IDs" column.
         """
         sorting_tag_levels = {self._contaminant_tag: 1}
@@ -224,7 +224,7 @@ class MQReader(ResultReader):
             representative_entries.append(sorted_proteins[0])
 
         df = df.copy()
-        df['Representative protein reported by software'] = reported_entries
+        df['Protein reported by software'] = reported_entries
         df['Leading proteins'] = leading_entries
         df['Representative protein'] = representative_entries
         return df
@@ -332,7 +332,7 @@ class FPReader(ResultReader):
         df = self._read_file('ions')
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
-        df['Representative protein reported by software'] = df['Protein ID']
+        df['Protein reported by software'] = df['Protein ID']
         return df
 
     def _rearrange_proteins(self, df: pd.DataFrame,
@@ -349,7 +349,7 @@ class FPReader(ResultReader):
         "Representative protein" contains only the first entry from the new
         "Leading proteins" column.
 
-        "Representative protein reported by software" contains the original
+        "Protein reported by software" contains the original
         protein id from the "Protein" column.
         """
         sorting_tag_levels = {self._contaminant_tag: 1}
@@ -374,7 +374,7 @@ class FPReader(ResultReader):
             representative_entries.append(sorted_proteins[0])
 
         df = df.copy()
-        df['Representative protein reported by software'] = reported_entries
+        df['Protein reported by software'] = reported_entries
         df['Leading proteins'] = leading_entries
         df['Representative protein'] = representative_entries
         return df

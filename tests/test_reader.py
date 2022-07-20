@@ -185,12 +185,12 @@ def test_mqreader_rearrange_proteins(example_mqreader):
     })
     leading_proteins = ['A;B', 'D', 'E', 'G;H;I']
     representative_protein = ['A', 'D', 'E', 'G']
-    representative_protein_reported_by_software = ['B', 'D', 'E', 'G']
+    protein_reported_by_software = ['B', 'D', 'E', 'G']
 
     df = example_mqreader._rearrange_proteins(df)
     assert df['Leading proteins'].tolist() == leading_proteins
     assert df['Representative protein'].tolist() == representative_protein
-    assert df['Representative protein reported by software'].tolist() == representative_protein_reported_by_software
+    assert df['Protein reported by software'].tolist() == protein_reported_by_software
 
 
 def test_fpreader_setup(example_fpreader):
@@ -206,12 +206,12 @@ def test_fpreader_rearrange_proteins(example_fpreader):
     })
     leading_proteins = ['A;B', 'D', 'E', 'G;H;I']
     representative_protein = ['A', 'D', 'E', 'G']
-    representative_protein_reported_by_software = ['B', 'D', 'E', 'G']
+    protein_reported_by_software = ['B', 'D', 'E', 'G']
 
     df = example_fpreader._rearrange_proteins(df)
     assert df['Leading proteins'].tolist() == leading_proteins
     assert df['Representative protein'].tolist() == representative_protein
-    assert df['Representative protein reported by software'].tolist() == representative_protein_reported_by_software
+    assert df['Protein reported by software'].tolist() == protein_reported_by_software
 
 
 class TestAddIbaqIntensities:
