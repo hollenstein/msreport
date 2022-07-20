@@ -89,3 +89,19 @@ def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
     )
     unique_peptide_sequences = set([p for p, i in digestion_products])
     return len(unique_peptide_sequences)
+
+
+def make_coverage_mask(protein_length: int,
+                       peptide_positions: list[(int, int)]) -> np.array:
+    coverage_mask = np.zeros(protein_length, dtype='bool')
+    for start, end in peptide_positions:
+        coverage_mask[start - 1: end] = True
+    return coverage_mask
+
+
+def calculate_sequence_coverage(protein_length: int,
+                                peptide_positions: list[(int, int)],
+                                ndigits: int = 1) -> np.array:
+    coverage_mask = make_coverage_mask(protein_length, peptide_positions)
+    coverage = round(coverage_mask.sum() / protein_length * 100, ndigits)
+    return coverage

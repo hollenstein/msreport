@@ -417,6 +417,31 @@ def add_protein_annotations(
         table[column] = new_columns[column]
 
 
+def add_sequence_coverage(protein_table: pd.DataFrame,
+                          peptide_table: pd.DataFrame,
+                          id_column: str = 'Protein reported by software'
+                          ) -> None:
+    """ Calculates 'Sequence coverage' and adds it to the protein table.
+
+    Requires the columns 'Start' and 'End' in the peptide_table, and
+    'Protein length' in the protein_table.
+    """
+    # Not tested #
+    peptide_positions = {}
+    for protein_id, pep_group in peptide_table.groupby(by=id_column):
+        positions = [(s, e) for s, e in zip(pep_group['Start'], pep_group['End'])]
+        peptide_positions[protein_id] = sorted(positions)
+
+    sequence_coverages = []
+    for protein_id, protein_length in zip(protein_table[id_column],
+                                          protein_table['Protein length']):
+        sequence_coverage = helper.calculate_sequence_coverage(
+            protein_length, peptide_positions[protein_id], ndigits=1
+        )
+        sequence_coverages.append(sequence_coverage)
+    protein_table['Sequence coverage'] = sequence_coverages
+
+
 def add_ibaq_intensities(table: pd.DataFrame,
                          normalize_total_intensity: bool = True,
                          peptide_column: str = 'Total peptides',

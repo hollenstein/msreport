@@ -133,3 +133,24 @@ def test_calculate_tryptic_ibaq_peptides():
     expected_ibaq_peptides = sum([len(p) >= min_len and len(p) <= max_len for p in peptides])
     ibaq_peptides = helper.calculate_tryptic_ibaq_peptides(protein_sequence)
     assert ibaq_peptides == expected_ibaq_peptides
+
+
+@pytest.mark.parametrize('length, expected_coverage, peptide_positions',
+                         [(10, 9, [(1, 5), (3, 6), (8, 10)]),
+                          (20, 9, [(1, 5), (3, 6), (8, 10)]),
+                          (10, 5, [(1, 5), (1, 5), (1, 5)]),
+                          (10, 0, [])
+                          ])
+def test_make_coverage_mask(length, expected_coverage, peptide_positions):
+    coverage_mask = helper.make_coverage_mask(length, peptide_positions)
+    assert coverage_mask.sum() == expected_coverage
+
+
+@pytest.mark.parametrize('length, expected_coverage, ndigits, peptide_positions',
+                         [(15, round(7 / 15 * 100, 0), 0, [(1, 7)]),
+                          (15, round(7 / 15 * 100, 1), 1, [(1, 7)]),
+                          (15, round(7 / 15 * 100, 10), 10, [(1, 7)]),
+                          ])
+def test_calculate_sequence_coverage(length, expected_coverage, ndigits, peptide_positions):
+    calculated_coverage = helper.calculate_sequence_coverage(length, peptide_positions, ndigits=ndigits)
+    assert calculated_coverage == expected_coverage
