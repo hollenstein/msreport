@@ -327,11 +327,16 @@ class FPReader(ResultReader):
 
     def import_ions(self, rename_columns: bool = True,
                     prefix_column_tags: bool = True) -> pd.DataFrame:
-        """ Read and process 'combined_ion.tsv' file. """
+        """ Read and process 'combined_ion.tsv' file.
+
+        Adds the columns 'Representative protein' and
+        'Protein reported by software'.
+        """
         # Not tested #
         df = self._read_file('ions')
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
+        df['Representative protein'] = df['Protein ID']
         df['Protein reported by software'] = df['Protein ID']
         return df
 
@@ -386,7 +391,7 @@ def add_protein_annotations(
     """ Adds descriptive columns for the representative protein.
 
     The added columns always includes "Fasta header", "Protein length",
-    "iBAQ peptides", and if possible "Protein entry name" and "Gene id".
+    "iBAQ peptides", and if possible "Protein entry name" and "Gene name".
     """
     # Not tested #
     protein_db = ProtDB.importProteinDatabase(
@@ -394,7 +399,7 @@ def add_protein_annotations(
     )
 
     new_columns = {
-        'Representative entry name': [], 'Gene name': [], 'Fasta header': [],
+        'Protein entry name': [], 'Gene name': [], 'Fasta header': [],
         'Protein length': [], 'iBAQ peptides': [],
     }
     for protein_id in table[id_column]:
@@ -407,7 +412,7 @@ def add_protein_annotations(
         length = protein_db[protein_id].length()
         ibaq_peptides = helper.calculate_tryptic_ibaq_peptides(sequence)
 
-        new_columns['Representative entry name'].append(entry_name)
+        new_columns['Protein entry name'].append(entry_name)
         new_columns['Gene name'].append(gene_name)
         new_columns['Fasta header'].append(fasta_header)
         new_columns['Protein length'].append(length)
@@ -428,8 +433,9 @@ def add_sequence_coverage(protein_table: pd.DataFrame,
     """
     # Not tested #
     peptide_positions = {}
-    for protein_id, pep_group in peptide_table.groupby(by=id_column):
-        positions = [(s, e) for s, e in zip(pep_group['Start'], pep_group['End'])]
+    for protein_id, peptide_group in peptide_table.groupby(by=id_column):
+        positions = [(s, e) for s, e in zip(peptide_group['Start'],
+                                            peptide_group['End'])]
         peptide_positions[protein_id] = sorted(positions)
 
     sequence_coverages = []
@@ -461,6 +467,53 @@ def add_ibaq_intensities(table: pd.DataFrame,
             factor = table[intensity_column].sum() / table[ibaq_column].sum()
             table[ibaq_column] = table[ibaq_column] * factor
 
+
+def add_peptide_positions(table: pd.DataFrame, fasta_path: str,
+                          protein_column: str = 'Representative protein',
+                          peptide_column: str = 'Peptide Sequence') -> None:
+    """ Adds protein 'Start' and 'End' positions fo peptides to the table."""
+    # TODO: replace fasta_path by a dictionary of protein sequences
+    # not tested #
+    protein_db = ProtDB.importProteinDatabase(
+        fasta_path, contaminationTag='contam_'
+    )
+
+    peptide_positions = {
+        'Start': [], 'End': []
+    }
+    for peptide, protein_id in zip(table[peptide_column],
+                                   table[protein_column]):
+        sequence = protein_db[protein_id].sequence
+        start = sequence.find(peptide) + 1
+        end = start + len(peptide) - 1
+        if start == 0:
+            start, end = -1, -1
+        peptide_positions['Start'].append(start)
+        peptide_positions['End'].append(end)
+
+    for key in peptide_positions:
+        table[key] = peptide_positions[key]
+
+
+def update_representative_protein(target_table: pd.DataFrame,
+                                  source_table: pd.DataFrame) -> None:
+    """ Propagates the 'Representative protein' from the source to the target
+    table.
+
+    The column 'Protein reported by software' is used to match entries between
+    the two tables, and entries from 'Representative protein' are propageted
+    from the source_table to the target_table.
+    """
+    # not tested #
+    protein_lookup = {}
+    for old, new in zip(source_table['Protein reported by software'],
+                        source_table['Representative protein']):
+        protein_lookup[old] = new
+
+    new_protein_ids = []
+    for old in target_table['Protein reported by software']:
+        new_protein_ids.append(protein_lookup[old])
+    target_table['Representative protein'] = new_protein_ids
 
 def extract_sample_names(df: pd.DataFrame, tag: str) -> list[str]:
     """ Extract sample names from columns containing the 'tag' """
