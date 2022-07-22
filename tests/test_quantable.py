@@ -113,9 +113,22 @@ def test_qtable_get_samples(example_data, example_qtable):
         assert example_qtable.get_samples(exp) == samples
 
 
-def test_qtable_get_experiments(example_data, example_qtable):
-    experiment_set = set(example_data['design']['Experiment'])
-    assert set(example_qtable.get_experiments()) == experiment_set
+def test_qtable_get_experiment(example_data, example_qtable):
+    sample = example_data['design'].iloc[0]['Sample']
+    experiment = example_data['design'].iloc[0]['Experiment']
+    assert example_qtable.get_experiment(sample) == experiment
+
+
+class TestQtableGetExperiments:
+    def test_without_samples(self, example_data, example_qtable):
+        experiment_set = set(example_data['design']['Experiment'])
+        assert set(example_qtable.get_experiments()) == experiment_set
+
+    def test_with_samples(self, example_data, example_qtable):
+        samples = example_data['design'].iloc[0:2].values[:, 0]
+        expected_experiments = example_data['design'].iloc[0:2].values[:, 1]
+        fetched_experiments = example_qtable.get_experiments(samples)
+        assert set(fetched_experiments) == set(expected_experiments)
 
 
 class TestQtableResetExpression:

@@ -27,8 +27,20 @@ class Qtable():
             samples = design['Sample']
         return samples.tolist()
 
-    def get_experiments(self) -> list[str]:
-        return self.get_design()['Experiment'].unique().tolist()
+    def get_experiment(self, sample: str) -> str:
+        design = self.get_design()
+        experiment = design[design['Sample'] == sample]['Experiment'].values[0]
+        return experiment
+
+    def get_experiments(self, samples: list[str] = None) -> list[str]:
+        if samples is not None:
+            experiments = []
+            for sample in samples:
+                experiments.append(self.get_experiment(sample))
+        else:
+            experiments = self.get_design()['Experiment'].unique().tolist()
+
+        return experiments
 
     def get_expression_column(self, sample: str) -> str:
         """ Return expression column associated with a sample. """
@@ -244,11 +256,11 @@ class Qtable():
         self._expression_sample_mapping = {}
 
     def copy(self) -> 'Self':
-        # NOT TESTED #
+        # not tested #
         return self.__copy__()
 
     def __copy__(self) -> 'Self':
-        # NOT TESTED #
+        # not tested #
         new_instance = Qtable(self.data, self.design)
         # Copy all private attributes
         for attr in dir(self):
