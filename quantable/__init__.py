@@ -124,12 +124,11 @@ class Qtable():
             log2: If true, expression column values are log2 transformed and 0
                 are replaced by NaN.
         """
-        columns = helper.find_columns(self.data, tag)
+        columns = helper.find_columns(self.data, tag, must_be_substring=True)
         column_mapping = {}
         for column in columns:
-            if column.strip() != tag:
-                sample = column.replace(tag, '').strip()
-                column_mapping[column] = sample
+            sample = column.replace(tag, '').strip()
+            column_mapping[column] = sample
         self._set_expression(column_mapping, zerotonan=zerotonan, log2=log2)
 
     def set_expression_by_column(self,

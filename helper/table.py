@@ -26,11 +26,10 @@ def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
         A new DataFrame containing the columns "Sample" and "Experiment"
     """
     sample_entries = []
-    for column in find_columns(table, tag):
+    for column in find_columns(table, tag, must_be_substring=True):
         sample = column.replace(tag, '').strip()
         experiment = '_'.join(sample.split('_')[:-1])
-        if sample:
-            sample_entries.append([sample, experiment])
+        sample_entries.append([sample, experiment])
     design = pd.DataFrame(sample_entries, columns=['Sample', 'Experiment'])
     return design
 
@@ -60,8 +59,21 @@ def rename_mq_reporter_channels(
     table.rename(columns=column_mapping, inplace=True)
 
 
-def find_columns(df: pd.DataFrame, substring: str) -> list[str]:
-    """ Returns a list column names containing the substring """
-    matched_columns = [substring in col for col in df.columns]
-    matched_column_names = np.array(df.columns)[matched_columns].tolist()
-    return matched_column_names
+def find_columns(df: pd.DataFrame, substring: str,
+                 must_be_substring: bool = False) -> list[str]:
+    """ Returns a list column names containing the substring.
+
+    Args:
+        df: Columns of this pandas.DataFrame are queried.
+        substring: String that must be part of column names.
+        must_be_substring: If true than column names are not reported if they
+            are exactly equal to the substring.
+
+    Returns:
+        A list of column names that contain the substring.
+    """
+    matches = [substring in col for col in df.columns]
+    matched_columns = np.array(df.columns)[matches].tolist()
+    if must_be_substring:
+        matched_columns = [col for col in matched_columns if col != substring]
+    return matched_columns

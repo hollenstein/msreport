@@ -16,6 +16,7 @@ def example_data():
         'id': ['1', '2', '3'],
         'Total peptides': [2, 1, 2],
         'Representative protein': ['A', 'B', 'C'],
+        'Intensity': [10, 0, np.nan],
         'Intensity Sample_A1': [10, np.nan, 6],
         'Intensity Sample_A2': [10, np.nan, 2],
         'Intensity Sample_B1': [15, np.nan, 0],  # <- 0 is considered missing
