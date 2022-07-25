@@ -67,6 +67,11 @@ class ResultReader():
             new_df = _rearrange_column_tag(new_df, tag, prefix_tag)
         return new_df
 
+    def _drop_columns_by_tag(self, df: pd.DataFrame, tag: str) -> pd.DataFrame:
+        """ Returns a new data frame without columns containing 'tag'. """
+        columns = helper.find_columns(df, tag, must_be_substring=False)
+        return self._drop_columns(df, columns)
+
     def _drop_columns(self, df: pd.DataFrame,
                       columns_to_drop: list[str]) -> pd.DataFrame:
         """ Returns a new data frame without the specified columns. """
@@ -74,8 +79,7 @@ class ResultReader():
         for column in df.columns:
             if column not in columns_to_drop:
                 remaining_columns.append(column)
-        new_df = df[remaining_columns].copy()
-        return new_df
+        return df[remaining_columns].copy()
 
 
 class MQReader(ResultReader):
