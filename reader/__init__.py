@@ -96,8 +96,10 @@ class MQReader(ResultReader):
             'New substring' that will be replaced in column names. Used to
             rename intensity and spectral count columns.
         protein_info_columns: (class attribute) List of columns that contain
-            protein specific information.
-
+            protein specific information. Used to allow removing all protein
+            specific information prior to changing the representative protein.
+        protein_info_tags: (class attribute) List of tags present in columns
+            that contain protein specific information per sample.
         data_directory (str): Location of the MaxQuant 'txt' folder
         contamination_tag (str): Substring present in protein IDs to identify
             them as potential contaminants.
@@ -122,6 +124,9 @@ class MQReader(ResultReader):
         'Sequence coverage [%]', 'Unique + razor sequence coverage [%]',
         'Unique sequence coverage [%]', 'Mol. weight [kDa]', 'Sequence length',
         'Sequence lengths', 'iBAQ peptides'
+    ]
+    protein_info_tags: list[str] = [
+        'iBAQ', 'Sequence coverage', 'site positions'
     ]
 
     def __init__(self, directory: str, isobar: bool = False,
@@ -162,6 +167,8 @@ class MQReader(ResultReader):
             df = self._rearrange_proteins(df, special_proteins)
         if drop_protein_info:
             df = self._drop_columns(df, self.protein_info_columns)
+            for tag in self.protein_info_tags:
+                df = self._drop_columns_by_tag(df, tag)
         return df
 
     def import_peptides(self, drop_decoy: bool = True,
@@ -250,13 +257,14 @@ class FPReader(ResultReader):
             'New substring' that will be replaced in column names. Used to
             rename intensity and spectral count columns.
         protein_info_columns: (class attribute) List of columns that contain
-            protein specific information.
-
+            protein specific information. Used to allow removing all protein
+            specific information prior to changing the representative protein.
+        protein_info_tags: (class attribute) List of tags present in columns
+            that contain protein specific information per sample.
         data_directory (str): Location of the MaxQuant 'txt' folder
         contamination_tag (str): Substring present in protein IDs to identify
             them as potential contaminants.
     """
-
     filenames_default: dict[str, str] = {
         'proteins': 'combined_protein.tsv',
         'peptides': 'combined_peptide.tsv',
@@ -286,6 +294,7 @@ class FPReader(ResultReader):
         'Protein Length', 'Organism', 'Protein Existence',
         'Description', 'Indistinguishable Proteins'
     ]
+    protein_info_tags: list[str] = []
 
     def __init__(self, directory: str, isobar: bool = False,
                  contaminant_tag: str = 'contam_') -> None:
@@ -327,6 +336,8 @@ class FPReader(ResultReader):
             df = self._rearrange_proteins(df, special_proteins)
         if drop_protein_info:
             df = self._drop_columns(df, self.protein_info_columns)
+            for tag in self.protein_info_tags:
+                df = self._drop_columns_by_tag(df, tag)
         return df
 
     def import_ions(self, rename_columns: bool = True,
@@ -519,6 +530,7 @@ def update_representative_protein(target_table: pd.DataFrame,
         new_protein_ids.append(protein_lookup[old])
     target_table['Representative protein'] = new_protein_ids
 
+
 def extract_sample_names(df: pd.DataFrame, tag: str) -> list[str]:
     """ Extract sample names from columns containing the 'tag' """
     columns = helper.find_columns(df, tag)
@@ -605,13 +617,3 @@ def _sort_fasta_entries(fasta_entries: list[str],
     values.sort()
     sort_levels, proteins, fastas, names = [list(v) for v in zip(*(values))]
     return fastas, proteins, names
-
-
-if __name__ == '__main__':
-    filedir = 'C:/Users/david.hollenstein/ucloud/python/QuantTable/tests/testdata/maxquant_results'
-    protein_table = MQReader(filedir).import_proteins()
-    peptide_table = MQReader(filedir).import_peptides()
-    sample_names = extract_sample_names(protein_table, 'Intensity')
-
-    filedir = 'C:/Users/david.hollenstein/ucloud/python/QuantTable/tests/testdata/fragpipe_results'
-    protein_table = FPReader(filedir).import_proteins()
