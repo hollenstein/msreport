@@ -124,6 +124,22 @@ def test_result_reader_drop_columns(cols_dropped, cols_remaining):
     assert set(df.columns) == set(cols_remaining)
 
 
+@pytest.mark.parametrize(
+    'cols_inital, cols_remaining',
+    [(['Col A', 'Col B', 'Col C'], ['Col A', 'Col B', 'Col C']),
+     (['Col A', 'Drop B', 'Col C'], ['Col A', 'Col C']),
+     (['Drop A', 'Col B', 'Drop C'], ['Col B']),
+     (['Drop A', 'Drop B', 'Drop C'], [])]
+)
+def test_result_reader_drop_columns_by_tag(cols_inital, cols_remaining):
+    tag = 'Drop'
+    df = pd.DataFrame(columns=cols_inital)
+    base_reader = reader.ResultReader()
+    df = base_reader._drop_columns_by_tag(df, tag)
+
+    assert set(df.columns) == set(cols_remaining)
+
+
 def test_mqreader_setup(example_mqreader):
     assert os.path.isdir(example_mqreader.data_directory)
 
