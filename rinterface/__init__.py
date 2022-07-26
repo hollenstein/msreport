@@ -25,7 +25,8 @@ def two_group_limma(table: pd.DataFrame, column_groups: list[str],
         group2: Experimental group 2, used as the coefficient
 
     Returns:
-        A dataframe containing 'logFC', 'P-value', and 'Adjusted p-value'
+        A dataframe containing 'Average expression', 'logFC', 'P-value', and
+        'Adjusted p-value'.
     """
     rscript_path = _find_rscript_paths()['limma.R']
     robjects.r['source'](rscript_path)
@@ -36,8 +37,9 @@ def two_group_limma(table: pd.DataFrame, column_groups: list[str],
             table, column_groups, group1, group2, trend
         )
 
-    keep_columns = ['logFC', 'P.Value', 'adj.P.Val']
+    keep_columns = ['AveExpr', 'logFC', 'P.Value', 'adj.P.Val']
     column_mapping = {
+        'AveExpr': 'Average expression', 'logFC': 'logFC',
         'P.Value': 'P-value', 'adj.P.Val': 'Adjusted p-value',
     }
     return limma_result[keep_columns].rename(columns=column_mapping)
