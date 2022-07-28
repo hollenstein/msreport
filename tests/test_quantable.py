@@ -16,11 +16,14 @@ def example_data():
         'id': ['1', '2', '3'],
         'Total peptides': [2, 1, 2],
         'Representative protein': ['A', 'B', 'C'],
-        'Intensity': [10, 0, np.nan],
-        'Intensity Sample_A1': [10, np.nan, 6],
-        'Intensity Sample_A2': [10, np.nan, 2],
-        'Intensity Sample_B1': [15, np.nan, 0],  # <- 0 is considered missing
-        'Intensity Sample_B2': [15, np.nan, 4],
+        # Note that one intensitiy must be above 64, otherwise it is assumed
+        # that they are already log transformed and another log is prevented.
+        'Intensity': [100, 0, np.nan],
+        'Intensity Sample_A1': [100, np.nan, 60],
+        'Intensity Sample_A2': [100, np.nan, 20],
+        'Intensity Sample_B1': [150, np.nan, 00],  # <- 0 is considered missing
+        'Intensity Sample_B2': [15, np.nan, 40],
+        'Mean_Experiment_A1': [100, np.nan, 40],  # <- Adjust to Sample_A1/A2
     })
 
     example_data = {
@@ -400,6 +403,6 @@ def test_qtable_calculate_experiment_means(example_data, example_qtable):
     assert all([e in example_qtable._expression_features for e in experiments])
     assert np.allclose(
         example_qtable.data['Experiment_A'],
-        [10., np.nan, 4.],
+        example_data['data']['Mean_Experiment_A1'],
         equal_nan=True
     )

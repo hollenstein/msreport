@@ -4,7 +4,6 @@ import pytest
 import helper
 
 
-
 class TestFindColumns:
     def test_must_be_substring_false(self):
         df = pd.DataFrame(columns=['Test', 'Test A', 'Test B', 'Something else'])
@@ -12,11 +11,12 @@ class TestFindColumns:
         assert len(columns) == 3
         assert columns == ['Test', 'Test A', 'Test B']
 
-    def test_must_be_substring_false(self):
+    def test_must_be_substring_True(self):
         df = pd.DataFrame(columns=['Test', 'Test A', 'Test B', 'Something else'])
         columns = helper.find_columns(df, 'Test', must_be_substring=True)
         assert len(columns) == 2
         assert columns == ['Test A', 'Test B']
+
 
 def test_rename_mq_reporter_channels_only_intensity():
     table = pd.DataFrame(columns=[
@@ -92,6 +92,20 @@ def test_guess_design():
 
     design = helper.guess_design(table, tag)
     assert expected_design.equals(design)
+
+
+@pytest.mark.parametrize(
+    'data, data_in_logspace',
+    [([32, 45], True), ([np.nan, 64], True),
+     ([100, 1], False), ([100, np.nan], False), ([32, 64.1], False),
+     (np.array([32, 45]), True),
+     (np.array([[32, 45], [32, 45]]), True),
+     (np.array([[32, 45], [32, 64.1]]), False),
+     (pd.DataFrame([[32, 45, 64], [32, 45, 64]]), True),
+     (pd.DataFrame([[32, 45, 64.1]]), False),
+     ])
+def test_intensities_in_logspace(data, data_in_logspace):
+    assert helper.intensities_in_logspace(data) == data_in_logspace
 
 
 def test_mode():

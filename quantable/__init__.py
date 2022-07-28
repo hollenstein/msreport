@@ -122,7 +122,9 @@ class Qtable():
             tag: Identifies columns that contain this substring
             zerotonan: If true, zeros in expression columns are replace by NaN
             log2: If true, expression column values are log2 transformed and 0
-                are replaced by NaN.
+                are replaced by NaN. Evaluates wheter intensities are likely to
+                be already in logspace, which prevents another log2
+                transformation.
         """
         columns = helper.find_columns(self.data, tag, must_be_substring=True)
         column_mapping = {}
@@ -143,7 +145,9 @@ class Qtable():
                 data table, and are used to define expression columns.
             zerotonan: If true, zeros in expression columns are replace by NaN
             log2: If true, expression column values are log2 transformed and 0
-                are replaced by NaN.
+                are replaced by NaN. Evaluates wheter intensities are likely to
+                be already in logspace, which prevents another log2
+                transformation.
         """
         self._set_expression(
             columns_to_samples, zerotonan=zerotonan, log2=log2
@@ -208,7 +212,9 @@ class Qtable():
             expr_sample_mapping: mapping of expression columns to sample names
             zerotonan: If true, zeros in expression columns are replace by NaN
             log2: If true, expression column values are log2 transformed and 0
-                are replaced by NaN.
+                are replaced by NaN. Uses helper.intensities_in_logspace() to
+                evaluate wheter intensities are already in logspace, which
+                prevents another log2 transformation.
         """
         data_columns = self.data.columns.tolist()
         expression_columns = list(expr_sample_mapping.keys())
@@ -236,7 +242,14 @@ class Qtable():
         if zerotonan or log2:
             expression_data = expression_data.replace({0: np.nan})
         if log2:
-            expression_data = np.log2(expression_data)
+            if helper.intensities_in_logspace(expression_data):
+                warnings.warn(
+                    ('Prevented log2 transformation of intensities that '
+                     'appear to be already in log space.'),
+                    UserWarning, stacklevel=2
+                )
+            else:
+                expression_data = np.log2(expression_data)
         self.data[new_column_names] = expression_data
 
     def _reset_expression(self) -> None:

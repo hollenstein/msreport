@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import re
+from typing import Iterable, Union
 
 
 def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
@@ -32,6 +33,29 @@ def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
         sample_entries.append([sample, experiment])
     design = pd.DataFrame(sample_entries, columns=['Sample', 'Experiment'])
     return design
+
+
+def intensities_in_logspace(
+        data: Union[pd.DataFrame, np.ndarray, Iterable]) -> bool:
+    """ Evaluates whether intensities are likely to be log transformed.
+
+    Assumes that intensities are log transformed if all values are smaller or
+    equal to 64. Intensities values (and intensity peak areas) reported by
+    tandem mass spectrometery typically range from 10^3 to 10^12. To reach log2
+    transformed values greather than 64, intensities would need to be higher
+    than 10^19, which seems to be very unlikely to be ever encountered.
+
+    Args:
+        data: Dataset that contains only intensity values, can be any iterable,
+            a numpy.array or a pandas.DataFrame, multiple dimensions or columns
+            are allowed.
+
+    Returns:
+        True if intensity values in 'data' appear to be log transformed.
+    """
+    data = np.array(data, dtype=float)
+    mask = np.isfinite(data)
+    return np.all(data[mask].flatten() <= 64)
 
 
 def rename_mq_reporter_channels(
