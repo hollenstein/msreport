@@ -25,7 +25,10 @@ from collections import OrderedDict
 import pandas as pd
 import os
 import helper
-import maspy._proteindb_refactoring as ProtDB
+try:
+    import maspy._proteindb_refactoring as ProtDB
+except ModuleNotFoundError:
+    import maspy.proteindb as ProtDB
 
 
 class ResultReader():
@@ -39,9 +42,14 @@ class ResultReader():
         """ Read a result table from the data_directory
 
         Args:
-            which: Used to lookup the file name in self.filenames
+            which: lookup the filename in self.filenames. If 'which' is not
+                present in self.filenames, 'which' is used as the filename.
         """
-        filepath = os.path.join(self.data_directory, self.filenames[which])
+        if which in self.filenames:
+            filename = self.filenames[which]
+        else:
+            filename = which
+        filepath = os.path.join(self.data_directory, filename)
         df = pd.read_csv(filepath, sep='\t')
         str_cols = df.select_dtypes(include=['object']).columns
         df.loc[:, str_cols] = df.loc[:, str_cols].fillna('')
@@ -147,7 +155,7 @@ class MQReader(ResultReader):
         self._isobar: bool = isobar
         self._contaminant_tag: str = contaminant_tag
 
-    def import_proteins(self,
+    def import_proteins(self, filename: str = None,
                         rename_columns: bool = True,
                         drop_decoy: bool = True,
                         drop_idbysite: bool = True,
@@ -155,8 +163,13 @@ class MQReader(ResultReader):
                         rearrange_proteins: bool = True,
                         drop_protein_info: bool = True,
                         special_proteins: list[str] = []) -> pd.DataFrame:
-        """ Read and process 'proteinGroups.txt' file """
-        df = self._read_file('proteins')
+        """ Read and process 'proteinGroups.txt' file.
+
+        Args:
+            filename: allows specifying an alternative filename, otherwise the
+                default filename is used.
+        """
+        df = self._read_file('proteins' if filename is None else filename)
         if drop_decoy:
             df = self._drop_decoy(df)
         if drop_idbysite:
@@ -171,10 +184,16 @@ class MQReader(ResultReader):
                 df = self._drop_columns_by_tag(df, tag)
         return df
 
-    def import_peptides(self, drop_decoy: bool = True,
+    def import_peptides(self, filename: str = None,
+                        drop_decoy: bool = True,
                         prefix_column_tags: bool = True) -> pd.DataFrame:
-        """ Read and process 'peptides.txt' file """
-        df = self._read_file('peptides')
+        """ Read and process 'peptides.txt' file.
+
+        Args:
+            filename: allows specifying an alternative filename, otherwise the
+                default filename is used.
+        """
+        df = self._read_file('peptides' if filename is None else filename)
         if drop_decoy:
             df = self._drop_decoy(df)
         df = self._rename_columns(df, prefix_column_tags)
@@ -317,7 +336,8 @@ class FPReader(ResultReader):
         else:
             self.filenames = self.filenames_isobar
 
-    def import_proteins(self, rename_columns: bool = True,
+    def import_proteins(self, filename: str = None,
+                        rename_columns: bool = True,
                         prefix_column_tags: bool = True,
                         rearrange_proteins: bool = True,
                         drop_protein_info: bool = True,
@@ -327,9 +347,13 @@ class FPReader(ResultReader):
         Note that is is essential to rename column names before attempting
         to rename sample columns, as the 'Intensity' substring is present in
         multiple columns.
+
+        Args:
+            filename: allows specifying an alternative filename, otherwise the
+                default filename is used.
         """
         # Not tested #
-        df = self._read_file('proteins')
+        df = self._read_file('proteins' if filename is None else filename)
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
         if rearrange_proteins:
@@ -340,15 +364,20 @@ class FPReader(ResultReader):
                 df = self._drop_columns_by_tag(df, tag)
         return df
 
-    def import_ions(self, rename_columns: bool = True,
+    def import_ions(self, filename: str = None,
+                    rename_columns: bool = True,
                     prefix_column_tags: bool = True) -> pd.DataFrame:
         """ Read and process 'combined_ion.tsv' file.
 
         Adds the columns 'Representative protein' and
         'Protein reported by software'.
+
+        Args:
+            filename: allows specifying an alternative filename, otherwise the
+                default filename is used.
         """
         # Not tested #
-        df = self._read_file('ions')
+        df = self._read_file('ions' if filename is None else filename)
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
         df['Representative protein'] = df['Protein ID']
