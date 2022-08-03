@@ -64,49 +64,66 @@ def test_find_remaining_substrings():
         assert substrings == ['Sub1', 'Sub2', 'Sub3']
 
 
-def test_sort_fasta_entries_with_single_entry():
-    # Single entry
-    fasta_headers = ['x|A|a']
-    fastas, proteins, names = reader._sort_fasta_entries(fasta_headers)
-    assert fastas == ['x|A|a']
-    assert proteins == ['A']
-    assert names == ['a']
-
-    fasta_headers = ['x|A|a something else']
-    fastas, proteins, names = reader._sort_fasta_entries(fasta_headers)
-    assert fastas == ['x|A|a something else']
-    assert proteins == ['A']
-    assert names == ['a']
-
-
-def test_sort_fasta_entries_with_multiple_entries():
-    # Multiple entries
-    fasta_headers = ['x|A|a', 'x|B|b']
-    fastas, proteins, names = reader._sort_fasta_entries(fasta_headers)
-    assert fastas == ['x|A|a', 'x|B|b']
-    assert proteins == ['A', 'B']
-    assert names == ['a', 'b']
-
-
-def test_sort_fasta_entries_with_multiple_unsorted_entries():
-    # Multiple unsorted entries
-    fasta_headers = ['x|B|b', 'x|A|a']
-    fastas, proteins, names = reader._sort_fasta_entries(fasta_headers)
-    assert fastas == ['x|A|a', 'x|B|b']
-    assert proteins == ['A', 'B']
-    assert names == ['a', 'b']
+@pytest.mark.parametrize(
+    'input, expected_fastas, expected_proteins, expected_names',
+    [(['x|A|a'], ['x|A|a'], ['A'], ['a']),
+     (['x|A|a something else'], ['x|A|a something else'], ['A'], ['a']),
+     (['x|A|a', 'x|B|b'], ['x|A|a', 'x|B|b'], ['A', 'B'], ['a', 'b']),
+     (['x|B|b', 'x|A|a'], ['x|A|a', 'x|B|b'], ['A', 'B'], ['a', 'b']),
+     ]
+)
+def test_sort_fasta_entries_(input, expected_fastas, expected_proteins, expected_names):
+    fastas, proteins, names = reader._sort_fasta_entries(input)
+    assert fastas == expected_fastas
+    assert proteins == expected_proteins
+    assert names == expected_names
 
 
 def test_sort_fasta_entries_with_sorting_by_tag():
     # Sorting with sort tags
-    fasta_headers = ['x|B|b', 'x|A_end|a_end', 'x|C_A|c_a']
-    sorting_tags = {'C_': -1, '_end': 1}
+    fasta_headers = ['x|B|b', 'x|Apost|a_post', 'x|preA|pre_a']
+    sorting_tags = {'pre': -1, 'post': 1}
     fastas, proteins, names = reader._sort_fasta_entries(
         fasta_headers, sorting_tags
     )
-    assert fastas == ['x|C_A|c_a', 'x|B|b', 'x|A_end|a_end']
-    assert proteins == ['C_A', 'B', 'A_end']
-    assert names == ['c_a', 'b', 'a_end']
+    assert fastas == ['x|preA|pre_a', 'x|B|b', 'x|Apost|a_post']
+    assert proteins == ['preA', 'B', 'Apost']
+    assert names == ['pre_a', 'b', 'a_post']
+
+
+class TestSortLeadingProteins:
+    def test_without_args(self):
+        df = pd.DataFrame({
+            'Leading proteins': ['B;A', 'D', 'E;F', 'G;I;H'],
+        })
+        leading_proteins = ['A;B', 'D', 'E;F', 'G;H;I']
+        representative_protein = ['A', 'D', 'E', 'G']
+
+        df = reader._sort_leading_proteins(df)
+        assert df['Leading proteins'].tolist() == leading_proteins
+        assert df['Representative protein'].tolist() == representative_protein
+
+    def test_with_contamination_tag(self):
+        df = pd.DataFrame({
+            'Leading proteins': ['B;A', 'D', 'E;F', 'Gtag;I;H'],
+        })
+        leading_proteins = ['A;B', 'D', 'E;F', 'H;I;Gtag']
+        representative_protein = ['A', 'D', 'E', 'H']
+
+        df = reader._sort_leading_proteins(df, contaminant_tag='tag')
+        assert df['Leading proteins'].tolist() == leading_proteins
+        assert df['Representative protein'].tolist() == representative_protein
+
+    def test_with_special_proteins(self):
+        df = pd.DataFrame({
+            'Leading proteins': ['B;A', 'D', 'E;F', 'G;I;H'],
+        })
+        leading_proteins = ['A;B', 'D', 'F;E', 'H;I;G']
+        representative_protein = ['A', 'D', 'F', 'H']
+
+        df = reader._sort_leading_proteins(df, special_proteins=['F', 'I', 'H'])
+        assert df['Leading proteins'].tolist() == leading_proteins
+        assert df['Representative protein'].tolist() == representative_protein
 
 
 @pytest.mark.parametrize(
@@ -168,7 +185,6 @@ def test_mqreader_rename_columns(example_mqreader):
 
     protein_table = example_mqreader._rename_columns(protein_table,
                                                      prefixed)
-
     assert ('Peptides' not in protein_table.columns)
     assert ('Total peptides' in protein_table.columns)
 
@@ -194,16 +210,16 @@ def test_mqreader_drop_idbysite(example_mqreader):
     assert not is_idbysite.any()
 
 
-def test_mqreader_rearrange_proteins(example_mqreader):
+def test_mqreader_write_protein_entries(example_mqreader):
     df = pd.DataFrame({
         'Majority protein IDs': ['B;A;C', 'D', 'E;F', 'G;H;I'],
         'Peptide counts (all)': ['5;5;3', '3', '6;3', '6;6;6'],
     })
-    leading_proteins = ['A;B', 'D', 'E', 'G;H;I']
-    representative_protein = ['A', 'D', 'E', 'G']
-    protein_reported_by_software = ['B', 'D', 'E', 'G']
+    leading_proteins = ['B;A', 'D', 'E', 'G;H;I']
+    representative_protein = ['B', 'D', 'E', 'G']
+    protein_reported_by_software = representative_protein
 
-    df = example_mqreader._rearrange_proteins(df)
+    df = example_mqreader._write_protein_entries(df)
     assert df['Leading proteins'].tolist() == leading_proteins
     assert df['Representative protein'].tolist() == representative_protein
     assert df['Protein reported by software'].tolist() == protein_reported_by_software
@@ -213,18 +229,18 @@ def test_fpreader_setup(example_fpreader):
     assert os.path.isdir(example_fpreader.data_directory)
 
 
-def test_fpreader_rearrange_proteins(example_fpreader):
+def test_fpreader_write_protein_entries(example_fpreader):
     df = pd.DataFrame({
         'Protein': [
             'x|B|b', 'x|D|d', 'x|E|e', 'x|G|g'],
         'Indistinguishable Proteins': [
             'x|A|a', '', '', 'x|H|h, x|I|i'],
     })
-    leading_proteins = ['A;B', 'D', 'E', 'G;H;I']
-    representative_protein = ['A', 'D', 'E', 'G']
-    protein_reported_by_software = ['B', 'D', 'E', 'G']
+    leading_proteins = ['B;A', 'D', 'E', 'G;H;I']
+    representative_protein = ['B', 'D', 'E', 'G']
+    protein_reported_by_software = representative_protein
 
-    df = example_fpreader._rearrange_proteins(df)
+    df = example_fpreader._write_protein_entries(df)
     assert df['Leading proteins'].tolist() == leading_proteins
     assert df['Representative protein'].tolist() == representative_protein
     assert df['Protein reported by software'].tolist() == protein_reported_by_software

@@ -2,22 +2,24 @@
 tools. Currently MaxQuant and FragPipe protein tables are fully supported, and
 ion and peptide tables are partly supported.
 
-New or changed column names:
+New column names:
+- Representative protein
+- Leading proteins
+- Protein reported by software
+
+Unified column names:
+- Total peptides
 - Spectral count "sample name"
 - Unique spectral count "sample name"
 - Total spectral count "sample name"
-- LFQ intensity "sample name"
 - Intensity "sample name"
-- Total peptides
-- Representative protein
-- Leading proteins
+- LFQ intensity "sample name"
 
 Todos:
 - Add full support for ion (evidence) and peptide tables
-
-FP reader:
-- For LFQ the most relevant files are combined_protein.tsv, combined_ion.tsv
-- For TMT the relevant files are protein.tsv, psm.tsv (might be in folders)
+  - FP reader:
+    - For LFQ the most relevant files are combined_protein.tsv, combined_ion.tsv
+    - For TMT the relevant files are protein.tsv, psm.tsv (might be in folders)
 """
 
 
@@ -75,11 +77,6 @@ class ResultReader():
             new_df = _rearrange_column_tag(new_df, tag, prefix_tag)
         return new_df
 
-    def _drop_columns_by_tag(self, df: pd.DataFrame, tag: str) -> pd.DataFrame:
-        """ Returns a new data frame without columns containing 'tag'. """
-        columns = helper.find_columns(df, tag, must_be_substring=False)
-        return self._drop_columns(df, columns)
-
     def _drop_columns(self, df: pd.DataFrame,
                       columns_to_drop: list[str]) -> pd.DataFrame:
         """ Returns a new data frame without the specified columns. """
@@ -88,6 +85,11 @@ class ResultReader():
             if column not in columns_to_drop:
                 remaining_columns.append(column)
         return df[remaining_columns].copy()
+
+    def _drop_columns_by_tag(self, df: pd.DataFrame, tag: str) -> pd.DataFrame:
+        """ Returns a new data frame without columns containing 'tag'. """
+        columns = helper.find_columns(df, tag, must_be_substring=False)
+        return self._drop_columns(df, columns)
 
 
 class MQReader(ResultReader):
@@ -157,10 +159,10 @@ class MQReader(ResultReader):
 
     def import_proteins(self, filename: str = None,
                         rename_columns: bool = True,
+                        prefix_column_tags: bool = True,
+                        sort_proteins: bool = True,
                         drop_decoy: bool = True,
                         drop_idbysite: bool = True,
-                        prefix_column_tags: bool = True,
-                        rearrange_proteins: bool = True,
                         drop_protein_info: bool = True,
                         special_proteins: list[str] = []) -> pd.DataFrame:
         """ Read and process 'proteinGroups.txt' file.
@@ -170,14 +172,18 @@ class MQReader(ResultReader):
                 default filename is used.
         """
         df = self._read_file('proteins' if filename is None else filename)
+        df = self._write_protein_entries(df)
         if drop_decoy:
             df = self._drop_decoy(df)
         if drop_idbysite:
             df = self._drop_idbysite(df)
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
-        if rearrange_proteins:
-            df = self._rearrange_proteins(df, special_proteins)
+        if sort_proteins:
+            df = _sort_leading_proteins(
+                df, contaminant_tag=self._contaminant_tag,
+                special_proteins=special_proteins,
+            )
         if drop_protein_info:
             df = self._drop_columns(df, self.protein_info_columns)
             for tag in self.protein_info_tags:
@@ -185,8 +191,9 @@ class MQReader(ResultReader):
         return df
 
     def import_peptides(self, filename: str = None,
-                        drop_decoy: bool = True,
-                        prefix_column_tags: bool = True) -> pd.DataFrame:
+                        rename_columns: bool = True,
+                        prefix_column_tags: bool = True,
+                        drop_decoy: bool = True) -> pd.DataFrame:
         """ Read and process 'peptides.txt' file.
 
         Args:
@@ -194,9 +201,11 @@ class MQReader(ResultReader):
                 default filename is used.
         """
         df = self._read_file('peptides' if filename is None else filename)
+        df = self._write_protein_entries(df)
         if drop_decoy:
             df = self._drop_decoy(df)
-        df = self._rename_columns(df, prefix_column_tags)
+        if rename_columns:
+            df = self._rename_columns(df, prefix_column_tags)
         return df
 
     # def import_ions(self, drop_decoy: bool = True) -> pd.DataFrame:
@@ -214,27 +223,19 @@ class MQReader(ResultReader):
         """ Removes rows with '+' in the 'Only identified by site' column """
         return df.loc[df['Only identified by site'] != '+']
 
-    def _rearrange_proteins(self, df: pd.DataFrame,
-                            special_proteins: list[str] = []
-                            ) -> pd.DataFrame:
-        """ Sorts proteins and adds three newcolumns to the dataframe.
+    def _write_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ Adds standardized protein entry columns to the data frame.
 
-        "Leading proteins" contains all protein entries from the
-        "Majority protein IDs" column, which have the same and highest number
-        of peptide in the "Peptide counts (all)" column.
-        Multiple protein entries are separated by ";". Special proteins are
-        listed first and proteins containing the contamination tag are listed
-        last. The other proteins are sorted alphabetically ascending.
+        Added columns are 'Leading proteins', 'Representative protein', and
+        'Protein reported by software'.
 
-        "Representative protein" contains only the first entry from the new
-        "Leading proteins" column.
-
-        "Protein reported by software" contains the original
-        first entry from the "Majority protein IDs" column.
+        'Leading proteins' contains all protein entries from the column
+        'Majority protein IDs' that have the same and highest number of
+        peptides in the 'Peptide counts (all)' column. Multiple protein entries
+        are separated by ';'. 'Protein reported by software' and
+        'Representative protein' contain the first entry from the new
+        'Leading proteins' column.
         """
-        sorting_tag_levels = {self._contaminant_tag: 1}
-        sorting_tag_levels.update({p: -1 for p in special_proteins})
-
         reported_entries = []
         leading_entries = []
         representative_entries = []
@@ -246,12 +247,9 @@ class MQReader(ResultReader):
             leading_proteins = [f for f, c in zip(proteins, counts)
                                 if c >= highest_count]
 
-            fastas, sorted_proteins, names = _sort_fasta_entries(
-                leading_proteins, sorting_tag_levels
-            )
             reported_entries.append(leading_proteins[0])
-            leading_entries.append(';'.join(sorted_proteins))
-            representative_entries.append(sorted_proteins[0])
+            leading_entries.append(';'.join(leading_proteins))
+            representative_entries.append(leading_proteins[0])
 
         df = df.copy()
         df['Protein reported by software'] = reported_entries
@@ -339,7 +337,7 @@ class FPReader(ResultReader):
     def import_proteins(self, filename: str = None,
                         rename_columns: bool = True,
                         prefix_column_tags: bool = True,
-                        rearrange_proteins: bool = True,
+                        sort_proteins: bool = True,
                         drop_protein_info: bool = True,
                         special_proteins: list[str] = []) -> pd.DataFrame:
         """ Read and process 'combined_protein.tsv' file.
@@ -354,10 +352,14 @@ class FPReader(ResultReader):
         """
         # Not tested #
         df = self._read_file('proteins' if filename is None else filename)
+        df = self._write_protein_entries(df)
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
-        if rearrange_proteins:
-            df = self._rearrange_proteins(df, special_proteins)
+        if sort_proteins:
+            df = _sort_leading_proteins(
+                df, contaminant_tag=self._contaminant_tag,
+                special_proteins=special_proteins,
+            )
         if drop_protein_info:
             df = self._drop_columns(df, self.protein_info_columns)
             for tag in self.protein_info_tags:
@@ -378,32 +380,28 @@ class FPReader(ResultReader):
         """
         # Not tested #
         df = self._read_file('ions' if filename is None else filename)
-        if rename_columns:
-            df = self._rename_columns(df, prefix_column_tags)
+
+        # TODO: replace this by _write_protein_entries() if FragPipe adds
+        #       'Indistinguishable Proteins' to the ion table.
         df['Representative protein'] = df['Protein ID']
         df['Protein reported by software'] = df['Protein ID']
+
+        if rename_columns:
+            df = self._rename_columns(df, prefix_column_tags)
         return df
 
-    def _rearrange_proteins(self, df: pd.DataFrame,
-                            special_proteins: list[str] = []) -> pd.DataFrame:
-        """ Sorts proteins and adds three newcolumns to the dataframe.
+    def _write_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ Adds standardized protein entry columns to the data frame.
 
-        "Leading proteins" contains all protein entries from the "Protein"
-        plus "Indistinguishable Proteins" column, which have the same and
-        highest number of peptide in the "Peptide counts (all)" column.
-        Multiple protein entries are separated by ";". Special proteins are
-        listed first and proteins containing the contamination tag are listed
-        last. The other proteins are sorted alphabetically ascending.
+        Added columns are 'Leading proteins', 'Representative protein', and
+        'Protein reported by software'.
 
-        "Representative protein" contains only the first entry from the new
-        "Leading proteins" column.
-
-        "Protein reported by software" contains the original
-        protein id from the "Protein" column.
+        'Leading proteins' contains all protein entries from the original
+        'Protein' plus 'Indistinguishable Proteins' columns. Multiple protein
+        entries are separated by ';'. 'Protein reported by software' and
+        'Representative protein' contain the first entry from the new
+        'Leading proteins' column.
         """
-        sorting_tag_levels = {self._contaminant_tag: 1}
-        sorting_tag_levels.update({p: -1 for p in special_proteins})
-
         reported_entries = []
         leading_entries = []
         representative_entries = []
@@ -415,12 +413,9 @@ class FPReader(ResultReader):
                     protein_entries.append(entry)
             leading_proteins = [p.split('|')[1] for p in protein_entries]
 
-            fastas, sorted_proteins, names = _sort_fasta_entries(
-                leading_proteins, sorting_tag_levels
-            )
             reported_entries.append(leading_proteins[0])
-            leading_entries.append(';'.join(sorted_proteins))
-            representative_entries.append(sorted_proteins[0])
+            leading_entries.append(';'.join(leading_proteins))
+            representative_entries.append(leading_proteins[0])
 
         df = df.copy()
         df['Protein reported by software'] = reported_entries
@@ -610,6 +605,43 @@ def _find_remaining_substrings(strings: list[str],
     # Remove empty entries
     substrings = sorted(set(filter(None, substrings)))
     return substrings
+
+
+def _sort_leading_proteins(df: pd.DataFrame, contaminant_tag: str = None,
+                           special_proteins: list[str] = []) -> pd.DataFrame:
+    """ Sorts protein entries from the 'Leading proteins' column.
+
+    Multiple entries in the 'Leading proteins' column must be separated by ';'.
+    After sorting, special proteins are listed first and proteins containing
+    the contamination tag are listed last. The other proteins are sorted
+    alphabetically ascending.
+
+    The first entry from the sorted 'Leading proteins' is written into the
+    'Representative protein' column.
+
+    Returns:
+        A new dataframe containing sorting leading protein entries and updated the
+            representative proteins.
+    """
+    sorting_tag_levels = {}
+    if contaminant_tag is not None:
+        sorting_tag_levels[contaminant_tag] = 1
+    sorting_tag_levels.update({p: -1 for p in special_proteins})
+
+    leading_entries = []
+    representative_entries = []
+    for leading_proteins in df['Leading proteins']:
+        proteins = leading_proteins.split(';')
+        fastas, sorted_proteins, names = _sort_fasta_entries(
+            proteins, sorting_tag_levels
+        )
+        representative_entries.append(sorted_proteins[0])
+        leading_entries.append(';'.join(sorted_proteins))
+
+    df = df.copy()
+    df['Representative protein'] = representative_entries
+    df['Leading proteins'] = leading_entries
+    return df
 
 
 def _sort_fasta_entries(fasta_entries: list[str],
