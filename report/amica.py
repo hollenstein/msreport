@@ -23,20 +23,8 @@ for column_tag in ['iBAQ intensity', 'LFQ intensity']:
         qtable.data[column] = qtable.data[column].replace({0: np.nan})
         qtable.data[column] = np.log2(qtable.data[column])
 
-tag = 'contam_'
-contaminants = [tag in p for p in qtable.data['Representative protein']]
-qtable.data['Potential contaminant'] = contaminants
-
 write_amica_input(qtable, 'C:/Users/david.hollenstein/Desktop')
 """
-###########################
-## Add function to reader #
-#def _add_potential_contaminants(self, df: pd.DataFrame) -> pd.DataFrame:
-#    """ Adds a column to identify potential contaminants."""
-#    tag = self._contaminant_tag
-#    contaminants = [tag in p for p in df['Representative protein']]
-#    df['Potential contaminant'] = contaminants
-###########################
 import os
 
 import pandas as pd

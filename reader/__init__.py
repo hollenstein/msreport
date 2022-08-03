@@ -133,7 +133,7 @@ class MQReader(ResultReader):
         'Protein names', 'Gene names', 'Fasta headers'
         'Sequence coverage [%]', 'Unique + razor sequence coverage [%]',
         'Unique sequence coverage [%]', 'Mol. weight [kDa]', 'Sequence length',
-        'Sequence lengths', 'iBAQ peptides'
+        'Sequence lengths', 'iBAQ peptides', 'Potential contaminant'
     ]
     protein_info_tags: list[str] = [
         'iBAQ', 'Sequence coverage', 'site positions'
@@ -177,6 +177,10 @@ class MQReader(ResultReader):
             df = self._drop_decoy(df)
         if drop_idbysite:
             df = self._drop_idbysite(df)
+        if drop_protein_info:
+            df = self._drop_columns(df, self.protein_info_columns)
+            for tag in self.protein_info_tags:
+                df = self._drop_columns_by_tag(df, tag)
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
         if sort_proteins:
@@ -184,10 +188,7 @@ class MQReader(ResultReader):
                 df, contaminant_tag=self._contaminant_tag,
                 special_proteins=special_proteins,
             )
-        if drop_protein_info:
-            df = self._drop_columns(df, self.protein_info_columns)
-            for tag in self.protein_info_tags:
-                df = self._drop_columns_by_tag(df, tag)
+        df = _mark_potential_contaminants(df, self._contaminant_tag)
         return df
 
     def import_peptides(self, filename: str = None,
@@ -350,9 +351,13 @@ class FPReader(ResultReader):
             filename: allows specifying an alternative filename, otherwise the
                 default filename is used.
         """
-        # Not tested #
+        # not tested #
         df = self._read_file('proteins' if filename is None else filename)
         df = self._write_protein_entries(df)
+        if drop_protein_info:
+            df = self._drop_columns(df, self.protein_info_columns)
+            for tag in self.protein_info_tags:
+                df = self._drop_columns_by_tag(df, tag)
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
         if sort_proteins:
@@ -360,10 +365,7 @@ class FPReader(ResultReader):
                 df, contaminant_tag=self._contaminant_tag,
                 special_proteins=special_proteins,
             )
-        if drop_protein_info:
-            df = self._drop_columns(df, self.protein_info_columns)
-            for tag in self.protein_info_tags:
-                df = self._drop_columns_by_tag(df, tag)
+        df = _mark_potential_contaminants(df, self._contaminant_tag)
         return df
 
     def import_ions(self, filename: str = None,
@@ -378,7 +380,7 @@ class FPReader(ResultReader):
             filename: allows specifying an alternative filename, otherwise the
                 default filename is used.
         """
-        # Not tested #
+        # not tested #
         df = self._read_file('ions' if filename is None else filename)
 
         # TODO: replace this by _write_protein_entries() if FragPipe adds
@@ -432,7 +434,7 @@ def add_protein_annotations(
     The added columns always includes "Fasta header", "Protein length",
     "iBAQ peptides", and if possible "Protein entry name" and "Gene name".
     """
-    # Not tested #
+    # not tested #
     protein_db = ProtDB.importProteinDatabase(
         fasta_path, contaminationTag='contam_'
     )
@@ -470,7 +472,7 @@ def add_sequence_coverage(protein_table: pd.DataFrame,
     Requires the columns 'Start' and 'End' in the peptide_table, and
     'Protein length' in the protein_table.
     """
-    # Not tested #
+    # not tested #
     peptide_positions = {}
     for protein_id, peptide_group in peptide_table.groupby(by=id_column):
         positions = [(s, e) for s, e in zip(peptide_group['Start'],
@@ -678,3 +680,17 @@ def _sort_fasta_entries(fasta_entries: list[str],
     values.sort()
     sort_levels, proteins, fastas, names = [list(v) for v in zip(*(values))]
     return fastas, proteins, names
+
+
+def _mark_potential_contaminants(df: pd.DataFrame,
+                                 contaminant_tag: str) -> pd.DataFrame:
+    """ Adds a 'Potential contaminant' column to the data frame.
+
+    'Potential contaminant' is True if the 'Representative protein' entry
+    contains the 'contaminant_tag', and otherwise False.
+    """
+    # not tested #
+    contaminants = [contaminant_tag in e for e in df['Representative protein']]
+    df = df.copy()
+    df['Potential contaminant'] = contaminants
+    return df
