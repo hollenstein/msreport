@@ -23,11 +23,13 @@ for column_tag in ['iBAQ intensity', 'LFQ intensity']:
         qtable.data[column] = qtable.data[column].replace({0: np.nan})
         qtable.data[column] = np.log2(qtable.data[column])
 
-write_amica_input(qtable, 'C:/Users/david.hollenstein/Desktop')
+report. write_amica_input(qtable, 'C:/Users/david.hollenstein/Desktop')
 """
 import os
 
+import numpy as np
 import pandas as pd
+
 import helper
 import quantable
 
@@ -61,9 +63,19 @@ def _amica_table_from(qtable: quantable.Qtable) -> pd.DataFrame:
         'P-value: ': 'P.Value_',
         'Adjusted p-value: ': 'adj.P.Val_',
     }
+    intensity_column_tags = [
+        'Intensity', 'LFQ intensity', 'Expression', 'iBAQ intensity'
+    ]
     amica_comparison_tag = (' vs ', '__vs__')
 
     table = qtable.data.copy()
+    # Log transform columns if necessary
+    for tag in intensity_column_tags:
+        for column in helper.find_columns(table, tag):
+            if not helper.intensities_in_logspace(table[column]):
+                table[column] = table[column].replace({0: np.nan})
+                table[column] = np.log2(table[column])
+
     for old_column in helper.find_columns(table, amica_comparison_tag[0]):
         new_column = old_column.replace(*amica_comparison_tag)
         table.rename(columns={old_column: new_column}, inplace=True)
