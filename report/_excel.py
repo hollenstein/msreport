@@ -9,8 +9,9 @@
     - Could this be a switch argument?
 - Parse arguments from the config file
 - Remove columns that have already been parsed to avoid duplication
-- Add column comments
+- Add option to append all remaining columns (and hide them)
 - Add option to specify sample order
+- Add column comments
 - Add option to sort the table before writing data
 """
 
@@ -38,10 +39,14 @@ class ReportSheet():
         self.nan_symbol = 'n.a.'  # args['nan_symbol']
         self.supheader_height = 30  # args['upheader_height']
         self.header_height = 105  # args['header_height']
+        self.sample_extraction_tag = 'Spectral count'  # args['sample_extraction_tag']
 
         self.workbook = workbook
         self.worksheet = workbook.add_worksheet('Proteins')
         self._config = None
+        self._table = None
+        self._samples = None
+        self._sample_groups = None
         self._format_templates = {}
         self._workbook_formats = {}
         self._conditional_formats = {}
@@ -49,96 +54,41 @@ class ReportSheet():
     def apply_configuration(self, config_file: str) -> None:
         """ Reads a config file and prepares formats. """
         self._config = parse_config_file(config_file)
-        self.add_formats(self._config['formats'])
-        self.extend_header_format(self._config['groups'])
-        self.extend_supheader_format(self._config['groups'])
-        self.extend_border_formats()
-        self.add_formats_to_workbook()
-        self.add_conditionals(self._config['conditionals'])
+        self._add_formats(self._config['formats'])
+        self._extend_header_format(self._config['groups'])
+        self._extend_supheader_format(self._config['groups'])
+        self._extend_border_formats()
+        self._add_formats_to_workbook()
+        self._add_conditionals(self._config['conditionals'])
 
-    def get_format(self, format_name: str) -> xlsxwriter.format.Format:
-        """ Returns an excel format. """
-        return self._workbook_formats[format_name]
+    def read_data(self, table: pd.DataFrame) -> None:
+        """ Adds table that will be used for filing the worksheet with data.
 
-    def get_conditional(self, format_name: str) -> dict[str, object]:
-        """ Returns an excel conditional format. """
-        return self._conditional_formats[format_name]
-
-    def add_formats(self, formats: dict[str, dict[str, object]]) -> None:
-        """ Add formats. """
-        for format_name in formats:
-            format_properties = formats[format_name].copy()
-            self._format_templates[format_name] = format_properties
-
-    def extend_border_formats(self) -> None:
-        """ Add format variants with borders to the format templates.
-
-        For each format adds a variant with a left or a right border, the
-        format name is extended by 'format_left' or 'format_right'.
+        Also extracts samples and generates possible sample comparison groups.
         """
-        for name in list(self._format_templates):
-            for border in ['left', 'right']:
-                format_properties = self._format_templates[name].copy()
-                format_name = f'{name}_{border}'
-                format_properties[border] = self.border_weight
-                self._format_templates[format_name] = format_properties
-
-    def extend_header_format(self, groups: dict[str, object]) -> None:
-        """ Adds individual header formats per group.
-
-        This allows to individualize header formats, such as defining a
-        different background color. The default 'header' format is extended
-        and modified by all entries from the groups 'header_format' entry.
-        """
-        self._extend_formats('header', groups)
-
-    def extend_supheader_format(self, groups: dict[str, object]) -> None:
-        """ Adds individual supheader formats per group.
-
-        This allows to individualize supheader formats, such as defining a
-        different background color. The default 'supheader' format is extended
-        and modified by all entries from the groups 'supheader_format' entry.
-        """
-        self._extend_formats('supheader', groups)
-
-    def _extend_formats(
-            self, key: str, groups: dict[str, object]) -> None:
-        """ Adds individual format types per group.
-
-        This allows to individualize header or supheader formats, such as
-        defining a different background color or vertical rotation.
-        The default format is extended and modified by all entries from the
-        groups 'KEY_format' entry.
-        """
-        for group_name, group_info in groups.items():
-            base_format = self._format_templates[key]
-            group_format = base_format.copy()
-            if f'{key}_format' in group_info:
-                group_format.update(group_info[f'{key}_format'])
-            group_format_name = f'{key}_{group_name}'
-            self._format_templates[group_format_name] = group_format
-
-    def add_conditionals(self, formats: dict[str, dict[str, object]]) -> None:
-        """ Add conditional formats to the conditional templates. """
-        for format_name, format_properties in formats.items():
-            self._conditional_formats[format_name] = format_properties
-
-    def add_formats_to_workbook(self):
-        """ Add the template formats to the workbook. """
-        for name, properties in self._format_templates.items():
-            self._workbook_formats[name] = self.workbook.add_format(
-                properties
+        self._table = table.copy()
+        if self._samples is None and self.sample_extraction_tag is not None:
+            self._samples = extract_samples_with_column_tag(
+                self._table, self.sample_extraction_tag
             )
+        if self._sample_groups is None:
+            # TODO: generate combinations of samples, separated by the
+            #   comparison_symbol.
+            pass
 
-    def write_data(self, table: pd.DataFrame) -> None:
-        """ Writes data from the table to the excel sheet. """
+    def write_data(self) -> None:
+        """ Writes data to the excel sheet and applies formats. """
         if self._config is None:
-            raise Exception('Configuration was not applied.')
+            raise Exception('Configuration has not applied. Call '
+                            '"ReportSheet.apply_configuration()" to do so.')
+        if self._table is None:
+            raise Exception('No data for writing has been added. '
+                            'Call "ReportSheet.read_data()" to add data.')
 
         supheader_row = 0
         header_row = 1
         data_row = 2
-        data_row_end = table.shape[0] + data_row - 1
+        data_row_end = self._table.shape[0] + data_row - 1
 
         column_position = 0
         first_column_position = column_position
@@ -155,7 +105,7 @@ class ReportSheet():
 
             # Define group columns
             if 'tag' in group_info:
-                group_columns = helper.find_columns(table, group_info['tag'])
+                group_columns = helper.find_columns(self._table, group_info['tag'])
             else:
                 group_columns = group_info['columns']
 
@@ -181,7 +131,7 @@ class ReportSheet():
                 col_formats[last_column] = f'{col_formats[last_column]}_right'
                 header_formats[last_column] = f'{header_format}_right'
 
-            # Define column widths
+            # Apply column widths
             if 'width' in group_info:
                 self.worksheet.set_column_pixels(
                     start_col, end_col, group_info['width']
@@ -217,7 +167,7 @@ class ReportSheet():
             for current_position, column in enumerate(group_columns):
                 col_position = start_col + current_position
                 col_format = self.get_format(col_formats[column])
-                data = table[column]
+                data = self._table[column]
                 if log2_transform:
                     data = data.replace(0, np.nan)
                     if not helper.intensities_in_logspace(data):
@@ -259,6 +209,80 @@ class ReportSheet():
             data_row_end, last_column_position
         )
 
+    def get_format(self, format_name: str) -> xlsxwriter.format.Format:
+        """ Returns an excel format. """
+        return self._workbook_formats[format_name]
+
+    def get_conditional(self, format_name: str) -> dict[str, object]:
+        """ Returns an excel conditional format. """
+        return self._conditional_formats[format_name]
+
+    def _add_formats(self, formats: dict[str, dict[str, object]]) -> None:
+        """ Add formats. """
+        for format_name in formats:
+            format_properties = formats[format_name].copy()
+            self._format_templates[format_name] = format_properties
+
+    def _extend_header_format(self, groups: dict[str, object]) -> None:
+        """ Adds individual header formats per group.
+
+        This allows to individualize header formats, such as defining a
+        different background color. The default 'header' format is extended
+        and modified by all entries from the groups 'header_format' entry.
+        """
+        self._extend_formats('header', groups)
+
+    def _extend_supheader_format(self, groups: dict[str, object]) -> None:
+        """ Adds individual supheader formats per group.
+
+        This allows to individualize supheader formats, such as defining a
+        different background color. The default 'supheader' format is extended
+        and modified by all entries from the groups 'supheader_format' entry.
+        """
+        self._extend_formats('supheader', groups)
+
+    def _extend_border_formats(self) -> None:
+        """ Add format variants with borders to the format templates.
+
+        For each format adds a variant with a left or a right border, the
+        format name is extended by 'format_left' or 'format_right'.
+        """
+        for name in list(self._format_templates):
+            for border in ['left', 'right']:
+                format_properties = self._format_templates[name].copy()
+                format_name = f'{name}_{border}'
+                format_properties[border] = self.border_weight
+                self._format_templates[format_name] = format_properties
+
+    def _extend_formats(
+            self, key: str, groups: dict[str, object]) -> None:
+        """ Adds individual format types per group.
+
+        This allows to individualize header or supheader formats, such as
+        defining a different background color or vertical rotation.
+        The default format is extended and modified by all entries from the
+        groups 'KEY_format' entry.
+        """
+        for group_name, group_info in groups.items():
+            base_format = self._format_templates[key]
+            group_format = base_format.copy()
+            if f'{key}_format' in group_info:
+                group_format.update(group_info[f'{key}_format'])
+            group_format_name = f'{key}_{group_name}'
+            self._format_templates[group_format_name] = group_format
+
+    def _add_formats_to_workbook(self):
+        """ Add the template formats to the workbook. """
+        for name, properties in self._format_templates.items():
+            self._workbook_formats[name] = self.workbook.add_format(
+                properties
+            )
+
+    def _add_conditionals(self, formats: dict[str, dict[str, object]]) -> None:
+        """ Add conditional formats to the conditional templates. """
+        for format_name, format_properties in formats.items():
+            self._conditional_formats[format_name] = format_properties
+
 
 class Report():
     def __init__(self):
@@ -289,3 +313,11 @@ def parse_config_file(file: str) -> dict[str, dict]:
 def _extract_config_entry(
         config: dict[str, dict], name: str) -> dict[str, object]:
     return config.pop(name) if name in config else dict()
+
+
+def extract_samples_with_column_tag(table: pd.DataFrame, tag: str):
+    """ Extract sample names from columns containing the specified tag """
+    # TODO: move to helper and add test #
+    columns = helper.find_columns(table, tag, must_be_substring=True)
+    samples = [c.replace(tag, '').strip() for c in columns]
+    return samples
