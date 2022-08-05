@@ -1,11 +1,4 @@
 """ TODOs
-- Add different conditional formatting for "Combined" column.
-    - Maybe only consider columns that also contain a sample entry
-    - Move the non-sample columns to the front.
-    - Specify a tag for the combined column (such as '', 'combined',
-      'total'). This should remove e.g. "iBAQ peptides" from the
-      "iBAQ" tag.
-- Add _write_data_group() function
 - Add option to append all remaining columns (and hide them)
 - Add option to specify sample order
 - Add column comments
@@ -21,9 +14,7 @@ import helper
 
 
 class ReportSheet():
-    default_format = {'align': 'left', 'num_format': '0'}
-
-    def __init__(self, workbook: xlsxwriter.Workbook):
+    def __init__(self, workbook: xlsxwriter.Workbook, sheet_name: str):
         self._args = {
             'border_weight': 2,
             'log2_tag': '[log2]',
@@ -35,11 +26,11 @@ class ReportSheet():
         }
 
         self.workbook = workbook
-        self.worksheet = workbook.add_worksheet('Proteins')
+        self.worksheet = workbook.add_worksheet(sheet_name)
         self._config = None
         self._table = None
-        self._samples = None  # TODO: probably not required
         self._sample_groups = None
+        self._samples = []  # TODO: probably not required
         self._format_templates = {}
         self._workbook_formats = {}
         self._conditional_formats = {}
@@ -68,13 +59,13 @@ class ReportSheet():
         # TODO: Extracting the samples is probably not required and not
         #       helpful for finding comparison groups
         extraction_tag = self._args['sample_extraction_tag']
-        if self._samples is None and extraction_tag is not None:
+        if not self._samples and extraction_tag is not None:
             self._samples = extract_samples_with_column_tag(
                 self._table, extraction_tag
             )
 
     def write_data(self) -> None:
-        """ Writes data to the excel sheet and applies formats. """
+        """ Writes data to the excel sheet and applies formatting. """
         if self._config is None:
             raise Exception('Configuration has not applied. Call '
                             '"ReportSheet.apply_configuration()" to do so.')
@@ -83,6 +74,7 @@ class ReportSheet():
                             'Call "ReportSheet.add_data()" to add data.')
 
         data_groups = self._prepare_data_groups()
+
         coordinates = {
             'supheader_row': 0,
             'header_row': 1,
@@ -92,7 +84,6 @@ class ReportSheet():
         }
         coordinates['data_row_end'] += self._table.shape[0] - 1
         coordinates['start_column'] = coordinates['first_column']
-
         for data_group in data_groups:
             coordinates['last_column'] = self._write_data_group(
                 data_group, coordinates
@@ -114,7 +105,7 @@ class ReportSheet():
 
     def _write_data_group(self, data_group: dict,
                           coordinates: dict[str, int]) -> int:
-        """ ...
+        """ Writes a data group to the excel sheet and applies formatting.
 
         Args:
             data_group:
@@ -172,13 +163,15 @@ class ReportSheet():
         )
 
         # Apply conditional formats to the group
-        for conditional in data_group['conditional_formats']:
-            if conditional is not None:
-                conditional_format = self.get_conditional(conditional)
-                self.worksheet.conditional_format(
-                    data_row_start, start_column,
-                    data_row_end, end_column, conditional_format
-                )
+        for conditional_info in data_group['conditional_formats']:
+            format_name = conditional_info['name']
+            conditional_format = self.get_conditional(format_name)
+            conditional_start = start_column + conditional_info['start']
+            conditional_end = start_column + conditional_info['end']
+            self.worksheet.conditional_format(
+                data_row_start, conditional_start,
+                data_row_end, conditional_end, conditional_format
+            )
 
         # Return last column
         return end_column
@@ -206,7 +199,7 @@ class ReportSheet():
             'header': self._prepare_column_headers(config, columns, name),
             'supheader': self._prepare_supheader(config, name),
             'col_width': config.get('width', self._args['column_width']),
-            'conditional_formats': [None]
+            'conditional_formats': []
         }
         # Remove already used columns from the table
         self._table = self._table.drop(columns=columns)
@@ -215,14 +208,26 @@ class ReportSheet():
 
     def _prepare_sample_group(self, name, config):
         """ Prepare data required to write a sample group. """
-        columns = helper.find_columns(self._table, config['tag'])
+        non_sample_columns, sample_columns = self._find_sample_group_columns(
+            config['tag']
+        )
+        conditional_formats = []
+        end = -1
+        for columns in [non_sample_columns, sample_columns]:
+            if columns:
+                start = end + 1
+                end = start + len(columns) - 1
+                conditional_formats.append(
+                    {'name': config['conditional'], 'start': start, 'end': end}
+                )
 
+        columns = [*non_sample_columns, *sample_columns]
         group_data = {
             'data': self._prepare_column_data(config, columns),
             'header': self._prepare_column_headers(config, columns, name),
             'supheader': self._prepare_supheader(config, name),
             'col_width': config.get('width', self._args['column_width']),
-            'conditional_formats': [config['conditional']]
+            'conditional_formats': conditional_formats
         }
         # Remove already used columns from the table
         self._table = self._table.drop(columns=columns)
@@ -292,7 +297,8 @@ class ReportSheet():
             data_info[-1][1] = f'{data_info[-1][1]}_right'
         return data_info
 
-    def _prepare_column_headers(self, config: dict, columns: list[str], name: str) -> dict:
+    def _prepare_column_headers(
+            self, config: dict, columns: list[str], name: str) -> dict:
         header_info = []
         for text in columns:
             if _eval_arg('remove_tag', config):
@@ -394,6 +400,29 @@ class ReportSheet():
         """ Add conditional formats to the conditional templates. """
         for format_name, format_properties in formats.items():
             self._conditional_formats[format_name] = format_properties
+
+    def _find_sample_group_columns(self, tag: str) -> [list[str], list[str]]:
+        """ Find all columns belonging to a group, i.e. containing the 'tag'.
+
+        Columns that contain the tag but not any of the extracted samples are
+        added to the first list, columns that contain both the tag and a sample
+        name are added to the second list.
+
+        Returns:
+            (list with non-sample columns, list with sample columns)
+        """
+        matched_columns = helper.find_columns(
+            self._table, tag, must_be_substring=False
+        )
+        non_sample_columns = []
+        sample_columns = []
+        for column in matched_columns:
+            sample_query = column.replace(tag, '').strip()
+            if sample_query in self._samples:
+                sample_columns.append(column)
+            else:
+                non_sample_columns.append(column)
+        return (non_sample_columns, sample_columns)
 
 
 class Report():
