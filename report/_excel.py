@@ -82,6 +82,7 @@ class ReportSheet():
             raise Exception('No data for writing has been added. '
                             'Call "ReportSheet.add_data()" to add data.')
 
+        data_groups = self._prepare_data_groups()
         coordinates = {
             'supheader_row': 0,
             'header_row': 1,
@@ -92,105 +93,95 @@ class ReportSheet():
         coordinates['data_row_end'] += self._table.shape[0] - 1
         coordinates['start_column'] = coordinates['first_column']
 
-        # Prepare data
-        data_groups = self._prepare_data_groups()
-
-        ##############
-        # Write data #
-        ##############
-
-        # for data_group in data_groups:
-        #    coordinates['last_column'] = self._write_data_group(
-        #        data_group, coordinates
-        #    )
-        #    coordinates['start_column'] = coordinates['last_column'] + 1
-        def _write_data_group(self, data_group: dict,
-                              coordinates: dict[str, int]) -> int:
-            """ ...
-
-            Args:
-                data_group:
-                coordinates: Dicionary containing information about row and
-                    column positions. Keys are 'supheader_row', 'header_row',
-                    'data_row_start', 'data_row_end', 'start_column'.
-
-            Returns:
-                Last column position that was filled with data
-            """
-            pass
-        supheader_row = 0
-        header_row = 1
-        data_row_start = 2
-        first_column = 0
-        data_row_end = self._table.shape[0] + data_row_start - 1
-
-        last_column = -1
         for data_group in data_groups:
-            start_column = last_column + 1
-            # Start column is input
+            coordinates['last_column'] = self._write_data_group(
+                data_group, coordinates
+            )
+            coordinates['start_column'] = coordinates['last_column'] + 1
 
-            group_length = len(data_group['data'])
-            end_column = start_column + group_length - 1
+        # Set header height, add autofilter, freeze panes
+        self.worksheet.set_row_pixels(
+            coordinates['supheader_row'], self._args['supheader_height']
+        )
+        self.worksheet.set_row_pixels(
+            coordinates['header_row'], self._args['header_height']
+        )
+        self.worksheet.autofilter(
+            coordinates['data_row_start'] - 1, coordinates['first_column'],
+            coordinates['data_row_end'], coordinates['last_column']
+        )
+        self.worksheet.freeze_panes(coordinates['data_row_start'], 1)
 
-            # Write column data
-            curr_column = start_column
-            for values, format_name, conditional_name in data_group['data']:
-                excel_format = self.get_format(format_name)
-                self.worksheet.write_column(
-                    data_row_start, curr_column, values, excel_format
+    def _write_data_group(self, data_group: dict,
+                          coordinates: dict[str, int]) -> int:
+        """ ...
+
+        Args:
+            data_group:
+            coordinates: Dicionary containing information about row and
+                column positions. Keys are 'supheader_row', 'header_row',
+                'data_row_start', 'data_row_end', 'start_column'.
+
+        Returns:
+            Last column position that was filled with data
+        """
+        group_length = len(data_group['data'])
+        supheader_row = coordinates['supheader_row']
+        header_row = coordinates['header_row']
+        data_row_start = coordinates['data_row_start']
+        data_row_end = coordinates['data_row_end']
+        start_column = coordinates['start_column']
+        end_column = start_column + group_length - 1
+
+        # Write column data
+        curr_column = start_column
+        for values, format_name, conditional_name in data_group['data']:
+            excel_format = self.get_format(format_name)
+            self.worksheet.write_column(
+                data_row_start, curr_column, values, excel_format
+            )
+            if conditional_name:
+                excel_conditional = self.get_conditional(conditional_name)
+                self.worksheet.conditional_format(
+                    data_row_start, curr_column,
+                    data_row_end, curr_column, excel_conditional
                 )
-                if conditional_name:
-                    excel_conditional = self.get_conditional(conditional_name)
-                    self.worksheet.conditional_format(
-                        data_row_start, curr_column,
-                        data_row_end, curr_column, excel_conditional
-                    )
-                curr_column += 1
+            curr_column += 1
 
-            # Write header data
-            curr_column = start_column
-            for text, format_name in data_group['header']:
-                excel_format = self.get_format(format_name)
-                self.worksheet.write(
-                    header_row, curr_column, text, excel_format
-                )
-                curr_column += 1
+        # Write header data
+        curr_column = start_column
+        for text, format_name in data_group['header']:
+            excel_format = self.get_format(format_name)
+            self.worksheet.write(
+                header_row, curr_column, text, excel_format
+            )
+            curr_column += 1
 
-            # Write supheader
-            supheader_text, format_name = data_group['supheader']
-            if supheader_text:
-                supheader_format = self.get_format(format_name)
-                self.worksheet.merge_range(
-                    supheader_row, start_column, supheader_row, end_column,
-                    supheader_text, supheader_format
-                )
-
-            # Set column width
-            self.worksheet.set_column_pixels(
-                start_column, end_column, data_group['col_width']
+        # Write supheader
+        supheader_text, format_name = data_group['supheader']
+        if supheader_text:
+            supheader_format = self.get_format(format_name)
+            self.worksheet.merge_range(
+                supheader_row, start_column, supheader_row, end_column,
+                supheader_text, supheader_format
             )
 
-            # Apply conditional formats to the group
-            for conditional in data_group['conditional_formats']:
-                if conditional is not None:
-                    conditional_format = self.get_conditional(conditional)
-                    self.worksheet.conditional_format(
-                        data_row_start, start_column,
-                        data_row_end, end_column, conditional_format
-                    )
-
-            # Return last column
-            last_column = end_column
-
-        # Set header height, freeze panes, and autofilter
-        self.worksheet.set_row_pixels(
-            supheader_row, self._args['supheader_height']
+        # Set column width
+        self.worksheet.set_column_pixels(
+            start_column, end_column, data_group['col_width']
         )
-        self.worksheet.set_row_pixels(header_row, self._args['header_height'])
-        self.worksheet.freeze_panes(data_row_start, 1)  # Freeze only first column
-        self.worksheet.autofilter(
-            data_row_start - 1, first_column, data_row_end, last_column
-        )
+
+        # Apply conditional formats to the group
+        for conditional in data_group['conditional_formats']:
+            if conditional is not None:
+                conditional_format = self.get_conditional(conditional)
+                self.worksheet.conditional_format(
+                    data_row_start, start_column,
+                    data_row_end, end_column, conditional_format
+                )
+
+        # Return last column
+        return end_column
 
     def _prepare_data_groups(self):
         data_groups = []
