@@ -15,14 +15,15 @@ import helper
 
 class Reportbook(xlsxwriter.Workbook):
     """ Subclass of the XlsxWriter Workbook class. """
-    def add_datasheet(self, name:str = None):
-        worksheet = self.add_worksheet(name)
-        data_sheet = Datasheet(self, worksheet)
-        return data_sheet
 
     def add_infosheet(self):
         worksheet = self.add_worksheet('info')
         return worksheet
+
+    def add_datasheet(self, name: str = None):
+        worksheet = self.add_worksheet(name)
+        data_sheet = Datasheet(self, worksheet)
+        return data_sheet
 
 
 class Datasheet():
@@ -52,17 +53,19 @@ class Datasheet():
         """ Reads a config file and prepares workbook formats. """
         self._config = parse_config_file(config_file)
         self._add_args(self._config['args'])
+
         self._add_formats(self._config['formats'])
         self._extend_header_format(self._config['groups'])
         self._extend_supheader_format(self._config['groups'])
         self._extend_border_formats()
-        self._add_formats_to_workbook()
-        self._add_conditionals(self._config['conditionals'])
+        self._add_format_templates_to_workbook()
+
+        self._add_conditional_formats(self._config['conditional_formats'])
 
     def add_data(self, table: pd.DataFrame) -> None:
         """ Adds table that will be used for filing the worksheet with data.
 
-        Also extracts sample names from table by using the 
+        Also extracts sample names from table by using the
         'sample_extraction_tag' from the config.
         """
         self._table = table.copy()
@@ -85,8 +88,8 @@ class Datasheet():
             raise Exception('No data for writing has been added. '
                             'Call "ReportSheet.add_data()" to add data.')
 
+        # initialize data group writing
         data_groups = self._prepare_data_groups()
-
         coordinates = {
             'supheader_row': 0,
             'header_row': 1,
@@ -96,6 +99,8 @@ class Datasheet():
         }
         coordinates['data_row_end'] += self._table.shape[0] - 1
         coordinates['start_column'] = coordinates['first_column']
+
+        # write data groups
         for data_group in data_groups:
             coordinates['last_column'] = self._write_data_group(
                 data_group, coordinates
@@ -409,14 +414,14 @@ class Datasheet():
             group_format_name = f'{key}_{group_name}'
             self._format_templates[group_format_name] = group_format
 
-    def _add_formats_to_workbook(self):
+    def _add_format_templates_to_workbook(self):
         """ Add the template formats to the workbook. """
         for name, properties in self._format_templates.items():
             self._workbook_formats[name] = self.workbook.add_format(
                 properties
             )
 
-    def _add_conditionals(self, formats: dict[str, dict[str, object]]) -> None:
+    def _add_conditional_formats(self, formats: dict[str, dict[str, object]]) -> None:
         """ Add conditional formats to the conditional templates. """
         for format_name, format_properties in formats.items():
             self._conditional_formats[format_name] = format_properties
@@ -449,8 +454,8 @@ def parse_config_file(file: str) -> dict[str, dict]:
     """ Parses excel report config file and returns entries as dictionaries.
 
     Returns:
-        Dictionary containing the keys 'formats', 'conditionals', 'groups',
-            'args', each pointing to another dictionary.
+        Dictionary containing the keys 'formats', 'conditional_formats',
+            'groups', 'args', each pointing to another dictionary.
     """
     with open(file) as open_file:
         yaml_file = yaml.safe_load(open_file)
@@ -458,7 +463,7 @@ def parse_config_file(file: str) -> dict[str, dict]:
         'args': _extract_config_entry(yaml_file, 'args'),
         'groups': _extract_config_entry(yaml_file, 'groups'),
         'formats': _extract_config_entry(yaml_file, 'formats'),
-        'conditionals': _extract_config_entry(
+        'conditional_formats': _extract_config_entry(
             yaml_file, 'conditional_formats'
         ),
     }
