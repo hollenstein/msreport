@@ -13,8 +13,21 @@ import yaml
 import helper
 
 
-class ReportSheet():
-    def __init__(self, workbook: xlsxwriter.Workbook, sheet_name: str):
+class Reportbook(xlsxwriter.Workbook):
+    """ Subclass of the XlsxWriter Workbook class. """
+    def add_datasheet(self, name:str = None):
+        worksheet = self.add_worksheet(name)
+        data_sheet = Datasheet(self, worksheet)
+        return data_sheet
+
+    def add_infosheet(self):
+        worksheet = self.add_worksheet('info')
+        return worksheet
+
+
+class Datasheet():
+    def __init__(self, workbook: xlsxwriter.Workbook,
+                 worksheet: xlsxwriter.worksheet.Worksheet):
         self._args = {
             'border_weight': 2,
             'log2_tag': '[log2]',
@@ -26,17 +39,17 @@ class ReportSheet():
         }
 
         self.workbook = workbook
-        self.worksheet = workbook.add_worksheet(sheet_name)
+        self.worksheet = worksheet
         self._config = None
         self._table = None
         self._sample_groups = None
-        self._samples = []  # TODO: probably not required
+        self._samples = []
         self._format_templates = {}
         self._workbook_formats = {}
         self._conditional_formats = {}
 
     def apply_configuration(self, config_file: str) -> None:
-        """ Reads a config file and prepares formats. """
+        """ Reads a config file and prepares workbook formats. """
         self._config = parse_config_file(config_file)
         self._add_args(self._config['args'])
         self._add_formats(self._config['formats'])
@@ -49,15 +62,14 @@ class ReportSheet():
     def add_data(self, table: pd.DataFrame) -> None:
         """ Adds table that will be used for filing the worksheet with data.
 
-        Also extracts samples and generates possible sample comparison groups.
+        Also extracts sample names from table by using the 
+        'sample_extraction_tag' from the config.
         """
         self._table = table.copy()
         # Replace NaN in string columns with an empty string
         str_cols = self._table.select_dtypes(include=['object']).columns
         self._table.loc[:, str_cols] = self._table.loc[:, str_cols].fillna('')
 
-        # TODO: Extracting the samples is probably not required and not
-        #       helpful for finding comparison groups
         extraction_tag = self._args['sample_extraction_tag']
         if not self._samples and extraction_tag is not None:
             self._samples = extract_samples_with_column_tag(
@@ -180,29 +192,34 @@ class ReportSheet():
         data_groups = []
         for name, config in self._config['groups'].items():
             if _eval_arg('comparison_group', config):
-                comp_group_data = self._prepare_comparison_group(name, config)
-                data_groups.extend(comp_group_data)
+                for group_data in self._prepare_comparison_group(name, config):
+                    if group_data:
+                        data_groups.append(group_data)
             elif _eval_arg('tag', config):
                 group_data = self._prepare_sample_group(name, config)
-                data_groups.append(group_data)
+                if group_data:
+                    data_groups.append(group_data)
             else:
                 group_data = self._prepare_feature_group(name, config)
-                data_groups.append(group_data)
+                if group_data:
+                    data_groups.append(group_data)
         return data_groups
 
-    def _prepare_feature_group(self, name, config):
+    def _prepare_feature_group(self, name, config) -> dict():
         """ Prepare data required to write a feature group. """
         columns = [col for col in config['columns'] if col in self._table]
-
-        group_data = {
-            'data': self._prepare_column_data(config, columns),
-            'header': self._prepare_column_headers(config, columns, name),
-            'supheader': self._prepare_supheader(config, name),
-            'col_width': config.get('width', self._args['column_width']),
-            'conditional_formats': []
-        }
-        # Remove already used columns from the table
-        self._table = self._table.drop(columns=columns)
+        if columns:
+            group_data = {
+                'data': self._prepare_column_data(config, columns),
+                'header': self._prepare_column_headers(config, columns, name),
+                'supheader': self._prepare_supheader(config, name),
+                'col_width': config.get('width', self._args['column_width']),
+                'conditional_formats': []
+            }
+            # Remove already used columns from the table
+            self._table = self._table.drop(columns=columns)
+        else:
+            group_data = {}
 
         return group_data
 
@@ -222,15 +239,18 @@ class ReportSheet():
                 )
 
         columns = [*non_sample_columns, *sample_columns]
-        group_data = {
-            'data': self._prepare_column_data(config, columns),
-            'header': self._prepare_column_headers(config, columns, name),
-            'supheader': self._prepare_supheader(config, name),
-            'col_width': config.get('width', self._args['column_width']),
-            'conditional_formats': conditional_formats
-        }
-        # Remove already used columns from the table
-        self._table = self._table.drop(columns=columns)
+        if columns:
+            group_data = {
+                'data': self._prepare_column_data(config, columns),
+                'header': self._prepare_column_headers(config, columns, name),
+                'supheader': self._prepare_supheader(config, name),
+                'col_width': config.get('width', self._args['column_width']),
+                'conditional_formats': conditional_formats
+            }
+            # Remove already used columns from the table
+            self._table = self._table.drop(columns=columns)
+        else:
+            group_data = {}
 
         return group_data
 
@@ -423,12 +443,6 @@ class ReportSheet():
             else:
                 non_sample_columns.append(column)
         return (non_sample_columns, sample_columns)
-
-
-class Report():
-    def __init__(self):
-        self.workbook = None
-        self.report_sheets = {}
 
 
 def parse_config_file(file: str) -> dict[str, dict]:
