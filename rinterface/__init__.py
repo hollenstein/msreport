@@ -46,7 +46,7 @@ def two_group_limma(table: pd.DataFrame, column_groups: list[str],
 
 
 def _find_rscript_paths():
-    """ Returns a mapping of files from the 'r_scripts' folder. """
+    """ Returns a mapping of files from the 'rscripts' folder. """
     script_paths = {}
     _module_path = os.path.dirname(os.path.realpath(__file__))
     _scripts_path = os.path.join(_module_path, 'rscripts')
