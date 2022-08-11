@@ -18,6 +18,14 @@ class TestFindColumns:
         assert columns == ['Test A', 'Test B']
 
 
+def test_find_sample_columns():
+    df = pd.DataFrame(columns=['Test', 'Test Not_a_sample', 'Test Sample_A', 'Test Sample_B', 'Something else'])
+    samples = ['Sample_A', 'Sample_B']
+    tag = 'Test'
+    columns = helper.find_sample_columns(df, tag, samples)
+    assert columns == ['Test Sample_A', 'Test Sample_B']
+
+
 def test_rename_mq_reporter_channels_only_intensity():
     table = pd.DataFrame(columns=[
         'Reporter intensity 1',

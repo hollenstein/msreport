@@ -94,10 +94,29 @@ def find_columns(df: pd.DataFrame, substring: str,
             are exactly equal to the substring.
 
     Returns:
-        A list of column names that contain the substring.
+        A list of column names,
     """
     matches = [substring in col for col in df.columns]
     matched_columns = np.array(df.columns)[matches].tolist()
     if must_be_substring:
         matched_columns = [col for col in matched_columns if col != substring]
+    return matched_columns
+
+
+def find_sample_columns(df: pd.DataFrame, substring: str,
+                        samples: list[str]) -> list[str]:
+    """ Returns a list column names containing the substring and any sample.
+    Args:
+        df: Columns of this pandas.DataFrame are queried.
+        substring: String that must be part of column names.
+        samples: List of strings from which at least one must be present in
+            matched columns.
+
+    Returns:
+        A list of column names.
+    """
+    matched_columns = []
+    for column in find_columns(df, substring):
+        if any([sample in column for sample in samples]):
+            matched_columns.append(column)
     return matched_columns
