@@ -52,6 +52,22 @@ class Qtable():
             expression_column = ''
         return expression_column
 
+    def make_sample_matrix(
+            self, tag: str, samples_as_columns: bool = False) -> pd.DataFrame:
+        """ Returns a new dataframe with sample columns containing the 'tag'.
+
+        Attributes:
+            samples_as_columns: If true, replace expression column names with
+                sample names. Requires that the experimental design is set.
+        """
+        samples = self.get_samples()
+        columns = helper.find_sample_columns(self.data, tag, samples)
+        matrix = self.data[columns].copy()
+        if samples_as_columns:
+            mapping = _str_to_substr_mapping(columns, samples)
+            matrix.rename(columns=mapping, inplace=True)
+        return matrix
+
     def make_expression_matrix(
             self, samples_as_columns: bool = False) -> pd.DataFrame:
         """ Returns a new dataframe containing the expression columns.

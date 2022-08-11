@@ -336,6 +336,27 @@ def test_qtable_get_expression_column(example_data, example_qtable):
     assert expected_columns == columns
 
 
+class TestQtableMakeSampleMatrix:
+    @pytest.fixture(autouse=True)
+    def _init_qtable(self, example_qtable):
+        self.qtable = example_qtable
+
+    def test_default_args(self, example_data):
+        expected = example_data['data'][example_data['intensity_columns']]
+        tag = example_data['expression_tag']
+
+        expr_matrix = self.qtable.make_sample_matrix(tag)
+        assert np.array_equal(expr_matrix.to_numpy(), expected.to_numpy(), equal_nan=True)
+
+    def test_with_samples_as_columns(self, example_data):
+        sample_names = example_data['design']['Sample'].tolist()
+        tag = example_data['expression_tag']
+
+        expr_matrix = self.qtable.make_sample_matrix(tag, samples_as_columns=True)
+        expr_matrix_columns = expr_matrix.columns.tolist()
+        assert expr_matrix_columns == sample_names
+
+
 class TestQtableMakeExpressionMatrix:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_qtable):
@@ -349,10 +370,10 @@ class TestQtableMakeExpressionMatrix:
         assert np.array_equal(expr_matrix.to_numpy(), expected.to_numpy(), equal_nan=True)
 
     def test_with_samples_as_columns(self, example_data):
+        sample_names = example_data['design']['Sample'].tolist()
+
         expr_matrix = self.qtable.make_expression_matrix(samples_as_columns=True)
         expr_matrix_columns = expr_matrix.columns.tolist()
-
-        sample_names = example_data['design']['Sample'].tolist()
         assert expr_matrix_columns == sample_names
 
 
