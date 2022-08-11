@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-import quantable
+import msreport.qtable
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def example_data():
 
 @pytest.fixture
 def example_qtable(example_data):
-    qtable = quantable.Qtable(
+    qtable = msreport.qtable.Qtable(
         example_data['data'], design=example_data['design']
     )
     qtable.set_expression_by_tag('Intensity')
@@ -75,16 +75,16 @@ def test_str_to_substr_mapping():
         'Tag SampleA_2': 'SampleA_2',
         'Tag SampleB_1': 'SampleB_1',
     }
-    assert quantable._str_to_substr_mapping(strings, substrs) == true_mapping
+    assert msreport.qtable._str_to_substr_mapping(strings, substrs) == true_mapping
 
 
 def test_qtable_setup():
-    qtable = quantable.Qtable(pd.DataFrame())
+    qtable = msreport.qtable.Qtable(pd.DataFrame())
     assert isinstance(qtable.data, pd.DataFrame)
 
 
 def test_qtable_add_design(example_data):
-    qtable = quantable.Qtable(pd.DataFrame())
+    qtable = msreport.qtable.Qtable(pd.DataFrame())
     qtable.add_design(example_data['design'])
     assert qtable.design.equals(example_data['design'])
 
@@ -95,12 +95,12 @@ def test_qtable_add_design(example_data):
 
 
 def test_qtable_setup_with_design(example_data):
-    qtable = quantable.Qtable(pd.DataFrame(), design=example_data['design'])
+    qtable = msreport.qtable.Qtable(pd.DataFrame(), design=example_data['design'])
     assert qtable.design.equals(example_data['design'])
 
 
 def test_qtable_get_design(example_data):
-    qtable = quantable.Qtable(
+    qtable = msreport.qtable.Qtable(
         example_data['data'], design=example_data['design']
     )
     assert qtable.get_design().equals(example_data['design'])
@@ -138,7 +138,7 @@ class TestQtableGetExperiments:
 class TestQtableResetExpression:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
-        self.qtable = quantable.Qtable(
+        self.qtable = msreport.qtable.Qtable(
             example_data['data'], design=example_data['design']
         )
 
@@ -177,7 +177,7 @@ class TestQtableResetExpression:
 class TestQtableSetExpression:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
-        self.qtable = quantable.Qtable(
+        self.qtable = msreport.qtable.Qtable(
             example_data['data'], design=example_data['design']
         )
 
@@ -232,7 +232,7 @@ class TestQtableSetExpression:
 class TestQtableSetExpressionByTag:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
-        self.qtable = quantable.Qtable(
+        self.qtable = msreport.qtable.Qtable(
             example_data['data'], design=example_data['design']
         )
 
@@ -261,7 +261,7 @@ class TestQtableSetExpressionByTag:
 class TestQtableSetExpressionByColumn:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
-        self.qtable = quantable.Qtable(
+        self.qtable = msreport.qtable.Qtable(
             example_data['data'], design=example_data['design']
         )
 
@@ -293,7 +293,7 @@ class TestQtableSetExpressionByColumn:
 class TestQtableAddExpressionFeature:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
-        self.qtable = quantable.Qtable(
+        self.qtable = msreport.qtable.Qtable(
             example_data['data'], design=example_data['design']
         )
 
