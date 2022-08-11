@@ -26,7 +26,9 @@ Todos:
 from collections import OrderedDict
 import pandas as pd
 import os
-import helper
+
+
+import msreport.helper as helper
 try:
     import maspy._proteindb_refactoring as ProtDB
 except ModuleNotFoundError:

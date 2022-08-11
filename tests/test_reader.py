@@ -2,17 +2,18 @@ import numpy as np
 import os
 import pandas as pd
 import pytest
-import reader
+
+import msreport.reader
 
 
 @pytest.fixture
 def example_mqreader():
-    return reader.MQReader('./tests/testdata/maxquant_results')
+    return msreport.reader.MQReader('./tests/testdata/maxquant_results')
 
 
 @pytest.fixture
 def example_fpreader():
-    return reader.FPReader('./tests/testdata/fragpipe_results')
+    return msreport.reader.FPReader('./tests/testdata/fragpipe_results')
 
 
 def test_that_always_passes():
@@ -21,7 +22,7 @@ def test_that_always_passes():
 
 def test_extract_sample_names(example_mqreader):
     protein_table = example_mqreader._read_file('proteins')
-    sample_names = reader.extract_sample_names(protein_table, 'Intensity')
+    sample_names = msreport.reader.extract_sample_names(protein_table, 'Intensity')
     assert len(sample_names) == 18
 
 
@@ -29,7 +30,7 @@ def test_replace_column_tag():
     df = pd.DataFrame(columns=['Tag', 'Tag A', 'Tag B', 'Something else'])
     old_tag = 'Tag'
     new_tag = 'New'
-    new_df = reader._replace_column_tag(df, old_tag, new_tag)
+    new_df = msreport.reader._replace_column_tag(df, old_tag, new_tag)
     new_columns = new_df.columns.tolist()
     assert new_columns == ['New', 'New A', 'New B', 'Something else']
 
@@ -39,14 +40,14 @@ def test_rearrange_column_tag():
                                'Text1 Tag2', 'Text2 Tag2', 'Tag2'])
     tag = 'Tag1'
     prefixed = False
-    new_df = reader._rearrange_column_tag(df, tag, prefixed)
+    new_df = msreport.reader._rearrange_column_tag(df, tag, prefixed)
     new_columns = new_df.columns.tolist()
     assert new_columns == ['Text1 Tag1', 'Text2 Tag1', 'Tag1',
                            'Text1 Tag2', 'Text2 Tag2', 'Tag2']
 
     tag = 'Tag2'
     prefixed = True
-    new_df = reader._rearrange_column_tag(df, tag, prefixed)
+    new_df = msreport.reader._rearrange_column_tag(df, tag, prefixed)
     new_columns = new_df.columns.tolist()
     assert new_columns == ['Tag1 Text1', 'Tag1 Text2', 'Tag1',
                            'Tag2 Text1', 'Tag2 Text2', 'Tag2']
@@ -59,7 +60,7 @@ def test_find_remaining_substrings():
     ]
     split_with = 'Test'
     for strings in strings_list:
-        substrings = reader._find_remaining_substrings(strings, split_with)
+        substrings = msreport.reader._find_remaining_substrings(strings, split_with)
         assert len(substrings) == 3
         assert substrings == ['Sub1', 'Sub2', 'Sub3']
 
@@ -73,7 +74,7 @@ def test_find_remaining_substrings():
      ]
 )
 def test_sort_fasta_entries_(input, expected_fastas, expected_proteins, expected_names):
-    fastas, proteins, names = reader._sort_fasta_entries(input)
+    fastas, proteins, names = msreport.reader._sort_fasta_entries(input)
     assert fastas == expected_fastas
     assert proteins == expected_proteins
     assert names == expected_names
@@ -83,7 +84,7 @@ def test_sort_fasta_entries_with_sorting_by_tag():
     # Sorting with sort tags
     fasta_headers = ['x|B|b', 'x|Apost|a_post', 'x|preA|pre_a']
     sorting_tags = {'pre': -1, 'post': 1}
-    fastas, proteins, names = reader._sort_fasta_entries(
+    fastas, proteins, names = msreport.reader._sort_fasta_entries(
         fasta_headers, sorting_tags
     )
     assert fastas == ['x|preA|pre_a', 'x|B|b', 'x|Apost|a_post']
@@ -99,7 +100,7 @@ class TestSortLeadingProteins:
         leading_proteins = ['A;B', 'D', 'E;F', 'G;H;I']
         representative_protein = ['A', 'D', 'E', 'G']
 
-        df = reader._sort_leading_proteins(df)
+        df = msreport.reader._sort_leading_proteins(df)
         assert df['Leading proteins'].tolist() == leading_proteins
         assert df['Representative protein'].tolist() == representative_protein
 
@@ -110,7 +111,7 @@ class TestSortLeadingProteins:
         leading_proteins = ['A;B', 'D', 'E;F', 'H;I;Gtag']
         representative_protein = ['A', 'D', 'E', 'H']
 
-        df = reader._sort_leading_proteins(df, contaminant_tag='tag')
+        df = msreport.reader._sort_leading_proteins(df, contaminant_tag='tag')
         assert df['Leading proteins'].tolist() == leading_proteins
         assert df['Representative protein'].tolist() == representative_protein
 
@@ -121,7 +122,7 @@ class TestSortLeadingProteins:
         leading_proteins = ['A;B', 'D', 'F;E', 'H;I;G']
         representative_protein = ['A', 'D', 'F', 'H']
 
-        df = reader._sort_leading_proteins(df, special_proteins=['F', 'I', 'H'])
+        df = msreport.reader._sort_leading_proteins(df, special_proteins=['F', 'I', 'H'])
         assert df['Leading proteins'].tolist() == leading_proteins
         assert df['Representative protein'].tolist() == representative_protein
 
@@ -135,7 +136,7 @@ class TestSortLeadingProteins:
 )
 def test_result_reader_drop_columns(cols_dropped, cols_remaining):
     df = pd.DataFrame(columns=['Col A', 'Col B', 'Col C'])
-    base_reader = reader.ResultReader()
+    base_reader = msreport.reader.ResultReader()
     df = base_reader._drop_columns(df, cols_dropped)
 
     assert set(df.columns) == set(cols_remaining)
@@ -151,7 +152,7 @@ def test_result_reader_drop_columns(cols_dropped, cols_remaining):
 def test_result_reader_drop_columns_by_tag(cols_inital, cols_remaining):
     tag = 'Drop'
     df = pd.DataFrame(columns=cols_inital)
-    base_reader = reader.ResultReader()
+    base_reader = msreport.reader.ResultReader()
     df = base_reader._drop_columns_by_tag(df, tag)
 
     assert set(df.columns) == set(cols_remaining)
@@ -256,7 +257,7 @@ class TestAddIbaqIntensities:
         })
 
     def test_ibaq_intensity_added(self):
-        reader.add_ibaq_intensities(
+        msreport.reader.add_ibaq_intensities(
             self.table,
             peptide_column='peptides',
             ibaq_peptide_column='ibaq_petides',
@@ -272,7 +273,7 @@ class TestAddIbaqIntensities:
     )
     def test_correct_ibaq_intensities(self, compare_ibaq_intensities, num_petides, normalize_intensity):
         self.table['peptides'] = num_petides
-        reader.add_ibaq_intensities(
+        msreport.reader.add_ibaq_intensities(
             self.table, normalize_total_intensity=normalize_intensity,
             peptide_column='peptides', ibaq_peptide_column='ibaq_petides',
             intensity_tag='intensity', ibaq_tag='ibaq',
