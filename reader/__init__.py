@@ -164,6 +164,7 @@ class MQReader(ResultReader):
                         drop_decoy: bool = True,
                         drop_idbysite: bool = True,
                         drop_protein_info: bool = True,
+                        mark_contaminants: bool = True,
                         special_proteins: list[str] = []) -> pd.DataFrame:
         """ Read and process 'proteinGroups.txt' file.
 
@@ -188,7 +189,8 @@ class MQReader(ResultReader):
                 df, contaminant_tag=self._contaminant_tag,
                 special_proteins=special_proteins,
             )
-        df = _mark_potential_contaminants(df, self._contaminant_tag)
+        if mark_contaminants:
+            df = _mark_potential_contaminants(df, self._contaminant_tag)
         return df
 
     def import_peptides(self, filename: str = None,
@@ -340,6 +342,7 @@ class FPReader(ResultReader):
                         prefix_column_tags: bool = True,
                         sort_proteins: bool = True,
                         drop_protein_info: bool = True,
+                        mark_contaminants: bool = True,
                         special_proteins: list[str] = []) -> pd.DataFrame:
         """ Read and process 'combined_protein.tsv' file.
 
@@ -365,7 +368,8 @@ class FPReader(ResultReader):
                 df, contaminant_tag=self._contaminant_tag,
                 special_proteins=special_proteins,
             )
-        df = _mark_potential_contaminants(df, self._contaminant_tag)
+        if mark_contaminants:
+            df = _mark_potential_contaminants(df, self._contaminant_tag)
         return df
 
     def import_ions(self, filename: str = None,
