@@ -5,9 +5,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sns
 
-import helper
-import quantable
-import quanalysis
+import msreport.helper as helper
+from msreport.qtable import Qtable
+import msreport.qanalysis
 
 
 class ColorWheelDict(UserDict):
@@ -37,7 +37,7 @@ class ColorWheelDict(UserDict):
         return self.data[key]
 
 
-def missing_values_vertical(qtable: quantable.Qtable):
+def missing_values_vertical(qtable: Qtable):
     """ Plot to analyze the completeness of protein quantification.
 
     If the column 'Valid' is present the data is filtered accordingly.
@@ -46,7 +46,7 @@ def missing_values_vertical(qtable: quantable.Qtable):
     experiments = qtable.get_experiments()
     num_experiments = len(experiments)
 
-    missing_values = quanalysis.count_missing_values(qtable)
+    missing_values = msreport.qanalysis.count_missing_values(qtable)
     if 'Valid' in qtable.data:
         missing_values = missing_values[qtable.data['Valid']]
 
@@ -85,7 +85,7 @@ def missing_values_vertical(qtable: quantable.Qtable):
     return fig, axes
 
 
-def missing_values_horizontal(qtable: quantable.Qtable):
+def missing_values_horizontal(qtable: Qtable):
     """ Plot to analyze the completeness of protein quantification.
 
     If the column 'Valid' is present the data is filtered accordingly.
@@ -94,7 +94,7 @@ def missing_values_horizontal(qtable: quantable.Qtable):
     experiments = qtable.get_experiments()
     num_experiments = len(experiments)
 
-    missing_values = quanalysis.count_missing_values(qtable)
+    missing_values = msreport.qanalysis.count_missing_values(qtable)
     if 'Valid' in qtable.data:
         missing_values = missing_values[qtable.data['Valid']]
 
@@ -137,7 +137,7 @@ def missing_values_horizontal(qtable: quantable.Qtable):
     return fig, ax
 
 
-def sample_intensities(qtable: quantable.Qtable, tag: str = 'Intensity',
+def sample_intensities(qtable: Qtable, tag: str = 'Intensity',
                        is_log: bool = False) -> (plt.Figure, plt.Axes):
     """ Plot to analyze similarity of sample intensities. """
     columns = helper.find_columns(qtable.data, tag, must_be_substring=True)

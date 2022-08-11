@@ -88,7 +88,7 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 import msreport.helper as helper
 from msreport.qtable import Qtable
-import rinterface
+import msreport.rinterface
 
 
 def count_missing_values(qtable: Qtable) -> pd.DataFrame:
@@ -280,7 +280,7 @@ def calculate_two_group_limma(qtable: Qtable, groups: list[str],
     group1 = groups[0]
     group2 = groups[1]
 
-    limma_result = rinterface.two_group_limma(
+    limma_result = msreport.rinterface.two_group_limma(
         table[mask], column_groups, group1, group2, limma_trend
     )
 

@@ -30,11 +30,11 @@ import os
 import numpy as np
 import pandas as pd
 
-import helper
-import quantable
+import msreport.helper as helper
+from msreport.qtable import Qtable
 
 
-def write_amica_input(qtable: quantable.Qtable, directory,
+def write_amica_input(qtable: Qtable, directory,
                       table_name: str = 'amica_table.tsv',
                       design_name: str = 'amica_design.tsv') -> None:
     amica_table = _amica_table_from(qtable)
@@ -46,7 +46,7 @@ def write_amica_input(qtable: quantable.Qtable, directory,
     amica_design.to_csv(amica_design_path, sep='\t', index=False)
 
 
-def _amica_table_from(qtable: quantable.Qtable) -> pd.DataFrame:
+def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
     amica_column_mapping = {
         'Representative protein': 'Majority.protein.IDs',
         'Gene name': 'Gene.names',
@@ -93,7 +93,7 @@ def _amica_table_from(qtable: quantable.Qtable) -> pd.DataFrame:
     return table[amica_columns]
 
 
-def _amica_design_from(qtable: quantable.Qtable) -> pd.DataFrame:
+def _amica_design_from(qtable: Qtable) -> pd.DataFrame:
     amica_design_columns = {'Sample': 'samples', 'Experiment': 'groups'}
     amica_design = qtable.design.copy().rename(columns=amica_design_columns)
     return amica_design
