@@ -1,19 +1,20 @@
 import numpy as np
 import pandas as pd
 import pytest
-import helper
+
+import msreport.helper
 
 
 class TestFindColumns:
     def test_must_be_substring_false(self):
         df = pd.DataFrame(columns=['Test', 'Test A', 'Test B', 'Something else'])
-        columns = helper.find_columns(df, 'Test')
+        columns = msreport.helper.find_columns(df, 'Test')
         assert len(columns) == 3
         assert columns == ['Test', 'Test A', 'Test B']
 
     def test_must_be_substring_True(self):
         df = pd.DataFrame(columns=['Test', 'Test A', 'Test B', 'Something else'])
-        columns = helper.find_columns(df, 'Test', must_be_substring=True)
+        columns = msreport.helper.find_columns(df, 'Test', must_be_substring=True)
         assert len(columns) == 2
         assert columns == ['Test A', 'Test B']
 
@@ -22,7 +23,7 @@ def test_find_sample_columns():
     df = pd.DataFrame(columns=['Test', 'Test Not_a_sample', 'Test Sample_A', 'Test Sample_B', 'Something else'])
     samples = ['Sample_A', 'Sample_B']
     tag = 'Test'
-    columns = helper.find_sample_columns(df, tag, samples)
+    columns = msreport.helper.find_sample_columns(df, tag, samples)
     assert columns == ['Test Sample_A', 'Test Sample_B']
 
 
@@ -36,7 +37,7 @@ def test_rename_mq_reporter_channels_only_intensity():
         'Reporter intensity Channel 1',
         'Reporter intensity Channel 2',
     ]
-    helper.rename_mq_reporter_channels(table, channel_names)
+    msreport.helper.rename_mq_reporter_channels(table, channel_names)
     assert table.columns.tolist() == expected_columns
 
 
@@ -57,7 +58,7 @@ def test_rename_mq_reporter_channels_with_other_columns():
         'Reporter count',
         'Something else'
     ]
-    helper.rename_mq_reporter_channels(table, channel_names)
+    msreport.helper.rename_mq_reporter_channels(table, channel_names)
     assert table.columns.tolist() == expected_columns
 
 
@@ -80,7 +81,7 @@ def test_rename_mq_reporter_channels_with_count_and_corrected():
         'Reporter intensity corrected Channel 1',
         'Reporter intensity corrected Channel 2',
     ]
-    helper.rename_mq_reporter_channels(table, channel_names)
+    msreport.helper.rename_mq_reporter_channels(table, channel_names)
     assert table.columns.tolist() == expected_columns
 
 
@@ -98,7 +99,7 @@ def test_guess_design():
         'Experiment': ['ExperimentA', 'ExperimentB', 'ExperimentB']
     })
 
-    design = helper.guess_design(table, tag)
+    design = msreport.helper.guess_design(table, tag)
     assert expected_design.equals(design)
 
 
@@ -113,12 +114,12 @@ def test_guess_design():
      (pd.DataFrame([[32, 45, 64.1]]), False),
      ])
 def test_intensities_in_logspace(data, data_in_logspace):
-    assert helper.intensities_in_logspace(data) == data_in_logspace
+    assert msreport.helper.intensities_in_logspace(data) == data_in_logspace
 
 
 def test_mode():
     values = np.random.normal(size=100)
-    mode = helper.mode(values)
+    mode = msreport.helper.mode(values)
     assert isinstance(mode, float)
     assert mode < 1 and mode > -1
 
@@ -130,7 +131,7 @@ def test_gaussian_imputation():
     })
     median_downshift = 1
     std_width = 1
-    imputed = helper.gaussian_imputation(
+    imputed = msreport.helper.gaussian_imputation(
         table, median_downshift, std_width
     )
 
@@ -160,7 +161,7 @@ def test_calculate_tryptic_ibaq_peptides():
     max_len = 30
     protein_sequence = ''.join(peptides)
     expected_ibaq_peptides = sum([len(p) >= min_len and len(p) <= max_len for p in peptides])
-    ibaq_peptides = helper.calculate_tryptic_ibaq_peptides(protein_sequence)
+    ibaq_peptides = msreport.helper.calculate_tryptic_ibaq_peptides(protein_sequence)
     assert ibaq_peptides == expected_ibaq_peptides
 
 
@@ -171,7 +172,7 @@ def test_calculate_tryptic_ibaq_peptides():
                           (10, 0, [])
                           ])
 def test_make_coverage_mask(length, expected_coverage, peptide_positions):
-    coverage_mask = helper.make_coverage_mask(length, peptide_positions)
+    coverage_mask = msreport.helper.make_coverage_mask(length, peptide_positions)
     assert coverage_mask.sum() == expected_coverage
 
 
@@ -181,5 +182,5 @@ def test_make_coverage_mask(length, expected_coverage, peptide_positions):
                           (15, round(7 / 15 * 100, 10), 10, [(1, 7)]),
                           ])
 def test_calculate_sequence_coverage(length, expected_coverage, ndigits, peptide_positions):
-    calculated_coverage = helper.calculate_sequence_coverage(length, peptide_positions, ndigits=ndigits)
+    calculated_coverage = msreport.helper.calculate_sequence_coverage(length, peptide_positions, ndigits=ndigits)
     assert calculated_coverage == expected_coverage
