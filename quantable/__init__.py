@@ -118,6 +118,8 @@ class Qtable():
                               log2: bool = False) -> None:
         """ Sets columns that contain the 'tag' as expression columns.
 
+        Previous expression columns and expression features are deleted.
+
         Attributes:
             tag: Identifies columns that contain this substring
             zerotonan: If true, zeros in expression columns are replace by NaN
@@ -137,7 +139,9 @@ class Qtable():
                                  columns_to_samples: dict[str, str],
                                  zerotonan: bool = False,
                                  log2: bool = False) -> None:
-        """ Defines a list of expression columns.
+        """ Defines a list of expression columns and their sample mapping.
+
+        Previous expression columns and expression features are deleted.
 
         Attributes:
             columns_to_samples: Mapping of expression columns to sample names-
@@ -210,7 +214,7 @@ class Qtable():
 
     def _set_expression(self, expr_sample_mapping: dict[str, str],
                         zerotonan: bool = False, log2: bool = False) -> None:
-        """ Define expresssion columns.
+        """ Define expresssion columns and delete previous expression features.
 
         Arguments:
             expr_sample_mapping: mapping of expression columns to sample names
