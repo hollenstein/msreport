@@ -72,7 +72,7 @@ Use cases
 ---------
 mqreader = reader.MQReader(search_dir, contaminant_tag='contam_')
 table = mqreader.import_proteins(special_proteins=['ups'])
-qtable = quantable.Qtable(table, design=design)
+qtable = Qtable(table, design=design)
 qtable.set_expression_by_tag('LFQ intensity', log2=True)
 
 validate_protein_quantification(
@@ -86,12 +86,12 @@ import numpy as np
 import pandas as pd
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-import helper
-import quantable
+import msreport.helper as helper
+from msreport.qtable import Qtable
 import rinterface
 
 
-def count_missing_values(qtable: quantable.Qtable) -> pd.DataFrame:
+def count_missing_values(qtable: Qtable) -> pd.DataFrame:
     """ Returns a quantification of missing values in expression columns.
 
     --> Returns a dataframe with missing value counts in expression columns per
@@ -110,7 +110,7 @@ def count_missing_values(qtable: quantable.Qtable) -> pd.DataFrame:
     return missingness
 
 
-def validate_proteins(qtable: quantable.Qtable, min_peptides: int = 0,
+def validate_proteins(qtable: Qtable, min_peptides: int = 0,
                       max_missing: int = None) -> None:
     """ Validate protein entries and add a 'Valid' column to the qtable.
 
@@ -130,7 +130,7 @@ def validate_proteins(qtable: quantable.Qtable, min_peptides: int = 0,
         qtable.data['Valid'] = min_two_quant_events & qtable.data['Valid']
 
 
-def median_normalize_samples(qtable: quantable.Qtable) -> None:
+def median_normalize_samples(qtable: Qtable) -> None:
     """ Normalize samples with median profiles. """
     # NOT TESTED #
     samples = qtable.get_samples()
@@ -153,7 +153,7 @@ def median_normalize_samples(qtable: quantable.Qtable) -> None:
         qtable.data[col] -= profile[i]
 
 
-def mode_normalize_samples(qtable: quantable.Qtable) -> None:
+def mode_normalize_samples(qtable: Qtable) -> None:
     """ Normalize samples with median profiles. """
     # NOT TESTED #
     # Is a duplication of median_normalize_samples -> create common function #
@@ -177,7 +177,7 @@ def mode_normalize_samples(qtable: quantable.Qtable) -> None:
         qtable.data[col] -= profile[i]
 
 
-def lowess_normalize_samples(qtable: quantable.Qtable) -> None:
+def lowess_normalize_samples(qtable: Qtable) -> None:
     """ Normalize samples to pseudo reference with lowess. """
     # NOT TESTED #
     samples = qtable.get_samples()
@@ -213,7 +213,7 @@ def lowess_normalize_samples(qtable: quantable.Qtable) -> None:
         qtable.data[expr_column] = expr_table[sample]
 
 
-def impute_missing_values(qtable: quantable.Qtable) -> None:
+def impute_missing_values(qtable: Qtable) -> None:
     """ Impute missing expression values.
 
     Imputes missing values (nan) from expression columns and thus requires that
@@ -233,7 +233,7 @@ def impute_missing_values(qtable: quantable.Qtable) -> None:
     qtable.data[expr.columns] = imputed[expr.columns]
 
 
-def calculate_two_group_limma(qtable: quantable.Qtable, groups: list[str],
+def calculate_two_group_limma(qtable: Qtable, groups: list[str],
                               filter_valid: bool = True,
                               limma_trend: bool = True) -> pd.DataFrame:
     """ Use limma to calculate two sample differential expression from qtable.

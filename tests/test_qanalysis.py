@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-import quantable
-import quanalysis
+
+import msreport.qtable
+import msreport.qanalysis
 
 
 @pytest.fixture
@@ -34,7 +35,7 @@ def example_data():
 
 @pytest.fixture
 def example_qtable(example_data):
-    qtable = quantable.Qtable(
+    qtable = msreport.qtable.Qtable(
         example_data['data'], design=example_data['design']
     )
     qtable.set_expression_by_tag('Intensity')
@@ -42,7 +43,7 @@ def example_qtable(example_data):
 
 
 def test_count_missing_values(example_data, example_qtable):
-    missing_values = quanalysis.count_missing_values(example_qtable)
+    missing_values = msreport.qanalysis.count_missing_values(example_qtable)
     expected = example_data['missing_values']
     assert missing_values.to_dict() == expected.to_dict()
 
@@ -53,19 +54,19 @@ class TestValidateProteins:
         self.qtable = example_qtable
 
     def test_validate_proteins(self):
-        quanalysis.validate_proteins(self.qtable)
+        msreport.qanalysis.validate_proteins(self.qtable)
         data_columns = self.qtable.data.columns.to_list()
         assert 'Valid' in data_columns
 
     @pytest.mark.parametrize('min_peptides, expected_valid',
                              [(0, 3), (1, 3), (2, 2), (3, 0)])
     def test_with_min_peptides(self, min_peptides, expected_valid):
-        quanalysis.validate_proteins(self.qtable, min_peptides=min_peptides)
+        msreport.qanalysis.validate_proteins(self.qtable, min_peptides=min_peptides)
         assert expected_valid == self.qtable.data['Valid'].sum()
 
 
 def test_impute_missing_values(example_qtable):
-    quanalysis.impute_missing_values(example_qtable)
+    msreport.qanalysis.impute_missing_values(example_qtable)
 
     expr_matrix = example_qtable.make_expression_matrix()
     number_missing_values = expr_matrix.isna().sum().sum()
