@@ -14,7 +14,7 @@ class Qtable():
 
         self.data: pd.DataFrame = table.copy()
         if design is not None:
-            self.design = design
+            self.design = self.add_design(design)
 
     def get_design(self) -> pd.DataFrame:
         return self.design
@@ -107,7 +107,7 @@ class Qtable():
             exception_message = ''.join([
                 'The design matrix must at least contain the columns: ',
                 ', '.join(f'"{c}"' for c in required_columns), '. '
-                'It contains the columns: ',
+                'It only contains the columns: ',
                 ', '.join(f'"{c}"' for c in matrix_columns), '.'
             ])
             raise ValueError(exception_message)
@@ -175,6 +175,10 @@ class Qtable():
 
     def calculate_experiment_means(self) -> None:
         """ Calculate mean expression values for each experiment. """
+        # TODO: move to quanalysis
+        warnings.warn('This method will be deprecated', DeprecationWarning,
+                      stacklevel=2)
+
         experiment_means = {}
         for experiment in self.get_experiments():
             samples = self.get_samples(experiment)
