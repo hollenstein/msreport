@@ -14,7 +14,7 @@ class Qtable():
 
         self.data: pd.DataFrame = table.copy()
         if design is not None:
-            self.design = self.add_design(design)
+            self.add_design(design)
 
     def get_design(self) -> pd.DataFrame:
         return self.design
