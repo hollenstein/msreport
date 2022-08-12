@@ -1,7 +1,8 @@
-import numpy as np
-import pandas as pd
 import re
 from typing import Iterable, Union
+
+import numpy as np
+import pandas as pd
 
 
 def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:

@@ -24,9 +24,9 @@ Todos:
 
 
 from collections import OrderedDict
-import pandas as pd
 import os
 
+import pandas as pd
 
 import msreport.helper as helper
 try:

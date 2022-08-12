@@ -1,11 +1,12 @@
 import itertools
-import numpy as np
-import pandas as pd
 from typing import Iterable
 
-import maspy.peptidemethods
+import numpy as np
+import pandas as pd
 import scipy.stats
 import scipy.optimize
+
+import maspy.peptidemethods
 
 
 def gaussian_imputation(table: pd.DataFrame, median_downshift: float,

@@ -82,6 +82,7 @@ qtable.impute_missing_values()
 analyse_differential_expression(qtable)
 """
 import itertools
+
 import numpy as np
 import pandas as pd
 from statsmodels.nonparametric.smoothers_lowess import lowess
