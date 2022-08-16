@@ -292,7 +292,7 @@ def calculate_two_group_limma(qtable: Qtable, groups: list[str],
     limma_table.fillna(np.nan, inplace=True)
 
     group_name = f'{group2} vs {group1}'
-    mapping = {col: f'{col}: {group_name}' for col in limma_table.columns}
+    mapping = {col: f'{col} {group_name}' for col in limma_table.columns}
     limma_table.rename(columns=mapping, inplace=True)
     qtable.add_expression_features(limma_table)
 
