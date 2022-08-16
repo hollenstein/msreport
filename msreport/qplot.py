@@ -187,7 +187,7 @@ def sample_intensities(
     matrix = qtable.make_sample_matrix(tag, samples_as_columns=True)
     matrix = matrix.replace({0: np.nan})
 
-    if msreport.intensities_in_logspace(matrix):
+    if msreport.helper.intensities_in_logspace(matrix):
         log2_matrix = matrix
         matrix = np.power(2, log2_matrix)
     else:
