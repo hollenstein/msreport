@@ -5,10 +5,22 @@ import re
 
 import numpy as np
 from matplotlib import pyplot as plt
+import pandas as pd
 import seaborn as sns
+import sklearn.preprocessing
+import sklearn.decomposition
 
 from msreport.qtable import Qtable
 import msreport.qanalysis
+
+
+def set_dpi(dpi: int) -> None:
+    """ Changes the default dots per inch settings.
+
+    This effectively makes figures smaller or larger, without affecting the
+    relative sizes of elements within the figures.
+    """
+    plt.rcParams['figure.dpi'] = dpi
 
 
 class ColorWheelDict(UserDict):
@@ -207,6 +219,105 @@ def sample_intensities(
     axes[0].set_ylabel('Protein ratios [log2]\nto pseudo reference')
     axes[1].set_ylabel('Total protein intensity')
     fig.tight_layout()
+    return fig, axes
+
+
+def sample_pca(
+        qtable: Qtable, tag: str = 'Intensity',
+        pc_x: str = 'PC1', pc_y: str = 'PC2') -> (plt.Figure, plt.Axes):
+    """ Figure to compare sample similarities with PCA.
+
+    PCA of log2 transformed values
+
+    Args:
+        qtable: An msreport.qtable.Qtable instance.
+        tag: String used for matching the intensity columns.
+        pc_x: Principle component to plot on x-axis of the scatter plot.
+        pc_y: Principle component to plot on y-axis of the scatter plot.
+
+    Returns:
+        A matplotlib Figure and Axes object containing the missing value plot.
+    """
+
+    matrix = qtable.make_sample_matrix(tag, samples_as_columns=True)
+    if 'Valid' in qtable.data:
+        matrix = matrix[qtable.data['Valid']]
+
+    matrix = matrix.replace({0: np.nan})
+    matrix = matrix[np.isfinite(matrix).sum(axis=1) > 0]
+    if not msreport.helper.intensities_in_logspace(matrix):
+        matrix = np.log2(matrix)
+    matrix[matrix.isna()] = 0
+
+    matrix = matrix.transpose()
+    sample_index = matrix.index.tolist()
+    matrix = sklearn.preprocessing.scale(matrix)
+
+    n_components = min(len(sample_index), 9)
+    pca = sklearn.decomposition.PCA(n_components=n_components)
+    components = pca.fit_transform(matrix)
+    variance = pca.explained_variance_ratio_
+    component_labels = ['PC{}'.format(i + 1) for i in range(components.shape[1])]
+    components_table = pd.DataFrame(
+        data=components, columns=component_labels, index=sample_index
+    )
+
+    # Prepare colors
+    color_wheel = ColorWheelDict()
+    experiments = qtable.get_experiments()
+    _ = [color_wheel[exp] for exp in experiments]
+
+    # Prepare figure
+    num_legend_cols = 3
+    legendheight = 0.2 + 0.2 * np.ceil(len(experiments) / num_legend_cols)
+    plotheight = 3.7
+    figheight = plotheight + legendheight
+    figwidth = (4.3 + n_components * 0.2)
+    width_ratios = [4, 0.2 + n_components * 0.25]
+    figsize = (figwidth, figheight)
+
+    sns.set_style('white')
+    fig, axes = plt.subplots(
+        1, 2, figsize=figsize, gridspec_kw={'width_ratios': width_ratios}
+    )
+
+    # Comparison of two principle components
+    ax = axes[0]
+    for sample, data in components_table.iterrows():
+        experiment = qtable.get_experiment(sample)
+        label = sample.replace(experiment, '').strip().strip('_')
+        color = color_wheel[experiment]
+        ax.scatter(
+            data[pc_x], data[pc_y], color=color, edgecolor='#999999', lw=1,
+            s=50, label=experiment)
+        ax.annotate(label, (data[pc_x], data[pc_y]))
+    ax.tick_params(axis='both', labelsize=9)
+    ax.set_xlabel(pc_x, size=12)
+    ax.set_ylabel(pc_y, size=12)
+    ax.grid(axis='both', linestyle='dotted', linewidth=1)
+
+    # Explained variance bar plot
+    ax = axes[1]
+    xpos = range(len(variance))
+    ax.bar(xpos, variance * 100, color='#D0D0D0', edgecolor='#000000')
+    ax.set_xticks(xpos)
+    ax.set_xticklabels(component_labels, rotation='vertical', ha='center')
+    ax.tick_params(axis='both', labelsize=9)
+    ax.set_ylabel('Explained variance', size=12)
+    ax.grid(axis='y', linestyle='dashed', linewidth=1)
+
+    # Add legend
+    handles, labels = axes[0].get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    handles, labels = by_label.values(), by_label.keys()
+    fig.legend(
+        handles, labels, bbox_to_anchor=(0.5, 0.0),
+        ncol=num_legend_cols, fontsize=9, loc='lower center'
+    )
+    legend_space = (legendheight / figheight)
+    fig.suptitle(f'PCA of "{tag}" columns')
+    fig.tight_layout(rect=[0, legend_space, 1, 1])
+
     return fig, axes
 
 
