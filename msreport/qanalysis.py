@@ -112,23 +112,28 @@ def count_missing_values(qtable: Qtable) -> pd.DataFrame:
 
 
 def validate_proteins(qtable: Qtable, min_peptides: int = 0,
+                      remove_contaminants: bool = True,
                       max_missing: int = None) -> None:
-    """ Validate protein entries and add a 'Valid' column to the qtable.
+    """ Validates protein entries by adding a 'Valid' column to the qtable.
 
     Attributes:
-        min_peptides: minimum number of unique peptides
-        max_missing: requires at least one experiment with this maximum number
+        min_peptides: Minimum number of unique peptides.
+        remove_contaminants: If true, the 'Potential contaminant' column is
+            used to remove invalid entries.
+        max_missing: Requires at least one experiment with this maximum number
             of missing values.
     """
     valid_entries = (qtable.data['Total peptides'] >= min_peptides)
-    qtable.data['Valid'] = valid_entries
-
     # NOT TESTED from here #
+    if remove_contaminants and 'Potential contaminant' in qtable.data:
+        valid_entries = valid_entries & qtable.data['Potential contaminant']
+
     if max_missing is not None:
         missing_values = count_missing_values(qtable)
         cols = [' '.join(['Missing', e]) for e in qtable.get_experiments()]
         min_two_quant_events = np.any(missing_values[cols] <= max_missing, axis=1)
-        qtable.data['Valid'] = min_two_quant_events & qtable.data['Valid']
+        valid_entries = min_two_quant_events & valid_entries
+    qtable.data['Valid'] = valid_entries
 
 
 def median_normalize_samples(qtable: Qtable) -> None:
