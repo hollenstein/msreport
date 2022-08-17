@@ -63,16 +63,20 @@ class ColorWheelDict(UserDict):
         return self.data[key]
 
 
-def missing_values_vertical(qtable: Qtable) -> (plt.Figure, plt.Axes):
+def missing_values_vertical(qtable: Qtable,
+                            remove_invalid: bool = True,
+                            ) -> (plt.Figure, plt.Axes):
     """ Vertical bar plot to analyze the completeness of quantification.
 
     The expression columns are used to analyze the number of samples with
     missing values per experiment. This figure must be generated before
     imputing missing values.
 
-    If the column 'Valid' is present, rows are filtered according to the
-    boolean entries of 'Valid' before plotting.
-
+    Args:
+        qtable: msreport.qtable.Qtable instance, which data is used for
+            plotting.
+        remove_invalid: If true and the column 'Valid' is present, rows are
+            filtered according to the boolean entries of 'Valid'.
     Returns:
         A matplotlib Figure and Axes object containing the missing values plot.
     """
@@ -80,7 +84,7 @@ def missing_values_vertical(qtable: Qtable) -> (plt.Figure, plt.Axes):
     num_experiments = len(experiments)
 
     missing_values = msreport.qanalysis.count_missing_values(qtable)
-    if 'Valid' in qtable.data:
+    if remove_invalid and 'Valid' in qtable.data:
         missing_values = missing_values[qtable.data['Valid']]
 
     barwidth = 0.8
@@ -118,15 +122,20 @@ def missing_values_vertical(qtable: Qtable) -> (plt.Figure, plt.Axes):
     return fig, axes
 
 
-def missing_values_horizontal(qtable: Qtable) -> (plt.Figure, plt.Axes):
+def missing_values_horizontal(qtable: Qtable,
+                              remove_invalid: bool = True,
+                              ) -> (plt.Figure, plt.Axes):
     """ Horizontal bar plot to analyze the completeness of quantification.
 
     The expression columns are used to analyze the number of samples with
     missing values per experiment. This figure must be generated before
     imputing missing values.
 
-    If the column 'Valid' is present, rows are filtered according to the
-    boolean entries of 'Valid' before plotting.
+    Args:
+        qtable: msreport.qtable.Qtable instance, which data is used for
+            plotting.
+        remove_invalid: If true and the column 'Valid' is present, rows are
+            filtered according to the boolean entries of 'Valid'.
 
     Returns:
         A matplotlib Figure and Axes object containing the missing values plot.
@@ -135,7 +144,7 @@ def missing_values_horizontal(qtable: Qtable) -> (plt.Figure, plt.Axes):
     num_experiments = len(experiments)
 
     missing_values = msreport.qanalysis.count_missing_values(qtable)
-    if 'Valid' in qtable.data:
+    if remove_invalid and 'Valid' in qtable.data:
         missing_values = missing_values[qtable.data['Valid']]
 
     data = {'exp': [], 'max': [], 'some': [], 'min': []}
@@ -178,7 +187,8 @@ def missing_values_horizontal(qtable: Qtable) -> (plt.Figure, plt.Axes):
 
 
 def sample_intensities(
-        qtable: Qtable, tag: str = 'Intensity') -> (plt.Figure, plt.Axes):
+        qtable: Qtable, tag: str = 'Intensity',
+        remove_invalid: bool = True) -> (plt.Figure, plt.Axes):
     """ Figure to compare the overall quantitative similarity of samples.
 
     Generates two subplots to compare the intensities of multiple samples. For
@@ -190,15 +200,20 @@ def sample_intensities(
     summed up intensities of all rows per sample as bar plots.
 
     Args:
-        qtable: An msreport.qtable.Qtable instance.
+        qtable: msreport.qtable.Qtable instance, which data is used for
+            plotting.
         tag: String used for matching the intensity columns.
+        remove_invalid: If true and the column 'Valid' is present, rows are
+            filtered according to the boolean entries of 'Valid'.
 
     Returns:
         A matplotlib Figure and Axes object containing the missing value plot.
     """
     matrix = qtable.make_sample_matrix(tag, samples_as_columns=True)
-    matrix = matrix.replace({0: np.nan})
+    if remove_invalid and 'Valid' in qtable.data:
+        matrix = matrix[qtable.data['Valid']]
 
+    matrix = matrix.replace({0: np.nan})
     if msreport.helper.intensities_in_logspace(matrix):
         log2_matrix = matrix
         matrix = np.power(2, log2_matrix)
@@ -224,23 +239,27 @@ def sample_intensities(
 
 def sample_pca(
         qtable: Qtable, tag: str = 'Intensity',
-        pc_x: str = 'PC1', pc_y: str = 'PC2') -> (plt.Figure, plt.Axes):
+        pc_x: str = 'PC1', pc_y: str = 'PC2',
+        remove_invalid: bool = True) -> (plt.Figure, plt.Axes):
     """ Figure to compare sample similarities with PCA.
 
     PCA of log2 transformed values
 
     Args:
-        qtable: An msreport.qtable.Qtable instance.
+        qtable: msreport.qtable.Qtable instance, which data is used for
+            plotting.
         tag: String used for matching the intensity columns.
         pc_x: Principle component to plot on x-axis of the scatter plot.
         pc_y: Principle component to plot on y-axis of the scatter plot.
+        remove_invalid: If true and the column 'Valid' is present, rows are
+            filtered according to the boolean entries of 'Valid'.
 
     Returns:
         A matplotlib Figure and Axes object containing the missing value plot.
     """
 
     matrix = qtable.make_sample_matrix(tag, samples_as_columns=True)
-    if 'Valid' in qtable.data:
+    if remove_invalid and 'Valid' in qtable.data:
         matrix = matrix[qtable.data['Valid']]
 
     matrix = matrix.replace({0: np.nan})
