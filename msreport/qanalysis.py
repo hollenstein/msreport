@@ -126,7 +126,9 @@ def validate_proteins(qtable: Qtable, min_peptides: int = 0,
     valid_entries = (qtable.data['Total peptides'] >= min_peptides)
     # NOT TESTED from here #
     if remove_contaminants and 'Potential contaminant' in qtable.data:
-        valid_entries = valid_entries & qtable.data['Potential contaminant']
+        valid_entries = np.all([
+            valid_entries, np.invert(qtable.data['Potential contaminant'])
+        ], axis=0)
 
     if max_missing is not None:
         missing_values = count_missing_values(qtable)
@@ -142,6 +144,8 @@ def median_normalize_samples(qtable: Qtable) -> None:
     samples = qtable.get_samples()
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
+    if 'Valid' in qtable.data:
+        expr_table = expr_table[qtable.data['Valid']]
 
     # calculate ratio matrix
     sample_combinations = list(itertools.combinations(range(num_samples), 2))
@@ -166,6 +170,8 @@ def mode_normalize_samples(qtable: Qtable) -> None:
     samples = qtable.get_samples()
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
+    if 'Valid' in qtable.data:
+        expr_table = expr_table[qtable.data['Valid']]
 
     # calculate ratio matrix
     sample_combinations = list(itertools.combinations(range(num_samples), 2))
@@ -178,9 +184,12 @@ def mode_normalize_samples(qtable: Qtable) -> None:
 
     # Correct intensities
     profile = helper.solve_ratio_matrix(matrix)
+
+    # Write normalized intensities to qtable
     for i, sample in enumerate(samples):
-        col = qtable.get_expression_column(sample)
-        qtable.data[col] -= profile[i]
+        sample_column = qtable.get_expression_column(sample)
+        corrected_values = qtable.data[sample_column] - profile[i]
+        qtable.data[sample_column] = corrected_values
 
 
 def lowess_normalize_samples(qtable: Qtable) -> None:
@@ -190,9 +199,13 @@ def lowess_normalize_samples(qtable: Qtable) -> None:
     expr_table = qtable.make_expression_table(samples_as_columns=True)
 
     ref_mask = (expr_table[samples].isna().sum(axis=1) == 0)
+    if 'Valid' in qtable.data:
+        ref_mask = np.all([ref_mask, qtable.data['Valid']], axis=0)
     ref_intensities = expr_table.loc[ref_mask, samples].mean(axis=1)
-    lowess_delta = (ref_intensities.max() - ref_intensities.min()) * 0.05
 
+    delta_span_percentage = 0.05
+    lowess_delta = ((ref_intensities.max() - ref_intensities.min())
+                    * delta_span_percentage)
     sample_fits = {}
     for sample in samples:
         sample_intensities = expr_table.loc[ref_mask, sample]
@@ -204,19 +217,21 @@ def lowess_normalize_samples(qtable: Qtable) -> None:
     for sample, fit in sample_fits.items():
         fit_int, fit_ratio = [np.array(i) for i in zip(*fit)]
 
-        # Correct intensities
+        # Get raw intensities
         sample_mask = np.isfinite(expr_table[sample])
         raw_intensities = expr_table.loc[sample_mask, sample]
-        normalized_intensities = []
-        for intensity in raw_intensities:
-            norm_value = fit_ratio[np.argmin(np.abs(fit_int - intensity))]
-            normalized_intensity = intensity - norm_value
-            normalized_intensities.append(normalized_intensity)
+        normalized_intensities = raw_intensities - np.interp(
+            raw_intensities, fit_int, fit_ratio
+        )
+
+        # Store normalized intensities
         expr_table.loc[sample_mask, sample] = normalized_intensities
 
+    # Write normalized intensities to qtable
     for sample in samples:
-        expr_column = qtable.get_expression_column(sample)
-        qtable.data[expr_column] = expr_table[sample]
+        sample_column = qtable.get_expression_column(sample)
+        corrected_values = expr_table[sample]
+        qtable.data[sample_column] = corrected_values
 
 
 def impute_missing_values(qtable: Qtable) -> None:
