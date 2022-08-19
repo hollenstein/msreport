@@ -304,7 +304,8 @@ class Qtable():
             if (not callable(getattr(self, attr))
                     and attr.startswith('_')
                     and not attr.startswith('__')):
-                new_instance.__setattr__(attr, self.__getattribute__(attr))
+                attr_values = self.__getattribute__(attr).copy()
+                new_instance.__setattr__(attr, attr_values)
         return new_instance
 
 
