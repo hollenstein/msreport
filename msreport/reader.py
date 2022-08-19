@@ -25,14 +25,15 @@ Todos:
 
 from collections import OrderedDict
 import os
+import warnings
 
 import pandas as pd
-
-import msreport.helper as helper
 try:
     import maspy._proteindb_refactoring as ProtDB
 except ModuleNotFoundError:
     import maspy.proteindb as ProtDB
+
+import msreport.helper as helper
 
 
 class ResultReader():
@@ -175,7 +176,7 @@ class MQReader(ResultReader):
                 default filename is used.
         """
         df = self._read_file('proteins' if filename is None else filename)
-        df = self._write_protein_entries(df)
+        df = self._add_protein_entries(df)
         if drop_decoy:
             df = self._drop_decoy(df)
         if drop_idbysite:
@@ -193,6 +194,8 @@ class MQReader(ResultReader):
             )
         if mark_contaminants:
             df = _mark_potential_contaminants(df, self._contaminant_tag)
+        else:
+            df['Potential contaminant'] = (df['Potential contaminant'] == '+')
         return df
 
     def import_peptides(self, filename: str = None,
@@ -206,7 +209,7 @@ class MQReader(ResultReader):
                 default filename is used.
         """
         df = self._read_file('peptides' if filename is None else filename)
-        df = self._write_protein_entries(df)
+        df = self._add_protein_entries(df)
         if drop_decoy:
             df = self._drop_decoy(df)
         if rename_columns:
@@ -228,7 +231,7 @@ class MQReader(ResultReader):
         """ Removes rows with '+' in the 'Only identified by site' column """
         return df.loc[df['Only identified by site'] != '+']
 
-    def _write_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Adds standardized protein entry columns to the data frame.
 
         Added columns are 'Leading proteins', 'Representative protein', and
@@ -358,7 +361,7 @@ class FPReader(ResultReader):
         """
         # not tested #
         df = self._read_file('proteins' if filename is None else filename)
-        df = self._write_protein_entries(df)
+        df = self._add_protein_entries(df)
         if drop_protein_info:
             df = self._drop_columns(df, self.protein_info_columns)
             for tag in self.protein_info_tags:
@@ -389,7 +392,7 @@ class FPReader(ResultReader):
         # not tested #
         df = self._read_file('ions' if filename is None else filename)
 
-        # TODO: replace this by _write_protein_entries() if FragPipe adds
+        # TODO: replace this by _add_protein_entries() if FragPipe adds
         #       'Indistinguishable Proteins' to the ion table.
         df['Representative protein'] = df['Protein ID']
         df['Protein reported by software'] = df['Protein ID']
@@ -398,7 +401,7 @@ class FPReader(ResultReader):
             df = self._rename_columns(df, prefix_column_tags)
         return df
 
-    def _write_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Adds standardized protein entry columns to the data frame.
 
         Added columns are 'Leading proteins', 'Representative protein', and
@@ -652,6 +655,36 @@ def _sort_leading_proteins(df: pd.DataFrame, contaminant_tag: str = None,
     return df
 
 
+def _sort_proteins_by_tag(
+        proteins: list[str],
+        sorting_tag_levels: dict[str, int] = {}) -> list[str]:
+    """ Sorts proteins alphabetically, taking sorting tags into account.
+
+    Proteins are first sorted according to the sort level in ascending order,
+    and those with the same entries are sorted alphabetically.
+
+    Args:
+        proteins: List of protein names to be sorted.
+        sorting_tag_levels: Mapping of tags to sort levels. If the tag string
+            is present in a protein name, the sort level of this tag is used.
+
+    Returns:
+        Sorted lists of proteins.
+    """
+    warnings.warn('This method will be deprecated', DeprecationWarning,
+                  stacklevel=2)
+    values = []
+    for protein in proteins:
+        sort_level = 0
+        for tag, level in sorting_tag_levels.items():
+            if tag in protein:
+                sort_level = level
+        values.append((sort_level, protein))
+    values.sort()
+    _, proteins = [list(v) for v in zip(*(values))]
+    return proteins
+
+
 def _sort_fasta_entries(fasta_entries: list[str],
                         sorting_tag_levels: dict[str, int] = {}
                         ) -> list[list[str], list[str], list[str]]:
@@ -665,7 +698,7 @@ def _sort_fasta_entries(fasta_entries: list[str],
     Args:
         sorting_tag_levels: Mapping of tags to sort levels. If the tag string
             is present in the UniqueID entry of the fasta headers, the sort
-            level of for this fasta header is set.
+            level of this tag is used.
 
     Returns:
         sorted lists of [fasta headers, protein ids, entry names]
