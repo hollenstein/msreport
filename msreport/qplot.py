@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from collections import UserDict
+import itertools
 from typing import Optional
 import re
 
@@ -243,7 +244,7 @@ def sample_pca(
         remove_invalid: bool = True) -> (plt.Figure, plt.Axes):
     """ Figure to compare sample similarities with PCA.
 
-    PCA of log2 transformed values
+    PCA of log2 transformed, mean centered intensity values.
 
     Args:
         qtable: msreport.qtable.Qtable instance, which data is used for
@@ -270,16 +271,17 @@ def sample_pca(
 
     matrix = matrix.transpose()
     sample_index = matrix.index.tolist()
-    matrix = sklearn.preprocessing.scale(matrix)
+    matrix = sklearn.preprocessing.scale(matrix, with_std=False)
 
     n_components = min(len(sample_index), 9)
     pca = sklearn.decomposition.PCA(n_components=n_components)
     components = pca.fit_transform(matrix)
-    variance = pca.explained_variance_ratio_
     component_labels = ['PC{}'.format(i + 1) for i in range(components.shape[1])]
     components_table = pd.DataFrame(
         data=components, columns=component_labels, index=sample_index
     )
+    variance = pca.explained_variance_ratio_ * 100
+    variance_lookup = dict(zip(component_labels, variance))
 
     # Prepare colors
     color_wheel = ColorWheelDict()
@@ -311,14 +313,14 @@ def sample_pca(
             s=50, label=experiment)
         ax.annotate(label, (data[pc_x], data[pc_y]))
     ax.tick_params(axis='both', labelsize=9)
-    ax.set_xlabel(pc_x, size=12)
-    ax.set_ylabel(pc_y, size=12)
+    ax.set_xlabel(f'{pc_x} ({variance_lookup[pc_x]:.2f}%)', size=12)
+    ax.set_ylabel(f'{pc_y} ({variance_lookup[pc_y]:.2f}%)', size=12)
     ax.grid(axis='both', linestyle='dotted', linewidth=1)
 
     # Explained variance bar plot
     ax = axes[1]
     xpos = range(len(variance))
-    ax.bar(xpos, variance * 100, color='#D0D0D0', edgecolor='#000000')
+    ax.bar(xpos, variance, color='#D0D0D0', edgecolor='#000000')
     ax.set_xticks(xpos)
     ax.set_xticklabels(component_labels, rotation='vertical', ha='center')
     ax.tick_params(axis='both', labelsize=9)
@@ -410,3 +412,51 @@ def box_and_bars(
     ax.set_xlim(xlim)
     fig.tight_layout()
     return fig, axes
+
+
+def volcano_ma(qtable) -> list[(plt.Figure, plt.Axes)]:
+    """ Returns volcano and ma figure for each comparison group. """
+    comparison_tag = ' vs '
+    data = qtable.data.copy()
+    if 'Valid' in qtable.data:
+        data = data[qtable.data['Valid']]
+
+    experiments = qtable.get_experiments()
+
+    possible_comparisons = itertools.permutations(experiments, 2)
+    comparison_groups = []
+    for i, j in possible_comparisons:
+        comparison_group = comparison_tag.join([i, j])
+        columns = msreport.helper.find_columns(data, comparison_group)
+        if columns:
+            comparison_groups.append(comparison_group)
+
+    for variable in ['P-value', 'Adjusted p-value']:
+        for column in msreport.helper.find_sample_columns(
+                data, variable, comparison_groups):
+            data[column] = np.log10(data[column]) * -1
+
+    scatter_size = 2 / (max(min(data.shape[0], 10000), 1000) / 1000)
+
+    figures = []
+    for comparison_group in comparison_groups:
+        fig, axes = plt.subplots(1, 2, figsize=[8, 4], sharex=True)
+        fig.suptitle(comparison_group)
+
+        for ax, x_variable, y_variable in [
+                (axes[0], 'logFC', 'P-value'),
+                (axes[1], 'logFC', 'Average expression')]:
+            x_col = ' '.join([x_variable, comparison_group])
+            y_col = ' '.join([y_variable, comparison_group])
+            x_values = data[x_col]
+            y_values = data[y_col]
+            ax.grid(axis='both', linestyle='dotted', linewidth=1)
+            ax.scatter(
+                x_values, y_values, s=scatter_size, color='#606060', zorder=3
+            )
+            ax.set_xlabel(x_variable)
+            ax.set_ylabel(y_variable)
+
+        fig.tight_layout()
+        figures.append((fig, axes))
+    return figures
