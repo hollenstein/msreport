@@ -34,7 +34,7 @@ class ColorWheelDict(UserDict):
     key and color pairs by using the same syntax as for a regular dictionary.
     """
 
-    def __init__(self, colors: list[str] = None):
+    def __init__(self, colors: Optional[list[str]] = None):
         self.data = {}
 
         if colors is not None:

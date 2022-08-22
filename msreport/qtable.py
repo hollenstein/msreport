@@ -1,3 +1,4 @@
+from typing import Optional
 import warnings
 
 import numpy as np
@@ -7,7 +8,8 @@ import msreport.helper as helper
 
 
 class Qtable():
-    def __init__(self, table: pd.DataFrame, design: pd.DataFrame = None):
+    def __init__(
+            self, table: pd.DataFrame, design: Optional[pd.DataFrame] = None):
         self.design: pd.DataFrame
         self._expression_columns: list[str] = []
         self._expression_features: list[str] = []
@@ -86,7 +88,7 @@ class Qtable():
         return matrix
 
     def make_expression_table(
-            self, features: list[str] = None,
+            self, features: Optional[list[str]] = None,
             samples_as_columns: bool = False) -> pd.DataFrame:
         """ Returns a new dataframe containing the expression columns and
         additional expression related features.
@@ -318,14 +320,3 @@ def _str_to_substr_mapping(strings, substrings) -> dict[str, str]:
     for sub in substrings:
         mapping.update({s: sub for s in strings if sub in s})
     return mapping
-
-
-"""
-Todo:
-    - QTable.data_to_tsv()
-    - QTable.design_to_tsv()
-    - QTable.from_tsv(data_path, design_path)
-
-def reshape() -> pd.DataFrame
-    raise NotImplementedError
-"""

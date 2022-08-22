@@ -25,6 +25,7 @@ Todos:
 
 from collections import OrderedDict
 import os
+from typing import Optional
 import warnings
 
 import pandas as pd
@@ -160,7 +161,7 @@ class MQReader(ResultReader):
         self._isobar: bool = isobar
         self._contaminant_tag: str = contaminant_tag
 
-    def import_proteins(self, filename: str = None,
+    def import_proteins(self, filename: Optional[str] = None,
                         rename_columns: bool = True,
                         prefix_column_tags: bool = True,
                         sort_proteins: bool = True,
@@ -198,7 +199,7 @@ class MQReader(ResultReader):
             df['Potential contaminant'] = (df['Potential contaminant'] == '+')
         return df
 
-    def import_peptides(self, filename: str = None,
+    def import_peptides(self, filename: Optional[str] = None,
                         rename_columns: bool = True,
                         prefix_column_tags: bool = True,
                         drop_decoy: bool = True) -> pd.DataFrame:
@@ -342,7 +343,7 @@ class FPReader(ResultReader):
         else:
             self.filenames = self.filenames_isobar
 
-    def import_proteins(self, filename: str = None,
+    def import_proteins(self, filename: Optional[str] = None,
                         rename_columns: bool = True,
                         prefix_column_tags: bool = True,
                         sort_proteins: bool = True,
@@ -377,7 +378,7 @@ class FPReader(ResultReader):
             df = _mark_potential_contaminants(df, self._contaminant_tag)
         return df
 
-    def import_ions(self, filename: str = None,
+    def import_ions(self, filename: Optional[str] = None,
                     rename_columns: bool = True,
                     prefix_column_tags: bool = True) -> pd.DataFrame:
         """ Read and process 'combined_ion.tsv' file.
@@ -618,7 +619,8 @@ def _find_remaining_substrings(strings: list[str],
     return substrings
 
 
-def _sort_leading_proteins(df: pd.DataFrame, contaminant_tag: str = None,
+def _sort_leading_proteins(df: pd.DataFrame,
+                           contaminant_tag: Optional[str] = None,
                            special_proteins: list[str] = []) -> pd.DataFrame:
     """ Sorts protein entries from the 'Leading proteins' column.
 

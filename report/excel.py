@@ -4,6 +4,7 @@
 - Add column comments
 - Add option to sort the table before writing data
 """
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -20,7 +21,7 @@ class Reportbook(xlsxwriter.Workbook):
         worksheet = self.add_worksheet('info')
         return worksheet
 
-    def add_datasheet(self, name: str = None):
+    def add_datasheet(self, name: Optional[str] = None):
         worksheet = self.add_worksheet(name)
         data_sheet = Datasheet(self, worksheet)
         return data_sheet

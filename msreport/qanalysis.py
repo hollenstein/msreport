@@ -116,7 +116,7 @@ def count_missing_values(qtable: Qtable) -> pd.DataFrame:
 
 def validate_proteins(qtable: Qtable, min_peptides: int = 0,
                       remove_contaminants: bool = True,
-                      max_missing: int = None) -> None:
+                      max_missing: Optional[int] = None) -> None:
     """ Validates protein entries by adding a 'Valid' column to the qtable.
 
     Attributes:
