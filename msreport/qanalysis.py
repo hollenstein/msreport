@@ -82,12 +82,15 @@ qtable.impute_missing_values()
 analyse_differential_expression(qtable)
 """
 import itertools
+from typing import Optional
+import warnings
 
 import numpy as np
 import pandas as pd
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 import msreport.helper as helper
+import msreport.normalize
 from msreport.qtable import Qtable
 import msreport.rinterface
 
@@ -138,9 +141,53 @@ def validate_proteins(qtable: Qtable, min_peptides: int = 0,
     qtable.data['Valid'] = valid_entries
 
 
+def normalize_expression(
+        qtable: Qtable, method: str,
+        normalizer: Optional[msreport.normalize.BaseSampleNormalizer] = None
+) -> msreport.normalize.BaseSampleNormalizer:
+    """ Normalizes expression values and returns a Normalizer instance.
+
+    Attributes:
+        qtable: Qtable instance that contains expression values for
+            normalization.
+        method: Normalization method "median", "mode" or "lowess".
+        normalizer: Optional, if specified an already fitted normalizer is used
+            for normalization of expression values and the "method" argument is
+            ignored.
+    """
+    expression_matrix = qtable.make_expression_table(samples_as_columns=True)
+    if 'Valid' in qtable.data:
+        fitting_mask = qtable.data['Valid'].to_numpy()
+    else:
+        fitting_mask = np.ones(expression_matrix.shape[0], dtype=bool)
+
+    if normalizer is None:
+        if method == 'median':
+            normalizer = msreport.normalize.MedianNormalizer()
+        elif method == 'mode':
+            normalizer = msreport.normalize.ModeNormalizer()
+        elif method == 'lowess':
+            normalizer = msreport.normalize.LowessNormalizer()
+        else:
+            raise ValueError(f'"method" = {method} not allowed. '
+                             'Must be either "median", "mode" or "lowess".')
+        normalizer.fit(expression_matrix[fitting_mask])
+    else:
+        # TODO check that normalizer is already fitted
+        pass
+
+    samples = expression_matrix.columns.tolist()
+    columns = [qtable.get_expression_column(s) for s in samples]
+    qtable.data[columns] = normalizer.transform_matrix(expression_matrix)
+
+
 def median_normalize_samples(qtable: Qtable) -> None:
     """ Normalize samples with median profiles. """
-    # NOT TESTED #
+    warnings.warn(
+        'This method will be deprecated, use normalize_expression() instead',
+        DeprecationWarning, stacklevel=2
+    )
+
     samples = qtable.get_samples()
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
@@ -165,8 +212,11 @@ def median_normalize_samples(qtable: Qtable) -> None:
 
 def mode_normalize_samples(qtable: Qtable) -> None:
     """ Normalize samples with median profiles. """
-    # NOT TESTED #
-    # Is a duplication of median_normalize_samples -> create common function #
+    warnings.warn(
+        'This method will be deprecated, use normalize_expression() instead',
+        DeprecationWarning, stacklevel=2
+    )
+
     samples = qtable.get_samples()
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
@@ -194,7 +244,11 @@ def mode_normalize_samples(qtable: Qtable) -> None:
 
 def lowess_normalize_samples(qtable: Qtable) -> None:
     """ Normalize samples to pseudo reference with lowess. """
-    # NOT TESTED #
+    warnings.warn(
+        'This method will be deprecated, use normalize_expression() instead',
+        DeprecationWarning, stacklevel=2
+    )
+
     samples = qtable.get_samples()
     expr_table = qtable.make_expression_table(samples_as_columns=True)
 
@@ -264,7 +318,8 @@ def calculate_two_group_limma(qtable: Qtable, groups: list[str],
     column 'Representative protein' is used as the index.
 
     Attributes:
-        qtable
+        qtable: Qtable instance that contains expresion values for differential
+            expression analysis.
         groups: two experiments to compare
         filter_valid: if true, use column 'Valid' to filter rows
         limma_trend: if true, an intensity-dependent trend is fitted to the

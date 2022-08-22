@@ -4,6 +4,7 @@ from typing import Callable, Iterable
 
 import numpy as np
 import pandas as pd
+from statsmodels.nonparametric.smoothers_lowess import lowess
 
 import msreport.helper
 
@@ -24,29 +25,38 @@ class BaseSampleNormalizer(abc.ABC):
 
 
 class FixedValueNormalizer(BaseSampleNormalizer):
-    """ Expects log transformed intensity values. """
+    """ Normalization by a constant normalization factor for each sample.
 
-    def __init__(self, center_function: Callable, fit: str = 'paired'):
-        if fit not in ['paired', 'reference']:
+    Expects log transformed intensity values.
+    """
+
+    def __init__(self, center_function: Callable, comparison: str):
+        """
+
+        Args:
+            center_function: A function that accepts a sequence of values and
+                returns a center value such as the median.
+        """
+        if comparison not in ['paired', 'reference']:
             raise ValueError(
-                f'"fit" = {fit} not allowed. '
+                f'"comparison" = {comparison} not allowed. '
                 'Must be either "paired" or "reference".'
             )
-        self._fitting_mode = fit
-        self._center_function = center_function
-        self._sample_norm_values = None
+        self._comparison_mode = comparison
+        self._fit_function = center_function
+        self._sample_fits = None
 
     def fit(self, matrix: pd.DataFrame) -> BaseSampleNormalizer:
-        if self._fitting_mode == 'paired':
+        if self._comparison_mode == 'paired':
             self._fit_with_paired_samples(matrix)
-        elif self._fitting_mode == 'reference':
+        elif self._comparison_mode == 'reference':
             self._fit_with_pseudo_reference(matrix)
         return self
 
     def transform(self, sample: str, values: Iterable) -> np.ndarray:
         data = np.array(values, dtype=float)
         mask = np.isfinite(data)
-        data[mask] = data[mask] - self._sample_norm_values[sample]
+        data[mask] = data[mask] - self._sample_fits[sample]
         return data
 
     def transform_matrix(self, matrix: pd.DataFrame) -> pd.DataFrame:
@@ -65,18 +75,94 @@ class FixedValueNormalizer(BaseSampleNormalizer):
         for i, j in sample_combinations:
             ratios = matrix[samples[i]] - matrix[samples[j]]
             ratios = ratios[np.isfinite(ratios)]
-            center_value = self._center_function(ratios)
+            center_value = self._fit_function(ratios)
             ratio_matrix[i, j] = center_value
         profile = msreport.helper.solve_ratio_matrix(ratio_matrix)
-        self._sample_norm_values = dict(zip(samples, profile))
+        self._sample_fits = dict(zip(samples, profile))
 
     def _fit_with_pseudo_reference(self, matrix: pd.DataFrame) -> None:
         ref_mask = (matrix.isna().sum(axis=1) == 0)
         ref_values = matrix[ref_mask].mean(axis=1)
         samples = matrix.columns.tolist()
 
-        self._sample_norm_values = {}
+        self._sample_fits = {}
         for sample in samples:
             sample_values = matrix.loc[ref_mask, sample]
-            norm_value = self._center_function(sample_values - ref_values)
-            self._sample_norm_values[sample] = norm_value
+            sample_fit = self._fit_function(sample_values - ref_values)
+            self._sample_fits[sample] = sample_fit
+
+
+class ValueDependentNormalizer(BaseSampleNormalizer):
+    """ Normalization with a value dependent fit for each sample.
+
+    Expects log transformed intensity values.
+    """
+
+    def __init__(self, fit_function: Callable):
+        self._sample_fits = None
+        self._fit_function = fit_function
+
+    def fit(self, matrix: pd.DataFrame) -> BaseSampleNormalizer:
+        self._fit_with_pseudo_reference(matrix)
+        return self
+
+    def transform(self, sample: str, values: Iterable) -> np.ndarray:
+        data = np.array(values, dtype=float)
+        mask = np.isfinite(data)
+
+        sample_fit = self._sample_fits[sample]
+        fit_values, fit_deviations = [np.array(i) for i in zip(*sample_fit)]
+        data[mask] = data[mask] - np.interp(
+            data[mask], fit_values, fit_deviations
+        )
+        return data
+
+    def transform_matrix(self, matrix: pd.DataFrame) -> pd.DataFrame:
+        _matrix = matrix.copy()
+        for sample in matrix.columns:
+            _matrix[sample] = self.transform(sample, _matrix[sample])
+        return _matrix
+
+    def _fit_with_pseudo_reference(self, matrix: pd.DataFrame) -> None:
+        ref_mask = (matrix.isna().sum(axis=1) == 0)
+        ref_values = matrix[ref_mask].mean(axis=1)
+        samples = matrix.columns.tolist()
+
+        self._sample_fits = {}
+        for sample in samples:
+            sample_values = matrix.loc[ref_mask, sample]
+            sample_fit = self._fit_function(sample_values, ref_values)
+            self._sample_fits[sample] = sample_fit
+
+
+class MedianNormalizer(FixedValueNormalizer):
+    def __init__(self):
+        super(MedianNormalizer, self).__init__(
+            center_function=np.median, comparison='paired'
+        )
+
+
+class ModeNormalizer(FixedValueNormalizer):
+    def __init__(self):
+        super(ModeNormalizer, self).__init__(
+            center_function=msreport.helper.mode, comparison='paired'
+        )
+
+
+class LowessNormalizer(ValueDependentNormalizer):
+    def __init__(self):
+        super(LowessNormalizer, self).__init__(
+            fit_function=_value_dependent_fit_lowess
+        )
+
+
+def _value_dependent_fit_lowess(
+        values: np.ndarray, reference_values: np.ndarray) -> np.ndarray:
+    """ Uses lowess to calculate a fit between the values and their deviation
+    from the reference_values.
+    """
+    delta_span_percentage = 0.05
+    delta = ((reference_values.max() - reference_values.min())
+             * delta_span_percentage)
+    deviations = values - reference_values
+    return lowess(deviations, values, delta=delta, it=5)
