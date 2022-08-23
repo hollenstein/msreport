@@ -154,7 +154,7 @@ def normalize_expression(
             for normalization of expression values and the "method" argument is
             ignored.
     """
-    expression_matrix = qtable.make_expression_table(samples_as_columns=True)
+    expression_matrix = qtable.make_expression_matrix(samples_as_columns=True)
     if 'Valid' in qtable.data:
         fitting_mask = qtable.data['Valid'].to_numpy()
     else:
