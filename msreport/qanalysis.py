@@ -200,6 +200,19 @@ def impute_missing_values(qtable: Qtable) -> None:
     qtable.data[expr.columns] = imputed[expr.columns]
 
 
+def calculate_experiment_means(qtable: Qtable) -> None:
+    """ Calculate mean expression values for each experiment. """
+    experiment_means = {}
+    for experiment in qtable.get_experiments():
+        samples = qtable.get_samples(experiment)
+        columns = [qtable.get_expression_column(s) for s in samples]
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=RuntimeWarning)
+            row_means = np.nanmean(qtable.data[columns], axis=1)
+        experiment_means[f'Expression {experiment}'] = row_means
+    qtable.add_expression_features(pd.DataFrame(experiment_means))
+
+
 def two_group_comparison(qtable: Qtable, groups: list[str],
                          filter_valid: bool = False) -> None:
     """ Calculates comparison values for two experiments.
@@ -221,12 +234,12 @@ def two_group_comparison(qtable: Qtable, groups: list[str],
         for experiment in groups:
             samples = qtable.get_samples(experiment)
             group_expressions.append(np.nanmean(table[samples], axis=1))
-        ratios = group_expressions[1] - group_expressions[0]
+        ratios = group_expressions[0] - group_expressions[1]
         average_expressions = np.nanmean(group_expressions, axis=0)
 
     comparison_table = pd.DataFrame({
-        f'Average expression {groups[1]} vs {groups[0]}': average_expressions,
-        f'logFC {groups[1]} vs {groups[0]}': ratios,
+        f'Average expression {groups[0]} vs {groups[1]}': average_expressions,
+        f'logFC {groups[0]} vs {groups[1]}': ratios,
     })
     comparison_table[invalid] = np.nan
     qtable.add_expression_features(comparison_table)
@@ -280,8 +293,9 @@ def calculate_two_group_limma(qtable: Qtable, groups: list[str],
     group1 = groups[0]
     group2 = groups[1]
 
+    # Note that the order of groups for calling limma is reversed
     limma_result = msreport.rinterface.two_group_limma(
-        table[mask], column_groups, group1, group2, limma_trend
+        table[mask], column_groups, group2, group1, limma_trend
     )
 
     # For adding expression features to the qtable it is necessary that the
@@ -290,7 +304,7 @@ def calculate_two_group_limma(qtable: Qtable, groups: list[str],
     limma_table[mask] = limma_result
     limma_table.fillna(np.nan, inplace=True)
 
-    group_name = f'{group2} vs {group1}'
+    group_name = f'{group1} vs {group2}'
     mapping = {col: f'{col} {group_name}' for col in limma_table.columns}
     limma_table.rename(columns=mapping, inplace=True)
     qtable.add_expression_features(limma_table)
