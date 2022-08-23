@@ -14,6 +14,7 @@ Unified column names:
 - Total spectral count "sample name"
 - Intensity "sample name"
 - LFQ intensity "sample name"
+- iBAQ intensity "sample name"
 
 Todos:
 - Add full support for ion (evidence) and peptide tables
@@ -132,6 +133,7 @@ class MQReader(ResultReader):
     ])
     column_tag_mapping: OrderedDict[str, str] = OrderedDict([
         ('MS/MS count', 'Spectral count'),
+        ('iBAQ', 'iBAQ intensity')
     ])
     protein_info_columns: list[str] = [
         'Protein names', 'Gene names', 'Fasta headers'
