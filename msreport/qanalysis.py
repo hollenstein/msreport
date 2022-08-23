@@ -32,13 +32,13 @@ Required test data
 Interface
 ---------
 
-quanalysis.add_missing_value_count(qtable)
+msreport.quanalysis.analyze_missingness(qtable)
 --> Adds missing value counts as columns to "data"; and corresponding entries
     to expression_features.
 ! Requires expression columns to be set
 
 
-quanalysis.validate_protein_quantification(
+msreport.quanalysis.validate_proteins(
     qtable,
     min_peptides=None,
     min_group_quantification=None,
@@ -47,9 +47,9 @@ quanalysis.validate_protein_quantification(
 --> Adds a column "Valid quantification" containing true or false to
     qtable.data; and an entry "Valid quantification" to expression_features
 ! Requires expression columns to be set
+! Requires missingness to be analyzed
 ! Requires a "Total peptides" column
-! Expects that contaminants are marked with "contam_"
-? Do missing value calculation on the fly
+! Requires a "Potential contaminant" column
 
 
 quanalysis.analyse_differential_expression(
@@ -67,19 +67,6 @@ quanalysis.analyse_differential_expression(
     according to this column before differential expression analysis.
 ! Removes rows which contain NaN before differential expression analysis.
 
-
-Use cases
----------
-mqreader = reader.MQReader(search_dir, contaminant_tag='contam_')
-table = mqreader.import_proteins(special_proteins=['ups'])
-qtable = Qtable(table, design=design)
-qtable.set_expression_by_tag('LFQ intensity', log2=True)
-
-validate_protein_quantification(
-    qtable, min_peptides=2, min_group_quantification=2
-)
-qtable.impute_missing_values()
-analyse_differential_expression(qtable)
 """
 import itertools
 from typing import Optional
@@ -95,27 +82,30 @@ from msreport.qtable import Qtable
 import msreport.rinterface
 
 
-def count_missing_values(qtable: Qtable) -> pd.DataFrame:
-    """ Returns a quantification of missing values in expression columns.
-
-    --> Returns a dataframe with missing value counts in expression columns per
-        row, for all sample columns and per experiment. 'Missing total'
-    ! Requires expression columns to be set
-    """
+def analyze_missingness(qtable: Qtable) -> None:
+    """ Adds a quantification of missing values in expression columns."""
+    # TODO: not tested # 
     missingness = pd.DataFrame()
     expr_table = qtable.make_expression_table(samples_as_columns=True)
-    num_missing = expr_table.isna().sum(axis=1)
+    num_missing = np.isnan(expr_table).sum(axis=1)
+    num_events = np.isfinite(expr_table).sum(axis=1)
+    missingness['Events total'] = num_events
     missingness['Missing total'] = num_missing
     for experiment in qtable.get_experiments():
         exp_samples = qtable.get_samples(experiment)
-        num_missing = expr_table[exp_samples].isna().sum(axis=1)
-        column_name = ' '.join(['Missing', experiment])
-        missingness[column_name] = num_missing
-    return missingness
+        num_events = np.isfinite(expr_table[exp_samples]).sum(axis=1)
+        missingness[f'Events {experiment}'] = num_events
+        num_missing = np.isnan(expr_table[exp_samples]).sum(axis=1)
+        missingness[f'Missing {experiment}'] = num_missing
+        for sample in exp_samples:
+            sample_missing = np.isnan(expr_table[sample])
+            missingness[f'Missing {sample}'] = sample_missing
+    qtable.add_expression_features(missingness)
 
 
 def validate_proteins(qtable: Qtable, min_peptides: int = 0,
                       remove_contaminants: bool = True,
+                      min_events: Optional[int] = None,
                       max_missing: Optional[int] = None) -> None:
     """ Validates protein entries by adding a 'Valid' column to the qtable.
 
@@ -123,21 +113,30 @@ def validate_proteins(qtable: Qtable, min_peptides: int = 0,
         min_peptides: Minimum number of unique peptides.
         remove_contaminants: If true, the 'Potential contaminant' column is
             used to remove invalid entries.
+        min_events: Requires at least one experiment with this minimum number
+            of quantified samples.
         max_missing: Requires at least one experiment with this maximum number
             of missing values.
     """
     valid_entries = (qtable.data['Total peptides'] >= min_peptides)
-    # NOT TESTED from here #
+    # TODO: not tested from here #
     if remove_contaminants and 'Potential contaminant' in qtable.data:
         valid_entries = np.all([
             valid_entries, np.invert(qtable.data['Potential contaminant'])
         ], axis=0)
 
     if max_missing is not None:
-        missing_values = count_missing_values(qtable)
+        if 'Missing total' not in qtable.data:
+            raise Exception('Missing values need to be analyzed before.')
         cols = [' '.join(['Missing', e]) for e in qtable.get_experiments()]
-        min_two_quant_events = np.any(missing_values[cols] <= max_missing, axis=1)
-        valid_entries = min_two_quant_events & valid_entries
+        max_missing_valid = np.any(qtable.data[cols] <= max_missing, axis=1)
+        valid_entries = max_missing_valid & valid_entries
+
+    if min_events is not None:
+        cols = [' '.join(['Events', e]) for e in qtable.get_experiments()]
+        min_events_valid = np.any(qtable.data[cols] >= min_events, axis=1)
+        valid_entries = min_events_valid & valid_entries
+
     qtable.data['Valid'] = valid_entries
 
 
@@ -179,6 +178,116 @@ def normalize_expression(
     samples = expression_matrix.columns.tolist()
     columns = [qtable.get_expression_column(s) for s in samples]
     qtable.data[columns] = normalizer.transform_matrix(expression_matrix)
+
+
+def impute_missing_values(qtable: Qtable) -> None:
+    """ Impute missing expression values.
+
+    Imputes missing values (nan) from expression columns and thus requires that
+    expression columns are defined.
+
+    Missing values are imputed independently for each column by drawing
+    random values from a normal distribution. The parameters of the normal
+    distribution are calculated from the observed values. Mu is the
+    observed median, downshifted by 1.8 standard deviations. Sigma is the
+    observed standard deviation multiplied by 0.3.
+    """
+    median_downshift = 1.8
+    std_width = 0.3
+
+    expr = qtable.make_expression_matrix()
+    imputed = helper.gaussian_imputation(expr, median_downshift, std_width)
+    qtable.data[expr.columns] = imputed[expr.columns]
+
+
+def calculate_two_group_limma(qtable: Qtable, groups: list[str],
+                              filter_valid: bool = True,
+                              limma_trend: bool = True) -> pd.DataFrame:
+    """ Use limma to calculate two sample differential expression from qtable.
+
+    Requires that expression columns are set. All rows with missing values are
+    ignored, use imputation of missing values to prevent this. The qtable.data
+    column 'Representative protein' is used as the index.
+
+    Attributes:
+        qtable: Qtable instance that contains expresion values for differential
+            expression analysis.
+        groups: two experiments to compare
+        filter_valid: if true, use column 'Valid' to filter rows
+        limma_trend: if true, an intensity-dependent trend is fitted to the
+            prior variances
+
+    Returns:
+        A dataframe containing 'logFC', 'P-value', and 'Adjusted p-value'
+        The logFC is calculated as the mean intensity of group2 - group1
+    """
+    # TODO: not tested #
+    expression_table = qtable.make_expression_table(
+        samples_as_columns=True, features=['Representative protein']
+    )
+
+    # TODO: filtering should be able via "make_expression_table"
+    if filter_valid:
+        valid = qtable.data['Valid']
+    else:
+        valid = np.full(expression_table.shape[0], True)
+
+    samples_to_experiment = {}
+    for experiment in groups:
+        mapping = {s: experiment for s in qtable.get_samples(experiment)}
+        samples_to_experiment.update(mapping)
+
+    table_columns = ['Representative protein']
+    table_columns.extend(samples_to_experiment.keys())
+    table = expression_table[table_columns]
+    table = table.set_index('Representative protein')
+    not_nan = (table.isna().sum(axis=1) == 0)
+
+    mask = np.all([valid, not_nan], axis=0)
+    column_groups = list(samples_to_experiment.values())
+    group1 = groups[0]
+    group2 = groups[1]
+
+    limma_result = msreport.rinterface.two_group_limma(
+        table[mask], column_groups, group1, group2, limma_trend
+    )
+
+    # For adding expression features to the qtable it is necessary that the
+    # the limma_results have the same number of rows.
+    limma_table = pd.DataFrame(index=table.index, columns=limma_result.columns)
+    limma_table[mask] = limma_result
+    limma_table.fillna(np.nan, inplace=True)
+
+    group_name = f'{group2} vs {group1}'
+    mapping = {col: f'{col} {group_name}' for col in limma_table.columns}
+    limma_table.rename(columns=mapping, inplace=True)
+    qtable.add_expression_features(limma_table)
+
+    return limma_result
+
+
+def count_missing_values(qtable: Qtable) -> pd.DataFrame:
+    """ Returns a quantification of missing values in expression columns.
+
+    --> Returns a dataframe with missing value counts in expression columns per
+        row, for all sample columns and per experiment. 'Missing total'
+    ! Requires expression columns to be set
+    """
+    warnings.warn(
+        'This method will be deprecated, use normalize_expression() instead',
+        DeprecationWarning, stacklevel=2
+    )
+
+    missingness = pd.DataFrame()
+    expr_table = qtable.make_expression_table(samples_as_columns=True)
+    num_missing = expr_table.isna().sum(axis=1)
+    missingness['Missing total'] = num_missing
+    for experiment in qtable.get_experiments():
+        exp_samples = qtable.get_samples(experiment)
+        num_missing = expr_table[exp_samples].isna().sum(axis=1)
+        column_name = ' '.join(['Missing', experiment])
+        missingness[column_name] = num_missing
+    return missingness
 
 
 def median_normalize_samples(qtable: Qtable) -> None:
@@ -286,89 +395,3 @@ def lowess_normalize_samples(qtable: Qtable) -> None:
         sample_column = qtable.get_expression_column(sample)
         corrected_values = expr_table[sample]
         qtable.data[sample_column] = corrected_values
-
-
-def impute_missing_values(qtable: Qtable) -> None:
-    """ Impute missing expression values.
-
-    Imputes missing values (nan) from expression columns and thus requires that
-    expression columns are defined.
-
-    Missing values are imputed independently for each column by drawing
-    random values from a normal distribution. The parameters of the normal
-    distribution are calculated from the observed values. Mu is the
-    observed median, downshifted by 1.8 standard deviations. Sigma is the
-    observed standard deviation multiplied by 0.3.
-    """
-    median_downshift = 1.8
-    std_width = 0.3
-
-    expr = qtable.make_expression_matrix()
-    imputed = helper.gaussian_imputation(expr, median_downshift, std_width)
-    qtable.data[expr.columns] = imputed[expr.columns]
-
-
-def calculate_two_group_limma(qtable: Qtable, groups: list[str],
-                              filter_valid: bool = True,
-                              limma_trend: bool = True) -> pd.DataFrame:
-    """ Use limma to calculate two sample differential expression from qtable.
-
-    Requires that expression columns are set. All rows with missing values are
-    ignored, use imputation of missing values to prevent this. The qtable.data
-    column 'Representative protein' is used as the index.
-
-    Attributes:
-        qtable: Qtable instance that contains expresion values for differential
-            expression analysis.
-        groups: two experiments to compare
-        filter_valid: if true, use column 'Valid' to filter rows
-        limma_trend: if true, an intensity-dependent trend is fitted to the
-            prior variances
-
-    Returns:
-        A dataframe containing 'logFC', 'P-value', and 'Adjusted p-value'
-        The logFC is calculated as the mean intensity of group2 - group1
-    """
-    # NOT TESTED #
-    expression_table = qtable.make_expression_table(
-        samples_as_columns=True, features=['Representative protein']
-    )
-
-    # TODO: filtering should be able via "make_expression_table"
-    if filter_valid:
-        valid = qtable.data['Valid']
-    else:
-        valid = np.full(expression_table.shape[0], True)
-
-    samples_to_experiment = {}
-    for experiment in groups:
-        mapping = {s: experiment for s in qtable.get_samples(experiment)}
-        samples_to_experiment.update(mapping)
-
-    table_columns = ['Representative protein']
-    table_columns.extend(samples_to_experiment.keys())
-    table = expression_table[table_columns]
-    table = table.set_index('Representative protein')
-    not_nan = (table.isna().sum(axis=1) == 0)
-
-    mask = np.all([valid, not_nan], axis=0)
-    column_groups = list(samples_to_experiment.values())
-    group1 = groups[0]
-    group2 = groups[1]
-
-    limma_result = msreport.rinterface.two_group_limma(
-        table[mask], column_groups, group1, group2, limma_trend
-    )
-
-    # For adding expression features to the qtable it is necessary that the
-    # the limma_results have the same number of rows.
-    limma_table = pd.DataFrame(index=table.index, columns=limma_result.columns)
-    limma_table[mask] = limma_result
-    limma_table.fillna(np.nan, inplace=True)
-
-    group_name = f'{group2} vs {group1}'
-    mapping = {col: f'{col} {group_name}' for col in limma_table.columns}
-    limma_table.rename(columns=mapping, inplace=True)
-    qtable.add_expression_features(limma_table)
-
-    return limma_result

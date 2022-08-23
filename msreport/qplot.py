@@ -84,9 +84,9 @@ def missing_values_vertical(qtable: Qtable,
     experiments = qtable.get_experiments()
     num_experiments = len(experiments)
 
-    missing_values = msreport.qanalysis.count_missing_values(qtable)
+    table = qtable.data.copy()
     if remove_invalid and 'Valid' in qtable.data:
-        missing_values = missing_values[qtable.data['Valid']]
+        table = table[qtable.data['Valid']]
 
     barwidth = 0.8
     barcolors = ['#31A590', '#FAB74E', '#EB3952']
@@ -98,12 +98,12 @@ def missing_values_vertical(qtable: Qtable,
     fig, axes = plt.subplots(1, num_experiments, figsize=figsize, sharey=True)
     for exp_num, exp in enumerate(experiments):
         ax = axes[exp_num]
-        num_replicates = len(qtable.get_samples(exp))
 
-        exp_missing = missing_values[f'Missing {exp}']
+        exp_missing = table[f'Missing {exp}']
+        exp_values = table[f'Events {exp}']
         missing_none = (exp_missing == 0).sum()
-        missing_some = ((exp_missing > 0) & (exp_missing < num_replicates)).sum()
-        missing_all = (exp_missing == 3).sum()
+        missing_some = ((exp_missing > 0) & (exp_values > 0)).sum()
+        missing_all = (exp_values == 0).sum()
 
         y = [missing_none, missing_some, missing_all]
         x = range(len(y))
@@ -144,13 +144,13 @@ def missing_values_horizontal(qtable: Qtable,
     experiments = qtable.get_experiments()
     num_experiments = len(experiments)
 
-    missing_values = msreport.qanalysis.count_missing_values(qtable)
+    table = qtable.data.copy()
     if remove_invalid and 'Valid' in qtable.data:
-        missing_values = missing_values[qtable.data['Valid']]
+        table = table[qtable.data['Valid']]
 
     data = {'exp': [], 'max': [], 'some': [], 'min': []}
     for exp in experiments:
-        exp_missing = missing_values[f'Missing {exp}']
+        exp_missing = table[f'Missing {exp}']
         total = len(exp_missing)
         num_replicates = len(qtable.get_samples(exp))
         missing_all = (exp_missing == num_replicates).sum()
@@ -208,7 +208,7 @@ def sample_intensities(
             filtered according to the boolean entries of 'Valid'.
 
     Returns:
-        A matplotlib Figure and Axes object containing the missing value plot.
+        A matplotlib Figure and Axes object containing the intensity plots.
     """
     matrix = qtable.make_sample_matrix(tag, samples_as_columns=True)
     if remove_invalid and 'Valid' in qtable.data:
@@ -256,7 +256,7 @@ def sample_pca(
             filtered according to the boolean entries of 'Valid'.
 
     Returns:
-        A matplotlib Figure and Axes object containing the missing value plot.
+        A matplotlib Figure and Axes object containing the PCA plots.
     """
 
     matrix = qtable.make_sample_matrix(tag, samples_as_columns=True)
@@ -366,7 +366,7 @@ def box_and_bars(
             names. If colors is None, boxes are colored in light grey.
 
     Returns:
-        A matplotlib Figure and Axes object containing the missing value plot.
+        A matplotlib Figure and Axes object containing the box and bar plots.
     """
     assert len(box_values) == len(bar_values) == len(group_names)
     assert colors is None or len(colors) == len(group_names)
