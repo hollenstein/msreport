@@ -84,7 +84,7 @@ import msreport.rinterface
 
 def analyze_missingness(qtable: Qtable) -> None:
     """ Adds a quantification of missing values in expression columns."""
-    # TODO: not tested # 
+    # TODO: not tested #
     missingness = pd.DataFrame()
     expr_table = qtable.make_expression_table(samples_as_columns=True)
     num_missing = np.isnan(expr_table).sum(axis=1)
@@ -198,6 +198,38 @@ def impute_missing_values(qtable: Qtable) -> None:
     expr = qtable.make_expression_matrix()
     imputed = helper.gaussian_imputation(expr, median_downshift, std_width)
     qtable.data[expr.columns] = imputed[expr.columns]
+
+
+def two_group_comparison(qtable: Qtable, groups: list[str],
+                         filter_valid: bool = False) -> None:
+    """ Calculates comparison values for two experiments.
+
+    Expects log2 transformed values
+    """
+    # TODO: not tested #
+    table = qtable.make_expression_matrix(samples_as_columns=True)
+
+    # TODO: filtering should be able via "make_expression_table"
+    if filter_valid:
+        invalid = np.invert(qtable.data['Valid'].to_numpy())
+    else:
+        invalid = np.full(table.shape[0], False)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=RuntimeWarning)
+        group_expressions = []
+        for experiment in groups:
+            samples = qtable.get_samples(experiment)
+            group_expressions.append(np.nanmean(table[samples], axis=1))
+        ratios = group_expressions[1] - group_expressions[0]
+        average_expressions = np.nanmean(group_expressions, axis=0)
+
+    comparison_table = pd.DataFrame({
+        f'Average expression {groups[1]} vs {groups[0]}': average_expressions,
+        f'logFC {groups[1]} vs {groups[0]}': ratios,
+    })
+    comparison_table[invalid] = np.nan
+    qtable.add_expression_features(comparison_table)
 
 
 def calculate_two_group_limma(qtable: Qtable, groups: list[str],
