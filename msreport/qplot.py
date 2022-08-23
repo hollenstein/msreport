@@ -460,3 +460,41 @@ def volcano_ma(qtable) -> list[(plt.Figure, plt.Axes)]:
         fig.tight_layout()
         figures.append((fig, axes))
     return figures
+
+
+def contaminants(
+        qtable: Qtable, ibaq_tag: str = 'iBAQ intensity'
+) -> (plt.Figure, plt.Axes):
+    """ Returns a barplot of relative contaminant amounts per sample. """
+    data = qtable.make_sample_matrix(ibaq_tag, samples_as_columns=True)
+    ibaq_sums = data.sum()
+    ribaq = data / ibaq_sums * 100
+    contaminants = qtable.data['Potential contaminant']
+    sample_names = data.columns.to_list()
+
+    x_values = range(ribaq.shape[1])
+    bar_values = ribaq[contaminants].sum(axis=0)
+    width = 0.8
+    colors = '#C0C0C0'
+
+    fig, ax = plt.subplots()
+    ax.bar(
+        x_values, bar_values, width=width,
+        color=colors, edgecolor='#000000', zorder=3
+    )
+    ax.set_xticks(x_values)
+    ax.set_xticklabels(sample_names, rotation=90)
+    ax.set_ylabel('Sum riBAQ [%]')
+
+    ax.set_ylim(0, max(5, ax.get_ylim()[1]))
+    sns.despine(top=True, right=True)
+    for spine in ['bottom', 'left']:
+        ax.spines[spine].set_color('#000000')
+        ax.spines[spine].set_linewidth(1)
+    ax.grid(False, axis='x')
+    ax.grid(axis='y', linestyle='dashed', linewidth=1, color='#cccccc')
+
+    fig.suptitle('Relative amount of contaminants')
+
+    fig.tight_layout()
+    return fig, ax
