@@ -3,6 +3,7 @@ from collections import UserDict
 import itertools
 from typing import Optional
 import re
+import warnings
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -498,3 +499,85 @@ def contaminants(
 
     fig.tight_layout()
     return fig, ax
+
+
+def expression_comparison(qtable: Qtable, group: list[str, str],
+                          comparison_tag: str = ' vs ', optional: bool = False,
+                          ) -> (plt.Figure, plt.Axes):
+    exp_1, exp_2 = group
+    comparison_group = ''.join([exp_1, comparison_tag, exp_2])
+
+    data = qtable.data.copy()
+    if 'Valid' in qtable.data:
+        data = data[qtable.data['Valid']]
+
+    mask = ((data[f'Events {exp_1}'] + data[f'Events {exp_2}']) > 0)
+    data = data[mask]
+
+    only_exp_1 = (data[f'Events {exp_2}'] == 0)
+    only_exp_2 = (data[f'Events {exp_1}'] == 0)
+    mask_both = np.invert(np.any([only_exp_1, only_exp_2], axis=0))
+
+    # Test if plotting maximum intensity is better than average
+    if optional:
+        max_values = np.max([data[f'Expression {exp_2}'], data[f'Expression {exp_1}']], axis=0)
+        data[f'Average expression {comparison_group}'] = max_values
+
+    def scattersize(df: pd.DataFrame) -> float:
+        return min(max(np.sqrt(scatter_area / df.shape[0]), 0.5), 4)
+    scatter_area = 5000
+
+    width_ratios = [1, 5, 1]
+    fig, axes = plt.subplots(
+        1, 3, figsize=[6, 4], sharey=True,
+        gridspec_kw={'width_ratios': width_ratios}
+    )
+
+    for ax, mask, exp in [
+            (axes[2], only_exp_1, exp_1), (axes[0], only_exp_2, exp_2)
+    ]:
+        values = data[mask]
+        s = scattersize(values)
+        y_variable = f'Expression {exp}'
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", category=UserWarning)
+            try:
+                sns.swarmplot(
+                    y=values[y_variable],
+                    size=np.sqrt(s * 2), marker='o', alpha=0.75,
+                    color='#606060', edgecolor='none', ax=ax
+                )
+            except UserWarning:
+                ax.cla()
+                sns.stripplot(
+                    y=values[y_variable], jitter=True,
+                    size=np.sqrt(s * 2), marker='o', alpha=0.75,
+                    color='#606060', edgecolor='none', ax=ax
+                )
+                ax.set_xlim(-0.2, 0.2)
+        ax.grid(axis='y', linestyle='dotted', linewidth=1)
+        ax.set_ylabel(f'Average expression {exp}')
+    axes[0].set_title(f'Absent in\n{exp_1}', fontsize=9)
+    axes[2].set_title(f'Absent in\n{exp_2}', fontsize=9)
+
+    ax = axes[1]
+    values = data[mask_both]
+    s = scattersize(values)
+    x_variable = f'logFC'
+    y_variable = f'Average expression'
+    x_col = ' '.join([x_variable, comparison_group])
+    y_col = ' '.join([y_variable, comparison_group])
+    x_values = values[x_col]
+    y_values = values[y_col]
+    ax.grid(axis='both', linestyle='dotted', linewidth=1)
+    ax.scatter(
+        x_values, y_values, s=s,
+        alpha=0.75, color='#606060', zorder=3
+    )
+    ax.set_xlabel(x_variable, fontsize=9)
+    ax.set_title(comparison_group, fontsize=12)
+    if optional:
+        ax.set_ylabel('Maximum expression')
+
+    fig.tight_layout()
+    return fig, axes
