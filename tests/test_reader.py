@@ -272,6 +272,27 @@ class TestMQReader:
         assert table['Representative protein'].tolist() == representative_protein
         assert table['Protein reported by software'].tolist() == protein_reported_by_software
 
+    def test_process_protein_entries(self):
+        table = pd.DataFrame({
+            'Majority protein IDs': [
+                'B;A;C', 'D', 'E;F', 'G;H;I', 'CON__x|J|x;J', 'CON__x|K|x'],
+            'Peptide counts (all)': ['5;5;3', '3', '6;3', '6;6;6', '4;4', '4'],
+        })
+        leading_proteins = ['B;A', 'D', 'E', 'G;H;I', 'J;J', 'K']
+        representative_protein = ['B', 'D', 'E', 'G', 'J', 'K']
+        protein_reported_by_software = representative_protein
+        is_contaminant = [False, False, False, False, True, True]
+        # TODO: Change after sorting
+        # leading_proteins = ['A;B', 'D', 'E', 'G;H;I', 'J;J', 'K']
+        # representative_protein = ['A', 'D', 'E', 'G', 'J', 'K']
+        # is_contaminant = [False, False, False, False, True, True]
+
+        table = self.reader._process_protein_entries(table)
+        assert table['Leading proteins'].tolist() == leading_proteins
+        assert table['Representative protein'].tolist() == representative_protein
+        assert table['Protein reported by software'].tolist() == protein_reported_by_software
+        assert table['Potential contaminant'].tolist() == is_contaminant
+
     def test_integration_import_proteins(self):
         table = self.reader.import_proteins(
             rename_columns=True,

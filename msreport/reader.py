@@ -154,7 +154,7 @@ class MQReader(ResultReader):
     ]
 
     def __init__(self, directory: str, isobar: bool = False,
-                 contaminant_tag: str = 'CON_') -> None:
+                 contaminant_tag: str = 'CON__') -> None:
         """
         Args:
             directory: Location of the MaxQuant 'txt' folder
@@ -188,6 +188,11 @@ class MQReader(ResultReader):
         """
         df = self._read_file('proteins' if filename is None else filename)
         df = self._add_protein_entries(df)
+        if sort_proteins:
+            df = _sort_leading_proteins(
+                df, contaminant_tag=self._contaminant_tag,
+                special_proteins=special_proteins,
+            )
         if drop_decoy:
             df = self._drop_decoy(df)
         if drop_idbysite:
@@ -198,11 +203,6 @@ class MQReader(ResultReader):
                 df = self._drop_columns_by_tag(df, tag)
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
-        if sort_proteins:
-            df = _sort_leading_proteins(
-                df, contaminant_tag=self._contaminant_tag,
-                special_proteins=special_proteins,
-            )
         if mark_contaminants:
             df = _mark_potential_contaminants(df, self._contaminant_tag)
         elif 'Potential contaminant' in df:  # Temporary fix, will be refactored
@@ -233,6 +233,61 @@ class MQReader(ResultReader):
     #     if drop_decoy:
     #         df = self._drop_decoy(df)
     #     return df
+
+    def _process_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
+        def _collect_leading_proteins(self, df: pd.DataFrame) -> list[str]:
+            rows_leading_proteins = []
+            for majority_ids_entry, count_entry in zip(
+                    df['Majority protein IDs'], df['Peptide counts (all)']
+            ):
+                proteins = majority_ids_entry.split(';')
+                counts = [int(i) for i in count_entry.split(';')]
+                highest_count = max(counts)
+                leading_proteins = [f for f, c in zip(proteins, counts)
+                                    if c >= highest_count]
+                rows_leading_proteins.append(leading_proteins)
+            return rows_leading_proteins
+
+        values_reported_id = []
+        values_leading_ids = []
+        values_representative_id = []
+        values_contaminant = []
+        for leading_proteins in _collect_leading_proteins(None, df):
+            # _extract_protein_ids()
+            protein_ids = []
+            for protein_entry in leading_proteins:
+                if protein_entry.count('|') >= 2:
+                    protein_id = protein_entry.split('|')[1]
+                else:
+                    protein_id = protein_entry
+                protein_ids.append(protein_id)
+
+            id_reported_by_software = protein_ids[0]
+
+            # _mark_contaminants()
+            contaminant_tag = 'CON__'  # self._contaminant_tag
+            is_contaminant = []
+            for protein_entry in leading_proteins:
+                if contaminant_tag in protein_entry:
+                    is_contaminant.append(True)
+                else:
+                    is_contaminant.append(False)
+
+            # OPTIONAL do sorting here
+            # _sort_proteins()
+            pass
+
+            # Collect all entries
+            values_reported_id.append(id_reported_by_software)
+            values_leading_ids.append(';'.join(protein_ids))
+            values_representative_id.append(protein_ids[0])
+            values_contaminant.append(is_contaminant[0])
+
+        df['Protein reported by software'] = values_reported_id
+        df['Leading proteins'] = values_leading_ids
+        df['Representative protein'] = values_representative_id
+        df['Potential contaminant'] = values_contaminant
+        return df
 
     def _drop_decoy(self, df: pd.DataFrame) -> pd.DataFrame:
         """ Removes rows with '+' in the 'Reverse' column """
