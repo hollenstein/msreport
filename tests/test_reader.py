@@ -8,23 +8,20 @@ import msreport.reader
 
 
 @pytest.fixture
-def example_mqreader():
-    return msreport.reader.MQReader('./tests/testdata/maxquant_results')
-
-
-@pytest.fixture
 def example_fpreader():
-    return msreport.reader.FPReader('./tests/testdata/fragpipe_results')
+    return msreport.reader.FPReader('./tests/testdata/fragpipe')
 
 
 def test_that_always_passes():
     assert True
 
 
-def test_extract_sample_names(example_mqreader):
-    protein_table = example_mqreader._read_file('proteins')
-    sample_names = msreport.reader.extract_sample_names(protein_table, 'Intensity')
-    assert len(sample_names) == 18
+def test_extract_sample_names():
+    reader = msreport.reader.ResultReader()
+    reader._add_data_directory('./tests/testdata/common')
+    table = reader._read_file('table.txt')
+    sample_names = msreport.reader.extract_sample_names(table, 'A_tag')
+    assert set(sample_names) == set(['Column 1', 'Column 2', 'Column 3'])
 
 
 def test_replace_column_tag():
@@ -134,126 +131,6 @@ class TestSortLeadingProteins:
         assert df['Representative protein'].tolist() == representative_protein
 
 
-@pytest.mark.parametrize(
-    'cols_dropped, cols_remaining',
-    [([], ['Col A', 'Col B', 'Col C']),
-     (['Col A'], ['Col B', 'Col C']),
-     (['Col B', 'Col C'], ['Col A']),
-     (['Col B'], ['Col A', 'Col C'])]
-)
-def test_result_reader_drop_columns(cols_dropped, cols_remaining):
-    df = pd.DataFrame(columns=['Col A', 'Col B', 'Col C'])
-    base_reader = msreport.reader.ResultReader()
-    df = base_reader._drop_columns(df, cols_dropped)
-
-    assert set(df.columns) == set(cols_remaining)
-
-
-@pytest.mark.parametrize(
-    'cols_inital, cols_remaining',
-    [(['Col A', 'Col B', 'Col C'], ['Col A', 'Col B', 'Col C']),
-     (['Col A', 'Drop B', 'Col C'], ['Col A', 'Col C']),
-     (['Drop A', 'Col B', 'Drop C'], ['Col B']),
-     (['Drop A', 'Drop B', 'Drop C'], [])]
-)
-def test_result_reader_drop_columns_by_tag(cols_inital, cols_remaining):
-    tag = 'Drop'
-    df = pd.DataFrame(columns=cols_inital)
-    base_reader = msreport.reader.ResultReader()
-    df = base_reader._drop_columns_by_tag(df, tag)
-
-    assert set(df.columns) == set(cols_remaining)
-
-
-def test_mqreader_setup(example_mqreader):
-    assert os.path.isdir(example_mqreader.data_directory)
-
-
-def test_mqreader_read_file(example_mqreader):
-    # Todo: change test to parental class ResultReader
-    protein_table = example_mqreader._read_file('proteins')
-    assert isinstance(protein_table, pd.DataFrame)
-    assert protein_table.shape == (7, 200)
-
-
-def test_mqreader_rename_columns(example_mqreader):
-    # Todo: change test to parental class ResultReader
-    protein_table = example_mqreader._read_file('proteins')
-    assert sum(protein_table.columns.str.count('MS/MS count')) > 0
-    assert sum(protein_table.columns.str.count('Spectral count')) == 0
-    assert ('Peptides' in protein_table.columns)
-
-    old_column_name = 'Peptides'
-    new_column_name = 'Total peptides'
-    example_mqreader.column_mapping = {old_column_name: new_column_name}
-    old_column_tag = 'MS/MS count'
-    new_column_tag = 'Spectral count'
-    example_mqreader.column_tag_mapping = {old_column_tag: new_column_tag}
-    prefixed = False
-
-    protein_table = example_mqreader._rename_columns(protein_table,
-                                                     prefixed)
-    assert ('Peptides' not in protein_table.columns)
-    assert ('Total peptides' in protein_table.columns)
-
-    assert sum(protein_table.columns.str.count('MS/MS count')) == 0
-    assert sum(protein_table.columns.str.count('Spectral count')) == 19
-
-    columns_ending_with_new_tag = [
-        c.endswith(new_column_tag) for c in protein_table.columns]
-    assert sum(columns_ending_with_new_tag) == 19
-
-
-def test_mqreader_drop_decoy(example_mqreader):
-    protein_table = example_mqreader._read_file('proteins')
-    protein_table = example_mqreader._drop_decoy(protein_table)
-    is_decoy = protein_table['Majority protein IDs'].str.contains('REV__')
-    assert not is_decoy.any()
-
-
-def test_mqreader_drop_idbysite(example_mqreader):
-    protein_table = example_mqreader._read_file('proteins')
-    protein_table = example_mqreader._drop_idbysite(protein_table)
-    is_idbysite = (protein_table['Only identified by site'] == '+')
-    assert not is_idbysite.any()
-
-
-def test_mqreader_add_protein_entries(example_mqreader):
-    df = pd.DataFrame({
-        'Majority protein IDs': ['B;A;C', 'D', 'E;F', 'G;H;I'],
-        'Peptide counts (all)': ['5;5;3', '3', '6;3', '6;6;6'],
-    })
-    leading_proteins = ['B;A', 'D', 'E', 'G;H;I']
-    representative_protein = ['B', 'D', 'E', 'G']
-    protein_reported_by_software = representative_protein
-
-    df = example_mqreader._add_protein_entries(df)
-    assert df['Leading proteins'].tolist() == leading_proteins
-    assert df['Representative protein'].tolist() == representative_protein
-    assert df['Protein reported by software'].tolist() == protein_reported_by_software
-
-
-def test_fpreader_setup(example_fpreader):
-    assert os.path.isdir(example_fpreader.data_directory)
-
-
-def test_fpreader_add_protein_entries(example_fpreader):
-    df = pd.DataFrame({
-        'Protein': [
-            'x|B|b', 'x|D|d', 'x|E|e', 'x|G|g'],
-        'Indistinguishable Proteins': [
-            'x|A|a', '', '', 'x|H|h, x|I|i'],
-    })
-    leading_proteins = ['B;A', 'D', 'E', 'G;H;I']
-    representative_protein = ['B', 'D', 'E', 'G']
-    protein_reported_by_software = representative_protein
-
-    df = example_fpreader._add_protein_entries(df)
-    assert df['Leading proteins'].tolist() == leading_proteins
-    assert df['Representative protein'].tolist() == representative_protein
-    assert df['Protein reported by software'].tolist() == protein_reported_by_software
-
-
 class TestAddIbaqIntensities:
     @pytest.fixture(autouse=True)
     def _init_qtable(self,):
@@ -286,3 +163,159 @@ class TestAddIbaqIntensities:
             intensity_tag='intensity', ibaq_tag='ibaq',
         )
         assert np.all(compare_ibaq_intensities(self.table['ibaq'], self.table['intensity']))
+
+
+class TestResultReader:
+    @pytest.fixture(autouse=True)
+    def _init_reader(self):
+        self.reader = msreport.reader.ResultReader()
+        self.reader._add_data_directory('./tests/testdata/common')
+        self.reader.filenames = {'table': 'table.txt'}
+        self.table_nrows = 5
+        self.table_ncolumns = 8
+
+    def test_read_file_with_filename_lookup(self):
+        table = self.reader._read_file('table')
+        assert isinstance(table, pd.DataFrame)
+        assert table.shape == (self.table_nrows, self.table_ncolumns)
+
+    def test_read_file_with_filename(self):
+        table = self.reader._read_file('table.txt')
+        assert isinstance(table, pd.DataFrame)
+        assert table.shape == (self.table_nrows, self.table_ncolumns)
+
+    def test_rename_columns_with_mapping(self):
+        table = self.reader._read_file('table.txt')
+        self.reader.column_mapping = {'Column 1': 'Renamed column'}
+        self.reader.column_tag_mapping = {}
+        self.reader.sample_column_tags = []
+
+        assert 'Column 1' in table.columns
+        assert 'Renamed column' not in table.columns
+        table = self.reader._rename_columns(table, prefix_tag=False)
+        assert 'Column 1' not in table.columns
+        assert 'Renamed column' in table.columns
+
+    def test_rename_columns_with_column_tag_mapping(self):
+        table = self.reader._read_file('table.txt')
+        self.reader.column_mapping = {}
+        self.reader.column_tag_mapping = {'Another_tag': 'B_tag'}
+        self.reader.sample_column_tags = []
+        assert 'B_tag Column 1' not in table.columns
+        table = self.reader._rename_columns(table, prefix_tag=False)
+        assert all(['Another_tag' not in c for c in table.columns])
+        assert 'B_tag Column 1' in table.columns
+
+    @pytest.mark.parametrize(
+        'prefix, expected_columns',
+        [(True, ['A_tag Column 1', 'A_tag Column 2', 'A_tag Column 3']),
+         (False, ['Column 1 A_tag', 'Column 2 A_tag', 'Column 3 A_tag'])]
+    )
+    def test_rename_columns_with_sample_column_tags(self, prefix, expected_columns):
+        table = self.reader._read_file('table.txt')
+        self.reader.column_mapping = {}
+        self.reader.column_tag_mapping = {}
+        self.reader.sample_column_tags = ['A_tag']
+        table = self.reader._rename_columns(table, prefix_tag=prefix)
+        assert all([c in table.columns for c in expected_columns])
+
+    @pytest.mark.parametrize(
+        'drop_columns, num_dropped_columns',
+        [(['Column 1'], 1), (['Column 1', 'Column 2', 'Column 3'], 3),
+         ([], 0), (['Column that does not exist'], 0)]
+    )
+    def test_drop_columns(self, drop_columns, num_dropped_columns):
+        table = self.reader._read_file('table.txt')
+        table = self.reader._drop_columns(table, drop_columns)
+        assert table.shape[1] == self.table_ncolumns - num_dropped_columns
+
+    def test_drop_columns_by_tag(self):
+        table = self.reader._read_file('table.txt')
+        table = self.reader._drop_columns_by_tag(table, 'A_tag')
+        assert all(['A_tag' not in c for c in table.columns])
+        assert table.shape[1] < self.table_ncolumns
+
+
+class TestMQReader:
+    @pytest.fixture(autouse=True)
+    def _init_reader(self):
+        self.reader = msreport.reader.MQReader(
+            './tests/testdata/maxquant', contaminant_tag='contam_',
+        )
+
+    def test_testdata_setup(self):
+        assert os.path.isdir(self.reader.data_directory)
+
+    def test_drop_decoy(self):
+        table = self.reader._read_file('proteins')
+        table = self.reader._drop_decoy(table)
+        is_decoy = table['Majority protein IDs'].str.contains('REV__')
+        assert not is_decoy.any()
+
+    def test_drop_idbysite(self):
+        table = self.reader._read_file('proteins')
+        table = self.reader._drop_idbysite(table)
+        is_idbysite = (table['Only identified by site'] == '+')
+        assert not is_idbysite.any()
+
+    def test_add_protein_entries(self):
+        table = pd.DataFrame({
+            'Majority protein IDs': ['B;A;C', 'D', 'E;F', 'G;H;I'],
+            'Peptide counts (all)': ['5;5;3', '3', '6;3', '6;6;6'],
+        })
+        leading_proteins = ['B;A', 'D', 'E', 'G;H;I']
+        representative_protein = ['B', 'D', 'E', 'G']
+        protein_reported_by_software = representative_protein
+
+        table = self.reader._add_protein_entries(table)
+        assert table['Leading proteins'].tolist() == leading_proteins
+        assert table['Representative protein'].tolist() == representative_protein
+        assert table['Protein reported by software'].tolist() == protein_reported_by_software
+
+    def test_integration_import_proteins(self):
+        table = self.reader.import_proteins(
+            rename_columns=True,
+            prefix_column_tags=False,
+            drop_decoy=True,
+            drop_idbysite=True,
+            sort_proteins=True,
+            drop_protein_info=True,
+            mark_contaminants=False,  # Not tested
+            special_proteins=[],  # Not tested
+        )
+        assert not (table['Reverse'] == '+').any()
+        assert not (table['Only identified by site'] == '+').any()
+        assert not table['Representative protein'].str.contains('REV__').any()
+        assert 'Total peptides' in table
+        assert '12500amol_1 Intensity' in table
+        assert not table.columns.str.contains('iBAQ').any()
+        assert not table.columns.str.contains('site positions').any()
+        assert 'Protein names' not in table.columns
+        assert not table['Representative protein'].str.contains('contam_P00330').any()
+
+
+class TestFPReader:
+    @pytest.fixture(autouse=True)
+    def _init_reader(self):
+        self.reader = msreport.reader.FPReader(
+            './tests/testdata/fragpipe', contaminant_tag='contam_',
+        )
+
+    def test_testdata_setup(self):
+        assert os.path.isdir(self.reader.data_directory)
+
+    def test_add_protein_entries(self):
+        table = pd.DataFrame({
+            'Protein': [
+                'x|B|b', 'x|D|d', 'x|E|e', 'x|G|g'],
+            'Indistinguishable Proteins': [
+                'x|A|a', '', '', 'x|H|h, x|I|i'],
+        })
+        leading_proteins = ['B;A', 'D', 'E', 'G;H;I']
+        representative_protein = ['B', 'D', 'E', 'G']
+        protein_reported_by_software = representative_protein
+
+        table = self.reader._add_protein_entries(table)
+        assert table['Leading proteins'].tolist() == leading_proteins
+        assert table['Representative protein'].tolist() == representative_protein
+        assert table['Protein reported by software'].tolist() == protein_reported_by_software
