@@ -147,7 +147,7 @@ class MQReader(ResultReader):
         'Protein names', 'Gene names', 'Fasta headers'
         'Sequence coverage [%]', 'Unique + razor sequence coverage [%]',
         'Unique sequence coverage [%]', 'Mol. weight [kDa]', 'Sequence length',
-        'Sequence lengths', 'iBAQ peptides', 'Potential contaminant'
+        'Sequence lengths', 'iBAQ peptides',
     ]
     protein_info_tags: list[str] = [
         'iBAQ', 'Sequence coverage', 'site positions'
@@ -178,7 +178,6 @@ class MQReader(ResultReader):
                         drop_idbysite: bool = True,
                         sort_proteins: bool = False,
                         drop_protein_info: bool = False,
-                        mark_contaminants: bool = True,
                         special_proteins: list[str] = []) -> pd.DataFrame:
         """ Read and process 'proteinGroups.txt' file.
 
@@ -187,12 +186,8 @@ class MQReader(ResultReader):
                 default filename is used.
         """
         df = self._read_file('proteins' if filename is None else filename)
-        df = self._add_protein_entries(df)
-        if sort_proteins:
-            df = _sort_leading_proteins(
-                df, contaminant_tag=self._contaminant_tag,
-                special_proteins=special_proteins,
-            )
+        df = self._process_protein_entries(df, sort_proteins, special_proteins)
+
         if drop_decoy:
             df = self._drop_decoy(df)
         if drop_idbysite:
@@ -203,10 +198,6 @@ class MQReader(ResultReader):
                 df = self._drop_columns_by_tag(df, tag)
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
-        if mark_contaminants:
-            df = _mark_potential_contaminants(df, self._contaminant_tag)
-        elif 'Potential contaminant' in df:  # Temporary fix, will be refactored
-            df['Potential contaminant'] = (df['Potential contaminant'] == '+')
         return df
 
     def import_peptides(self, filename: Optional[str] = None,
@@ -234,7 +225,10 @@ class MQReader(ResultReader):
     #         df = self._drop_decoy(df)
     #     return df
 
-    def _process_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _process_protein_entries(
+            self, df: pd.DataFrame, sort_proteins: bool = False,
+            special_proteins: Optional[list] = None
+    ) -> pd.DataFrame:
         def _collect_leading_proteins(self, df: pd.DataFrame) -> list[str]:
             rows_leading_proteins = []
             for majority_ids_entry, count_entry in zip(
@@ -252,10 +246,10 @@ class MQReader(ResultReader):
         values_leading_ids = []
         values_representative_id = []
         values_contaminant = []
-        for leading_proteins in _collect_leading_proteins(None, df):
+        for leading_protein_entries in _collect_leading_proteins(None, df):
             # _extract_protein_ids()
             protein_ids = []
-            for protein_entry in leading_proteins:
+            for protein_entry in leading_protein_entries:
                 if protein_entry.count('|') >= 2:
                     protein_id = protein_entry.split('|')[1]
                 else:
@@ -265,17 +259,20 @@ class MQReader(ResultReader):
             id_reported_by_software = protein_ids[0]
 
             # _mark_contaminants()
-            contaminant_tag = 'CON__'  # self._contaminant_tag
             is_contaminant = []
-            for protein_entry in leading_proteins:
-                if contaminant_tag in protein_entry:
+            for protein_entry in leading_protein_entries:
+                if self._contaminant_tag in protein_entry:
                     is_contaminant.append(True)
                 else:
                     is_contaminant.append(False)
 
             # OPTIONAL do sorting here
-            # _sort_proteins()
-            pass
+            if sort_proteins:
+                sort_order = _sort_order_proteins(
+                    protein_ids, special_proteins, is_contaminant
+                )
+                is_contaminant = [is_contaminant[i] for i in sort_order]
+                protein_ids = [protein_ids[i] for i in sort_order]
 
             # Collect all entries
             values_reported_id.append(id_reported_by_software)
@@ -722,9 +719,9 @@ def _sort_leading_proteins(df: pd.DataFrame,
     return df
 
 
-def _sort_proteins_by_tag(
-        proteins: list[str],
-        sorting_tag_levels: dict[str, int] = {}) -> list[str]:
+def _sort_order_proteins(
+        proteins: list[str], special_proteins: Optional[list[bool]] = None,
+        contaminants: Optional[list[bool]] = None) -> list[str]:
     """ Sorts proteins alphabetically, taking sorting tags into account.
 
     Proteins are first sorted according to the sort level in ascending order,
@@ -738,18 +735,21 @@ def _sort_proteins_by_tag(
     Returns:
         Sorted lists of proteins.
     """
-    warnings.warn('This method will be deprecated', DeprecationWarning,
-                  stacklevel=2)
-    values = []
-    for protein in proteins:
-        sort_level = 0
-        for tag, level in sorting_tag_levels.items():
-            if tag in protein:
-                sort_level = level
-        values.append((sort_level, protein))
-    values.sort()
-    _, proteins = [list(v) for v in zip(*(values))]
-    return proteins
+    if contaminants is not None:
+        sorting = [int(pc) for pc in contaminants]
+    else:
+        sorting = [0 for p in proteins]
+
+    if special_proteins is not None:
+        _sorting = []
+        for p, sort_level in zip(proteins, sorting):
+            _sorting.append(sort_level + (-2 if p in special_proteins else 0))
+        sorting = _sorting
+
+    sort_order = list(range(len(proteins)))
+    sorted_values = sorted(zip(sorting, proteins, sort_order))
+    _, _, sort_order = [list(v) for v in zip(*(sorted_values))]
+    return sort_order
 
 
 def _sort_fasta_entries(fasta_entries: list[str],

@@ -89,11 +89,21 @@ def test_sort_fasta_entries_with_sorting_by_tag():
     assert names == ['pre_a', 'b', 'a_post']
 
 
-def test_sort_proteins_by_tag():
-    proteins = ['A', 'Apost', 'preA']
-    sorting_tags = {'pre': -1, 'post': 1}
-    sorted_proteins = msreport.reader._sort_proteins_by_tag(proteins, sorting_tags)
-    assert sorted_proteins == ['preA', 'A', 'Apost']
+@pytest.mark.parametrize(
+    'proteins, contaminants, special_proteins, expected',
+    [(['C', 'B', 'A'], None, None, ['A', 'B', 'C']),
+     (['C', 'B', 'A'], None, 'C', ['C', 'A', 'B']),
+     (['C', 'B', 'A'], [False, False, True], None, ['B', 'C', 'A']),
+     (['C', 'B', 'A'], [False, False, True], ['C'], ['C', 'B', 'A']),
+     (['C', 'B', 'A'], [False, True, False], ['B'], ['B', 'A', 'C'])]
+)
+def test_sort_order_proteins(proteins, contaminants, special_proteins, expected):
+    proteins = ['C', 'B', 'A']
+    sort_order = msreport.reader._sort_order_proteins(
+        proteins, special_proteins=special_proteins, contaminants=contaminants
+    )
+    sorted_proteins = [proteins[i] for i in sort_order]
+    assert sorted_proteins == expected
 
 
 class TestSortLeadingProteins:
@@ -133,7 +143,7 @@ class TestSortLeadingProteins:
 
 class TestAddIbaqIntensities:
     @pytest.fixture(autouse=True)
-    def _init_qtable(self,):
+    def _init_qtable(self):
         self.table = pd.DataFrame({
             'peptides': [2, 2],
             'ibaq_petides': [2, 2],
@@ -282,12 +292,30 @@ class TestMQReader:
         representative_protein = ['B', 'D', 'E', 'G', 'J', 'K']
         protein_reported_by_software = representative_protein
         is_contaminant = [False, False, False, False, True, True]
-        # TODO: Change after sorting
-        # leading_proteins = ['A;B', 'D', 'E', 'G;H;I', 'J;J', 'K']
-        # representative_protein = ['A', 'D', 'E', 'G', 'J', 'K']
-        # is_contaminant = [False, False, False, False, True, True]
 
-        table = self.reader._process_protein_entries(table)
+        self.reader._contaminant_tag = 'CON__'
+        table = self.reader._process_protein_entries(table, sort_proteins=False)
+        assert table['Leading proteins'].tolist() == leading_proteins
+        assert table['Representative protein'].tolist() == representative_protein
+        assert table['Protein reported by software'].tolist() == protein_reported_by_software
+        assert table['Potential contaminant'].tolist() == is_contaminant
+
+    def test_process_protein_entries_with_sorting(self):
+        table = pd.DataFrame({
+            'Majority protein IDs': [
+                'B;A;C', 'D', 'E;F', 'G;H;I', 'CON__x|J|x;J', 'CON__x|K|x'],
+            'Peptide counts (all)': ['5;5;3', '3', '6;3', '6;6;6', '4;4', '4'],
+        })
+        special_proteins = ['H']
+        leading_proteins = ['A;B', 'D', 'E', 'H;G;I', 'J;J', 'K']
+        representative_protein = ['A', 'D', 'E', 'H', 'J', 'K']
+        protein_reported_by_software = ['B', 'D', 'E', 'G', 'J', 'K']
+        is_contaminant = [False, False, False, False, False, True]
+
+        self.reader._contaminant_tag = 'CON__'
+        table = self.reader._process_protein_entries(
+            table, sort_proteins=True, special_proteins=special_proteins
+        )
         assert table['Leading proteins'].tolist() == leading_proteins
         assert table['Representative protein'].tolist() == representative_protein
         assert table['Protein reported by software'].tolist() == protein_reported_by_software
@@ -301,7 +329,6 @@ class TestMQReader:
             drop_idbysite=True,
             sort_proteins=True,
             drop_protein_info=True,
-            mark_contaminants=False,  # Not tested
             special_proteins=[],  # Not tested
         )
         assert not (table['Reverse'] == '+').any()
@@ -313,6 +340,8 @@ class TestMQReader:
         assert not table.columns.str.contains('site positions').any()
         assert 'Protein names' not in table.columns
         assert not table['Representative protein'].str.contains('contam_P00330').any()
+        assert table['Potential contaminant'].dtype == bool
+        assert table['Potential contaminant'].sum() == 1
 
 
 class TestFPReader:
