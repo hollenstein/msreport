@@ -509,7 +509,7 @@ def add_protein_annotations(
             header_info = protein_db[protein_id].headerInfo
 
             entry_name = header_info["entry"] if "entry" in header_info else ""
-            gene_name = header_info["gene_id"] if "gene_id" in header_info else ""
+            gene_name = header_info["GN"] if "GN" in header_info else ""
             fasta_header = protein_db[protein_id].fastaHeader
             length = protein_db[protein_id].length()
             ibaq_peptides = helper.calculate_tryptic_ibaq_peptides(sequence)
