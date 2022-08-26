@@ -18,6 +18,14 @@ class Qtable:
         if design is not None:
             self.add_design(design)
 
+    def to_tsv(self, path: str, index: bool = False):
+        """Writes table to a tab-separated values (tsv) file."""
+        self.data.to_csv(path, sep="\t", index=index)
+
+    def to_clipboard(self, index: bool = False):
+        """Writes table to the system clipboard, which can be pasted into Excel."""
+        self.data.to_clipboard(sep="\t", index=index)
+
     def get_design(self) -> pd.DataFrame:
         return self.design
 
