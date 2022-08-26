@@ -30,6 +30,7 @@ from typing import Optional
 import warnings
 
 import pandas as pd
+
 try:
     import maspy._proteindb_refactoring as ProtDB
 except ModuleNotFoundError:
@@ -38,19 +39,20 @@ except ModuleNotFoundError:
 import msreport.helper as helper
 
 
-class ResultReader():
-    """ Base Reader class, is by itself not functional. """
+class ResultReader:
+    """Base Reader class, is by itself not functional."""
+
     filenames_default: dict[str, str]
     column_mapping: dict[str, str]
     column_tag_mapping: OrderedDict[str, str]
     sample_column_tags: list[str]
 
     def __init__(self):
-        self.data_directory: str = ''
+        self.data_directory: str = ""
         self.filenames: dict[str, str] = {}
 
     def _read_file(self, which: str) -> pd.DataFrame:
-        """ Read a result table from the data_directory
+        """Read a result table from the data_directory
 
         Args:
             which: lookup the filename in self.filenames. If 'which' is not
@@ -61,14 +63,13 @@ class ResultReader():
         else:
             filename = which
         filepath = os.path.join(self.data_directory, filename)
-        df = pd.read_csv(filepath, sep='\t')
-        str_cols = df.select_dtypes(include=['object']).columns
-        df.loc[:, str_cols] = df.loc[:, str_cols].fillna('')
+        df = pd.read_csv(filepath, sep="\t")
+        str_cols = df.select_dtypes(include=["object"]).columns
+        df.loc[:, str_cols] = df.loc[:, str_cols].fillna("")
         return df
 
-    def _rename_columns(self, df: pd.DataFrame,
-                        prefix_tag: bool) -> pd.DataFrame:
-        """ Returns a new DataFrame with renamed columns.
+    def _rename_columns(self, df: pd.DataFrame, prefix_tag: bool) -> pd.DataFrame:
+        """Returns a new DataFrame with renamed columns.
 
         First columns are renamed according to self.column_mapping. Next, tags
         in columns are renamed according to self.column_tag_mapping. Then, for
@@ -87,9 +88,10 @@ class ResultReader():
             new_df = _rearrange_column_tag(new_df, tag, prefix_tag)
         return new_df
 
-    def _drop_columns(self, df: pd.DataFrame,
-                      columns_to_drop: list[str]) -> pd.DataFrame:
-        """ Returns a new data frame without the specified columns. """
+    def _drop_columns(
+        self, df: pd.DataFrame, columns_to_drop: list[str]
+    ) -> pd.DataFrame:
+        """Returns a new data frame without the specified columns."""
         remaining_columns = []
         for column in df.columns:
             if column not in columns_to_drop:
@@ -97,7 +99,7 @@ class ResultReader():
         return df[remaining_columns].copy()
 
     def _drop_columns_by_tag(self, df: pd.DataFrame, tag: str) -> pd.DataFrame:
-        """ Returns a new data frame without columns containing 'tag'. """
+        """Returns a new data frame without columns containing 'tag'."""
         columns = helper.find_columns(df, tag, must_be_substring=False)
         return self._drop_columns(df, columns)
 
@@ -106,7 +108,7 @@ class ResultReader():
 
 
 class MQReader(ResultReader):
-    """ Import and preprocess MaxQuant result files.
+    """Import and preprocess MaxQuant result files.
 
     Attributes:
         filenames_default: (class attribute) Look up of filenames for the
@@ -127,34 +129,43 @@ class MQReader(ResultReader):
         contamination_tag (str): Substring present in protein IDs to identify
             them as potential contaminants.
     """
+
     filenames_default: dict[str, str] = {
-        'proteins': 'proteinGroups.txt',
-        'peptides': 'peptides.txt',
-        'ions': 'evidence.txt'
+        "proteins": "proteinGroups.txt",
+        "peptides": "peptides.txt",
+        "ions": "evidence.txt",
     }
     sample_column_tags: list[str] = [
-        'LFQ intensity', 'Intensity', 'iBAQ',
-        'MS/MS count', 'Sequence coverage',
+        "LFQ intensity",
+        "Intensity",
+        "iBAQ",
+        "MS/MS count",
+        "Sequence coverage",
     ]
-    column_mapping: dict[str, str] = dict([
-        ('Peptides', 'Total peptides'),
-    ])
-    column_tag_mapping: OrderedDict[str, str] = OrderedDict([
-        ('MS/MS count', 'Spectral count'),
-        ('iBAQ', 'iBAQ intensity')
-    ])
+    column_mapping: dict[str, str] = dict(
+        [
+            ("Peptides", "Total peptides"),
+        ]
+    )
+    column_tag_mapping: OrderedDict[str, str] = OrderedDict(
+        [("MS/MS count", "Spectral count"), ("iBAQ", "iBAQ intensity")]
+    )
     protein_info_columns: list[str] = [
-        'Protein names', 'Gene names', 'Fasta headers'
-        'Sequence coverage [%]', 'Unique + razor sequence coverage [%]',
-        'Unique sequence coverage [%]', 'Mol. weight [kDa]', 'Sequence length',
-        'Sequence lengths', 'iBAQ peptides',
+        "Protein names",
+        "Gene names",
+        "Fasta headers" "Sequence coverage [%]",
+        "Unique + razor sequence coverage [%]",
+        "Unique sequence coverage [%]",
+        "Mol. weight [kDa]",
+        "Sequence length",
+        "Sequence lengths",
+        "iBAQ peptides",
     ]
-    protein_info_tags: list[str] = [
-        'iBAQ', 'Sequence coverage', 'site positions'
-    ]
+    protein_info_tags: list[str] = ["iBAQ", "Sequence coverage", "site positions"]
 
-    def __init__(self, directory: str, isobar: bool = False,
-                 contaminant_tag: str = 'CON__') -> None:
+    def __init__(
+        self, directory: str, isobar: bool = False, contaminant_tag: str = "CON__"
+    ) -> None:
         """
         Args:
             directory: Location of the MaxQuant 'txt' folder
@@ -171,21 +182,24 @@ class MQReader(ResultReader):
         self._isobar: bool = isobar
         self._contaminant_tag: str = contaminant_tag
 
-    def import_proteins(self, filename: Optional[str] = None,
-                        rename_columns: bool = True,
-                        prefix_column_tags: bool = True,
-                        drop_decoy: bool = True,
-                        drop_idbysite: bool = True,
-                        sort_proteins: bool = False,
-                        drop_protein_info: bool = False,
-                        special_proteins: list[str] = []) -> pd.DataFrame:
-        """ Read and process 'proteinGroups.txt' file.
+    def import_proteins(
+        self,
+        filename: Optional[str] = None,
+        rename_columns: bool = True,
+        prefix_column_tags: bool = True,
+        drop_decoy: bool = True,
+        drop_idbysite: bool = True,
+        sort_proteins: bool = False,
+        drop_protein_info: bool = False,
+        special_proteins: list[str] = [],
+    ) -> pd.DataFrame:
+        """Read and process 'proteinGroups.txt' file.
 
         Args:
             filename: allows specifying an alternative filename, otherwise the
                 default filename is used.
         """
-        df = self._read_file('proteins' if filename is None else filename)
+        df = self._read_file("proteins" if filename is None else filename)
         df = self._process_protein_entries(df, sort_proteins, special_proteins)
 
         if drop_decoy:
@@ -200,17 +214,20 @@ class MQReader(ResultReader):
             df = self._rename_columns(df, prefix_column_tags)
         return df
 
-    def import_peptides(self, filename: Optional[str] = None,
-                        rename_columns: bool = True,
-                        prefix_column_tags: bool = True,
-                        drop_decoy: bool = True) -> pd.DataFrame:
-        """ Read and process 'peptides.txt' file.
+    def import_peptides(
+        self,
+        filename: Optional[str] = None,
+        rename_columns: bool = True,
+        prefix_column_tags: bool = True,
+        drop_decoy: bool = True,
+    ) -> pd.DataFrame:
+        """Read and process 'peptides.txt' file.
 
         Args:
             filename: allows specifying an alternative filename, otherwise the
                 default filename is used.
         """
-        df = self._read_file('peptides' if filename is None else filename)
+        df = self._read_file("peptides" if filename is None else filename)
         df = self._add_protein_entries(df)
         if drop_decoy:
             df = self._drop_decoy(df)
@@ -226,19 +243,22 @@ class MQReader(ResultReader):
     #     return df
 
     def _process_protein_entries(
-            self, df: pd.DataFrame, sort_proteins: bool = False,
-            special_proteins: Optional[list] = None
+        self,
+        df: pd.DataFrame,
+        sort_proteins: bool = False,
+        special_proteins: Optional[list] = None,
     ) -> pd.DataFrame:
         def _collect_leading_proteins(self, df: pd.DataFrame) -> list[str]:
             rows_leading_proteins = []
             for majority_ids_entry, count_entry in zip(
-                    df['Majority protein IDs'], df['Peptide counts (all)']
+                df["Majority protein IDs"], df["Peptide counts (all)"]
             ):
-                proteins = majority_ids_entry.split(';')
-                counts = [int(i) for i in count_entry.split(';')]
+                proteins = majority_ids_entry.split(";")
+                counts = [int(i) for i in count_entry.split(";")]
                 highest_count = max(counts)
-                leading_proteins = [f for f, c in zip(proteins, counts)
-                                    if c >= highest_count]
+                leading_proteins = [
+                    f for f, c in zip(proteins, counts) if c >= highest_count
+                ]
                 rows_leading_proteins.append(leading_proteins)
             return rows_leading_proteins
 
@@ -247,11 +267,11 @@ class MQReader(ResultReader):
         values_representative_id = []
         values_contaminant = []
         for leading_protein_entries in _collect_leading_proteins(None, df):
-            # _extract_protein_ids()
+            # _extract_protein_ids() -> will also be used for FP
             protein_ids = []
             for protein_entry in leading_protein_entries:
-                if protein_entry.count('|') >= 2:
-                    protein_id = protein_entry.split('|')[1]
+                if protein_entry.count("|") >= 2:
+                    protein_id = protein_entry.split("|")[1]
                 else:
                     protein_id = protein_entry
                 protein_ids.append(protein_id)
@@ -266,7 +286,6 @@ class MQReader(ResultReader):
                 else:
                     is_contaminant.append(False)
 
-            # OPTIONAL do sorting here
             if sort_proteins:
                 sort_order = _sort_order_proteins(
                     protein_ids, special_proteins, is_contaminant
@@ -276,26 +295,26 @@ class MQReader(ResultReader):
 
             # Collect all entries
             values_reported_id.append(id_reported_by_software)
-            values_leading_ids.append(';'.join(protein_ids))
+            values_leading_ids.append(";".join(protein_ids))
             values_representative_id.append(protein_ids[0])
             values_contaminant.append(is_contaminant[0])
 
-        df['Protein reported by software'] = values_reported_id
-        df['Leading proteins'] = values_leading_ids
-        df['Representative protein'] = values_representative_id
-        df['Potential contaminant'] = values_contaminant
+        df["Protein reported by software"] = values_reported_id
+        df["Leading proteins"] = values_leading_ids
+        df["Representative protein"] = values_representative_id
+        df["Potential contaminant"] = values_contaminant
         return df
 
     def _drop_decoy(self, df: pd.DataFrame) -> pd.DataFrame:
-        """ Removes rows with '+' in the 'Reverse' column """
-        return df.loc[df['Reverse'] != '+']
+        """Removes rows with '+' in the 'Reverse' column"""
+        return df.loc[df["Reverse"] != "+"]
 
     def _drop_idbysite(self, df: pd.DataFrame) -> pd.DataFrame:
-        """ Removes rows with '+' in the 'Only identified by site' column """
-        return df.loc[df['Only identified by site'] != '+']
+        """Removes rows with '+' in the 'Only identified by site' column"""
+        return df.loc[df["Only identified by site"] != "+"]
 
     def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
-        """ Adds standardized protein entry columns to the data frame.
+        """Adds standardized protein entry columns to the data frame.
 
         Added columns are 'Leading proteins', 'Representative protein', and
         'Protein reported by software'.
@@ -310,27 +329,29 @@ class MQReader(ResultReader):
         reported_entries = []
         leading_entries = []
         representative_entries = []
-        for majority_ids_entry, count_entry in zip(df['Majority protein IDs'],
-                                                   df['Peptide counts (all)']):
-            proteins = majority_ids_entry.split(';')
-            counts = [int(i) for i in count_entry.split(';')]
+        for majority_ids_entry, count_entry in zip(
+            df["Majority protein IDs"], df["Peptide counts (all)"]
+        ):
+            proteins = majority_ids_entry.split(";")
+            counts = [int(i) for i in count_entry.split(";")]
             highest_count = max(counts)
-            leading_proteins = [f for f, c in zip(proteins, counts)
-                                if c >= highest_count]
+            leading_proteins = [
+                f for f, c in zip(proteins, counts) if c >= highest_count
+            ]
 
             reported_entries.append(leading_proteins[0])
-            leading_entries.append(';'.join(leading_proteins))
+            leading_entries.append(";".join(leading_proteins))
             representative_entries.append(leading_proteins[0])
 
         df = df.copy()
-        df['Protein reported by software'] = reported_entries
-        df['Leading proteins'] = leading_entries
-        df['Representative protein'] = representative_entries
+        df["Protein reported by software"] = reported_entries
+        df["Leading proteins"] = leading_entries
+        df["Representative protein"] = representative_entries
         return df
 
 
 class FPReader(ResultReader):
-    """ Import and preprocess FragPipe result files.
+    """Import and preprocess FragPipe result files.
 
     Attributes:
         filenames_default: (class attribute) Look up of filenames for the
@@ -353,39 +374,54 @@ class FPReader(ResultReader):
         contamination_tag (str): Substring present in protein IDs to identify
             them as potential contaminants.
     """
+
     filenames_default: dict[str, str] = {
-        'proteins': 'combined_protein.tsv',
-        'peptides': 'combined_peptide.tsv',
-        'ions': 'combined_ion.tsv',
+        "proteins": "combined_protein.tsv",
+        "peptides": "combined_peptide.tsv",
+        "ions": "combined_ion.tsv",
     }
     filenames_isobar: dict[str, str] = {
-        'proteins': 'protein.tsv',
-        'peptides': 'peptide.tsv',
-        'ions': 'ion.tsv',
+        "proteins": "protein.tsv",
+        "peptides": "peptide.tsv",
+        "ions": "ion.tsv",
     }
     sample_column_tags: list[str] = [
-        'Spectral Count', 'Unique Spectral Count', 'Total Spectral Count',
-        'Intensity', 'MaxLFQ Intensity'
+        "Spectral Count",
+        "Unique Spectral Count",
+        "Total Spectral Count",
+        "Intensity",
+        "MaxLFQ Intensity",
     ]
-    column_mapping: dict[str, str] = dict([
-        ('Combined Total Peptides', 'Total peptides'),  # From LFQ
-        ('Total Peptides', 'Total peptides'),  # From TMT
-    ])
-    column_tag_mapping: OrderedDict[str, str] = OrderedDict([
-        ('MaxLFQ Intensity', 'LFQ intensity'),
-        ('Total Spectral Count', 'Total spectral count'),
-        ('Unique Spectral Count', 'Unique spectral count'),
-        ('Spectral Count', 'Spectral count'),
-    ])
+    column_mapping: dict[str, str] = dict(
+        [
+            ("Combined Total Peptides", "Total peptides"),  # From LFQ
+            ("Total Peptides", "Total peptides"),  # From TMT
+        ]
+    )
+    column_tag_mapping: OrderedDict[str, str] = OrderedDict(
+        [
+            ("MaxLFQ Intensity", "LFQ intensity"),
+            ("Total Spectral Count", "Total spectral count"),
+            ("Unique Spectral Count", "Unique spectral count"),
+            ("Spectral Count", "Spectral count"),
+        ]
+    )
     protein_info_columns: list[str] = [
-        'Protein', 'Protein ID', 'Entry Name', 'Gene',
-        'Protein Length', 'Organism', 'Protein Existence',
-        'Description', 'Indistinguishable Proteins'
+        "Protein",
+        "Protein ID",
+        "Entry Name",
+        "Gene",
+        "Protein Length",
+        "Organism",
+        "Protein Existence",
+        "Description",
+        "Indistinguishable Proteins",
     ]
     protein_info_tags: list[str] = []
 
-    def __init__(self, directory: str, isobar: bool = False,
-                 contaminant_tag: str = 'contam_') -> None:
+    def __init__(
+        self, directory: str, isobar: bool = False, contaminant_tag: str = "contam_"
+    ) -> None:
         """
         Args:
             directory: Location of the FragPipe result folder
@@ -405,14 +441,17 @@ class FPReader(ResultReader):
         else:
             self.filenames = self.filenames_isobar
 
-    def import_proteins(self, filename: Optional[str] = None,
-                        rename_columns: bool = True,
-                        prefix_column_tags: bool = True,
-                        sort_proteins: bool = True,
-                        drop_protein_info: bool = True,
-                        mark_contaminants: bool = True,
-                        special_proteins: list[str] = []) -> pd.DataFrame:
-        """ Read and process 'combined_protein.tsv' file.
+    def import_proteins(
+        self,
+        filename: Optional[str] = None,
+        rename_columns: bool = True,
+        prefix_column_tags: bool = True,
+        sort_proteins: bool = True,
+        drop_protein_info: bool = True,
+        mark_contaminants: bool = True,
+        special_proteins: list[str] = [],
+    ) -> pd.DataFrame:
+        """Read and process 'combined_protein.tsv' file.
 
         Note that is is essential to rename column names before attempting
         to rename sample columns, as the 'Intensity' substring is present in
@@ -423,7 +462,7 @@ class FPReader(ResultReader):
                 default filename is used.
         """
         # not tested #
-        df = self._read_file('proteins' if filename is None else filename)
+        df = self._read_file("proteins" if filename is None else filename)
         df = self._add_protein_entries(df)
         if drop_protein_info:
             df = self._drop_columns(df, self.protein_info_columns)
@@ -433,17 +472,21 @@ class FPReader(ResultReader):
             df = self._rename_columns(df, prefix_column_tags)
         if sort_proteins:
             df = _sort_leading_proteins(
-                df, contaminant_tag=self._contaminant_tag,
+                df,
+                contaminant_tag=self._contaminant_tag,
                 special_proteins=special_proteins,
             )
         if mark_contaminants:
             df = _mark_potential_contaminants(df, self._contaminant_tag)
         return df
 
-    def import_ions(self, filename: Optional[str] = None,
-                    rename_columns: bool = True,
-                    prefix_column_tags: bool = True) -> pd.DataFrame:
-        """ Read and process 'combined_ion.tsv' file.
+    def import_ions(
+        self,
+        filename: Optional[str] = None,
+        rename_columns: bool = True,
+        prefix_column_tags: bool = True,
+    ) -> pd.DataFrame:
+        """Read and process 'combined_ion.tsv' file.
 
         Adds the columns 'Representative protein' and
         'Protein reported by software'.
@@ -453,19 +496,19 @@ class FPReader(ResultReader):
                 default filename is used.
         """
         # not tested #
-        df = self._read_file('ions' if filename is None else filename)
+        df = self._read_file("ions" if filename is None else filename)
 
         # TODO: replace this by _add_protein_entries() if FragPipe adds
         #       'Indistinguishable Proteins' to the ion table.
-        df['Representative protein'] = df['Protein ID']
-        df['Protein reported by software'] = df['Protein ID']
+        df["Representative protein"] = df["Protein ID"]
+        df["Protein reported by software"] = df["Protein ID"]
 
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
         return df
 
     def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
-        """ Adds standardized protein entry columns to the data frame.
+        """Adds standardized protein entry columns to the data frame.
 
         Added columns are 'Leading proteins', 'Representative protein', and
         'Protein reported by software'.
@@ -480,66 +523,69 @@ class FPReader(ResultReader):
         leading_entries = []
         representative_entries = []
         for protein_entry, indist_protein_entry in zip(
-                df['Protein'], df['Indistinguishable Proteins']):
+            df["Protein"], df["Indistinguishable Proteins"]
+        ):
             protein_entries = [protein_entry]
             if indist_protein_entry:
-                for entry in indist_protein_entry.split(', '):
+                for entry in indist_protein_entry.split(", "):
                     protein_entries.append(entry)
-            leading_proteins = [p.split('|')[1] for p in protein_entries]
+            leading_proteins = [p.split("|")[1] for p in protein_entries]
 
             reported_entries.append(leading_proteins[0])
-            leading_entries.append(';'.join(leading_proteins))
+            leading_entries.append(";".join(leading_proteins))
             representative_entries.append(leading_proteins[0])
 
         df = df.copy()
-        df['Protein reported by software'] = reported_entries
-        df['Leading proteins'] = leading_entries
-        df['Representative protein'] = representative_entries
+        df["Protein reported by software"] = reported_entries
+        df["Leading proteins"] = leading_entries
+        df["Representative protein"] = representative_entries
         return df
 
 
 def add_protein_annotations(
-        table: pd.DataFrame, fasta_path: str,
-        id_column: str = 'Representative protein') -> None:
-    """ Adds descriptive columns for the representative protein.
+    table: pd.DataFrame, fasta_path: str, id_column: str = "Representative protein"
+) -> None:
+    """Adds descriptive columns for the representative protein.
 
     The added columns always includes "Fasta header", "Protein length",
     "iBAQ peptides", and if possible "Protein entry name" and "Gene name".
     """
     # not tested #
-    protein_db = ProtDB.importProteinDatabase(
-        fasta_path, contaminationTag='contam_'
-    )
+    protein_db = ProtDB.importProteinDatabase(fasta_path, contaminationTag="contam_")
 
     new_columns = {
-        'Protein entry name': [], 'Gene name': [], 'Fasta header': [],
-        'Protein length': [], 'iBAQ peptides': [],
+        "Protein entry name": [],
+        "Gene name": [],
+        "Fasta header": [],
+        "Protein length": [],
+        "iBAQ peptides": [],
     }
     for protein_id in table[id_column]:
         sequence = protein_db[protein_id].sequence
         header_info = protein_db[protein_id].headerInfo
 
-        entry_name = header_info['entry'] if 'entry' in header_info else ''
-        gene_name = header_info['gene_id'] if 'gene_id' in header_info else ''
+        entry_name = header_info["entry"] if "entry" in header_info else ""
+        gene_name = header_info["gene_id"] if "gene_id" in header_info else ""
         fasta_header = protein_db[protein_id].fastaHeader
         length = protein_db[protein_id].length()
         ibaq_peptides = helper.calculate_tryptic_ibaq_peptides(sequence)
 
-        new_columns['Protein entry name'].append(entry_name)
-        new_columns['Gene name'].append(gene_name)
-        new_columns['Fasta header'].append(fasta_header)
-        new_columns['Protein length'].append(length)
-        new_columns['iBAQ peptides'].append(ibaq_peptides)
+        new_columns["Protein entry name"].append(entry_name)
+        new_columns["Gene name"].append(gene_name)
+        new_columns["Fasta header"].append(fasta_header)
+        new_columns["Protein length"].append(length)
+        new_columns["iBAQ peptides"].append(ibaq_peptides)
 
     for column in new_columns:
         table[column] = new_columns[column]
 
 
-def add_sequence_coverage(protein_table: pd.DataFrame,
-                          peptide_table: pd.DataFrame,
-                          id_column: str = 'Protein reported by software'
-                          ) -> None:
-    """ Calculates 'Sequence coverage' and adds it to the protein table.
+def add_sequence_coverage(
+    protein_table: pd.DataFrame,
+    peptide_table: pd.DataFrame,
+    id_column: str = "Protein reported by software",
+) -> None:
+    """Calculates 'Sequence coverage' and adds it to the protein table.
 
     Requires the columns 'Start' and 'End' in the peptide_table, and
     'Protein length' in the protein_table.
@@ -547,27 +593,31 @@ def add_sequence_coverage(protein_table: pd.DataFrame,
     # not tested #
     peptide_positions = {}
     for protein_id, peptide_group in peptide_table.groupby(by=id_column):
-        positions = [(s, e) for s, e in zip(peptide_group['Start'],
-                                            peptide_group['End'])]
+        positions = [
+            (s, e) for s, e in zip(peptide_group["Start"], peptide_group["End"])
+        ]
         peptide_positions[protein_id] = sorted(positions)
 
     sequence_coverages = []
-    for protein_id, protein_length in zip(protein_table[id_column],
-                                          protein_table['Protein length']):
+    for protein_id, protein_length in zip(
+        protein_table[id_column], protein_table["Protein length"]
+    ):
         sequence_coverage = helper.calculate_sequence_coverage(
             protein_length, peptide_positions[protein_id], ndigits=1
         )
         sequence_coverages.append(sequence_coverage)
-    protein_table['Sequence coverage'] = sequence_coverages
+    protein_table["Sequence coverage"] = sequence_coverages
 
 
-def add_ibaq_intensities(table: pd.DataFrame,
-                         normalize_total_intensity: bool = True,
-                         peptide_column: str = 'Total peptides',
-                         ibaq_peptide_column: str = 'iBAQ peptides',
-                         intensity_tag: str = 'Intensity',
-                         ibaq_tag: str = 'iBAQ intensity') -> None:
-    """ Calculates iBAQ intensities.
+def add_ibaq_intensities(
+    table: pd.DataFrame,
+    normalize_total_intensity: bool = True,
+    peptide_column: str = "Total peptides",
+    ibaq_peptide_column: str = "iBAQ peptides",
+    intensity_tag: str = "Intensity",
+    ibaq_tag: str = "iBAQ intensity",
+) -> None:
+    """Calculates iBAQ intensities.
 
     Requires a column containing the theoretical number of iBAQ peptides.
     """
@@ -581,36 +631,35 @@ def add_ibaq_intensities(table: pd.DataFrame,
             table[ibaq_column] = table[ibaq_column] * factor
 
 
-def add_peptide_positions(table: pd.DataFrame, fasta_path: str,
-                          protein_column: str = 'Representative protein',
-                          peptide_column: str = 'Peptide Sequence') -> None:
-    """ Adds protein 'Start' and 'End' positions fo peptides to the table."""
+def add_peptide_positions(
+    table: pd.DataFrame,
+    fasta_path: str,
+    protein_column: str = "Representative protein",
+    peptide_column: str = "Peptide Sequence",
+) -> None:
+    """Adds protein 'Start' and 'End' positions fo peptides to the table."""
     # TODO: replace fasta_path by a dictionary of protein sequences
     # not tested #
-    protein_db = ProtDB.importProteinDatabase(
-        fasta_path, contaminationTag='contam_'
-    )
+    protein_db = ProtDB.importProteinDatabase(fasta_path, contaminationTag="contam_")
 
-    peptide_positions = {
-        'Start': [], 'End': []
-    }
-    for peptide, protein_id in zip(table[peptide_column],
-                                   table[protein_column]):
+    peptide_positions = {"Start": [], "End": []}
+    for peptide, protein_id in zip(table[peptide_column], table[protein_column]):
         sequence = protein_db[protein_id].sequence
         start = sequence.find(peptide) + 1
         end = start + len(peptide) - 1
         if start == 0:
             start, end = -1, -1
-        peptide_positions['Start'].append(start)
-        peptide_positions['End'].append(end)
+        peptide_positions["Start"].append(start)
+        peptide_positions["End"].append(end)
 
     for key in peptide_positions:
         table[key] = peptide_positions[key]
 
 
-def propagate_representative_protein(target_table: pd.DataFrame,
-                                     source_table: pd.DataFrame) -> None:
-    """ Propagates the 'Representative protein' from the source to the target
+def propagate_representative_protein(
+    target_table: pd.DataFrame, source_table: pd.DataFrame
+) -> None:
+    """Propagates the 'Representative protein' from the source to the target
     table.
 
     The column 'Protein reported by software' is used to match entries between
@@ -619,35 +668,35 @@ def propagate_representative_protein(target_table: pd.DataFrame,
     """
     # not tested #
     protein_lookup = {}
-    for old, new in zip(source_table['Protein reported by software'],
-                        source_table['Representative protein']):
+    for old, new in zip(
+        source_table["Protein reported by software"],
+        source_table["Representative protein"],
+    ):
         protein_lookup[old] = new
 
     new_protein_ids = []
-    for old in target_table['Protein reported by software']:
+    for old in target_table["Protein reported by software"]:
         new_protein_ids.append(protein_lookup[old])
-    target_table['Representative protein'] = new_protein_ids
+    target_table["Representative protein"] = new_protein_ids
 
 
 def extract_sample_names(df: pd.DataFrame, tag: str) -> list[str]:
-    """ Extract sample names from columns containing the 'tag' """
+    """Extract sample names from columns containing the 'tag'"""
     columns = helper.find_columns(df, tag)
     sample_names = _find_remaining_substrings(columns, tag)
     return sample_names
 
 
-def _replace_column_tag(df: pd.DataFrame,
-                        old_tag: str, new_tag: str) -> pd.DataFrame:
-    """ Replace column substrings old_tag with new_tag """
+def _replace_column_tag(df: pd.DataFrame, old_tag: str, new_tag: str) -> pd.DataFrame:
+    """Replace column substrings old_tag with new_tag"""
     old_columns = helper.find_columns(df, old_tag)
     new_columns = [c.replace(old_tag, new_tag) for c in old_columns]
     mapping = dict(zip(old_columns, new_columns))
     return df.rename(columns=mapping, inplace=False)
 
 
-def _rearrange_column_tag(df: pd.DataFrame, tag: str,
-                          prefix: bool) -> pd.DataFrame:
-    """ Moves the column tag to the beginning or end of each column.
+def _rearrange_column_tag(df: pd.DataFrame, tag: str, prefix: bool) -> pd.DataFrame:
+    """Moves the column tag to the beginning or end of each column.
 
     Args:
         df: Rearrange columns in this DataFrame
@@ -659,20 +708,19 @@ def _rearrange_column_tag(df: pd.DataFrame, tag: str,
     old_columns = helper.find_columns(df, tag)
     new_columns = []
     for column_name in old_columns:
-        column_name = column_name.replace(tag, '').strip()
+        column_name = column_name.replace(tag, "").strip()
         if prefix:
-            new_column_name = ' '.join([tag, column_name]).strip()
+            new_column_name = " ".join([tag, column_name]).strip()
         else:
-            new_column_name = ' '.join([column_name, tag]).strip()
+            new_column_name = " ".join([column_name, tag]).strip()
         new_columns.append(new_column_name)
     column_lookup = dict(zip(old_columns, new_columns))
     df = df.rename(columns=column_lookup, inplace=False)
     return df
 
 
-def _find_remaining_substrings(strings: list[str],
-                               split_with: str) -> list[str]:
-    """ Find the remaining part from several strings after splitting. """
+def _find_remaining_substrings(strings: list[str], split_with: str) -> list[str]:
+    """Find the remaining part from several strings after splitting."""
     substrings = []
     for string in strings:
         substrings.extend([s.strip() for s in string.split(split_with)])
@@ -681,10 +729,12 @@ def _find_remaining_substrings(strings: list[str],
     return substrings
 
 
-def _sort_leading_proteins(df: pd.DataFrame,
-                           contaminant_tag: Optional[str] = None,
-                           special_proteins: list[str] = []) -> pd.DataFrame:
-    """ Sorts protein entries from the 'Leading proteins' column.
+def _sort_leading_proteins(
+    df: pd.DataFrame,
+    contaminant_tag: Optional[str] = None,
+    special_proteins: list[str] = [],
+) -> pd.DataFrame:
+    """Sorts protein entries from the 'Leading proteins' column.
 
     Multiple entries in the 'Leading proteins' column must be separated by ';'.
     After sorting, special proteins are listed first and proteins containing
@@ -705,24 +755,26 @@ def _sort_leading_proteins(df: pd.DataFrame,
 
     leading_entries = []
     representative_entries = []
-    for leading_proteins in df['Leading proteins']:
-        proteins = leading_proteins.split(';')
+    for leading_proteins in df["Leading proteins"]:
+        proteins = leading_proteins.split(";")
         fastas, sorted_proteins, names = _sort_fasta_entries(
             proteins, sorting_tag_levels
         )
         representative_entries.append(sorted_proteins[0])
-        leading_entries.append(';'.join(sorted_proteins))
+        leading_entries.append(";".join(sorted_proteins))
 
     df = df.copy()
-    df['Representative protein'] = representative_entries
-    df['Leading proteins'] = leading_entries
+    df["Representative protein"] = representative_entries
+    df["Leading proteins"] = leading_entries
     return df
 
 
 def _sort_order_proteins(
-        proteins: list[str], special_proteins: Optional[list[bool]] = None,
-        contaminants: Optional[list[bool]] = None) -> list[str]:
-    """ Sorts proteins alphabetically, taking sorting tags into account.
+    proteins: list[str],
+    special_proteins: Optional[list[bool]] = None,
+    contaminants: Optional[list[bool]] = None,
+) -> list[str]:
+    """Sorts proteins alphabetically, taking sorting tags into account.
 
     Proteins are first sorted according to the sort level in ascending order,
     and those with the same entries are sorted alphabetically.
@@ -752,10 +804,10 @@ def _sort_order_proteins(
     return sort_order
 
 
-def _sort_fasta_entries(fasta_entries: list[str],
-                        sorting_tag_levels: dict[str, int] = {}
-                        ) -> list[list[str], list[str], list[str]]:
-    """ Return sorted fasta headers, protein ids, entry names.
+def _sort_fasta_entries(
+    fasta_entries: list[str], sorting_tag_levels: dict[str, int] = {}
+) -> list[list[str], list[str], list[str]]:
+    """Return sorted fasta headers, protein ids, entry names.
 
     Fasta headers are first sorted according to the sort level of each header
     in ascending order, and those with the same entries are sorted
@@ -772,9 +824,9 @@ def _sort_fasta_entries(fasta_entries: list[str],
     """
     values = []
     for fasta in fasta_entries:
-        if fasta.count('|') >= 2:
-            protein = fasta.split('|')[1]
-            name = fasta.split('|')[2].split(' ')[0]
+        if fasta.count("|") >= 2:
+            protein = fasta.split("|")[1]
+            name = fasta.split("|")[2].split(" ")[0]
         else:
             protein = fasta
             name = fasta
@@ -788,15 +840,16 @@ def _sort_fasta_entries(fasta_entries: list[str],
     return fastas, proteins, names
 
 
-def _mark_potential_contaminants(df: pd.DataFrame,
-                                 contaminant_tag: str) -> pd.DataFrame:
-    """ Adds a 'Potential contaminant' column to the data frame.
+def _mark_potential_contaminants(
+    df: pd.DataFrame, contaminant_tag: str
+) -> pd.DataFrame:
+    """Adds a 'Potential contaminant' column to the data frame.
 
     'Potential contaminant' is True if the 'Representative protein' entry
     contains the 'contaminant_tag', and otherwise False.
     """
     # not tested #
-    contaminants = [contaminant_tag in e for e in df['Representative protein']]
+    contaminants = [contaminant_tag in e for e in df["Representative protein"]]
     df = df.copy()
-    df['Potential contaminant'] = contaminants
+    df["Potential contaminant"] = contaminants
     return df

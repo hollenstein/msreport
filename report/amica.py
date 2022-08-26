@@ -34,39 +34,45 @@ import msreport.helper as helper
 from msreport.qtable import Qtable
 
 
-def write_amica_input(qtable: Qtable, directory,
-                      table_name: str = 'amica_table.tsv',
-                      design_name: str = 'amica_design.tsv') -> None:
+def write_amica_input(
+    qtable: Qtable,
+    directory,
+    table_name: str = "amica_table.tsv",
+    design_name: str = "amica_design.tsv",
+) -> None:
     amica_table = _amica_table_from(qtable)
     amica_table_path = os.path.join(directory, table_name)
-    amica_table.to_csv(amica_table_path, sep='\t', index=False)
+    amica_table.to_csv(amica_table_path, sep="\t", index=False)
 
     amica_design = _amica_design_from(qtable)
     amica_design_path = os.path.join(directory, design_name)
-    amica_design.to_csv(amica_design_path, sep='\t', index=False)
+    amica_design.to_csv(amica_design_path, sep="\t", index=False)
 
 
 def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
     amica_column_mapping = {
-        'Representative protein': 'Majority.protein.IDs',
-        'Gene name': 'Gene.names',
-        'Valid': 'quantified',
-        'Potential contaminant': 'Potential.contaminant',
+        "Representative protein": "Majority.protein.IDs",
+        "Gene name": "Gene.names",
+        "Valid": "quantified",
+        "Potential contaminant": "Potential.contaminant",
     }
     amica_column_tags = {
-        'LFQ intensity ': 'LFQIntensity_',
-        'Expression ': 'ImputedIntensity_',
-        'Spectral count ': 'razorUniqueCount_',
-        'iBAQ intensity ': 'iBAQ_',
-        'Average expression: ': 'AveExpr_',
-        'logFC: ': 'logFC_',
-        'P-value: ': 'P.Value_',
-        'Adjusted p-value: ': 'adj.P.Val_',
+        "LFQ intensity ": "LFQIntensity_",
+        "Expression ": "ImputedIntensity_",
+        "Spectral count ": "razorUniqueCount_",
+        "iBAQ intensity ": "iBAQ_",
+        "Average expression: ": "AveExpr_",
+        "logFC: ": "logFC_",
+        "P-value: ": "P.Value_",
+        "Adjusted p-value: ": "adj.P.Val_",
     }
     intensity_column_tags = [
-        'Intensity', 'LFQ intensity', 'Expression', 'iBAQ intensity'
+        "Intensity",
+        "LFQ intensity",
+        "Expression",
+        "iBAQ intensity",
     ]
-    amica_comparison_tag = (' vs ', '__vs__')
+    amica_comparison_tag = (" vs ", "__vs__")
 
     table = qtable.data.copy()
     # Log transform columns if necessary
@@ -80,8 +86,8 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
         new_column = old_column.replace(*amica_comparison_tag)
         table.rename(columns={old_column: new_column}, inplace=True)
 
-    for column in ['Valid', 'Potential contaminant']:
-        table[column] = ['+' if i else '' for i in table[column]]
+    for column in ["Valid", "Potential contaminant"]:
+        table[column] = ["+" if i else "" for i in table[column]]
 
     for old_tag, new_tag in amica_column_tags.items():
         for old_column in helper.find_columns(table, old_tag):
@@ -94,6 +100,6 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
 
 
 def _amica_design_from(qtable: Qtable) -> pd.DataFrame:
-    amica_design_columns = {'Sample': 'samples', 'Experiment': 'groups'}
+    amica_design_columns = {"Sample": "samples", "Experiment": "groups"}
     amica_design = qtable.design.copy().rename(columns=amica_design_columns)
     return amica_design

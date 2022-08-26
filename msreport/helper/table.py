@@ -6,7 +6,7 @@ import pandas as pd
 
 
 def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
-    """ Extract sample names and experiments from intensity columns.
+    """Extract sample names and experiments from intensity columns.
 
     First a subset of columns containing a column tag are identified. Then
     sample names are extracted by removing the column tag from each column
@@ -29,16 +29,15 @@ def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
     """
     sample_entries = []
     for column in find_columns(table, tag, must_be_substring=True):
-        sample = column.replace(tag, '').strip()
-        experiment = '_'.join(sample.split('_')[:-1])
+        sample = column.replace(tag, "").strip()
+        experiment = "_".join(sample.split("_")[:-1])
         sample_entries.append([sample, experiment])
-    design = pd.DataFrame(sample_entries, columns=['Sample', 'Experiment'])
+    design = pd.DataFrame(sample_entries, columns=["Sample", "Experiment"])
     return design
 
 
-def intensities_in_logspace(
-        data: Union[pd.DataFrame, np.ndarray, Iterable]) -> bool:
-    """ Evaluates whether intensities are likely to be log transformed.
+def intensities_in_logspace(data: Union[pd.DataFrame, np.ndarray, Iterable]) -> bool:
+    """Evaluates whether intensities are likely to be log transformed.
 
     Assumes that intensities are log transformed if all values are smaller or
     equal to 64. Intensities values (and intensity peak areas) reported by
@@ -59,9 +58,8 @@ def intensities_in_logspace(
     return np.all(data[mask].flatten() <= 64)
 
 
-def rename_mq_reporter_channels(
-        table: pd.DataFrame, channel_names: list[str]) -> None:
-    """ Renames reporter channel numbers with sample names.
+def rename_mq_reporter_channels(table: pd.DataFrame, channel_names: list[str]) -> None:
+    """Renames reporter channel numbers with sample names.
 
     MaxQuant writes reporter channel names either in the format
     'Reporter intensity 1' or 'Reporter intensity 1 Experiment Name',
@@ -70,23 +68,24 @@ def rename_mq_reporter_channels(
     NOTE: This might not work for the peptides.txt table, as there are columns
     present with the experiment name and without it.
     """
-    pattern = re.compile('Reporter intensity [0-9]+')
+    pattern = re.compile("Reporter intensity [0-9]+")
     reporter_columns = list(filter(pattern.match, table.columns.tolist()))
     assert len(reporter_columns) == len(channel_names)
 
     column_mapping = {}
-    base_name = 'Reporter intensity '
+    base_name = "Reporter intensity "
     for column, channel_name in zip(reporter_columns, channel_names):
-        for tag in ['', 'count ', 'corrected ']:
-            old_column = column.replace(f'{base_name}', f'{base_name}{tag}')
-            new_column = f'{base_name}{tag}{channel_name}'
+        for tag in ["", "count ", "corrected "]:
+            old_column = column.replace(f"{base_name}", f"{base_name}{tag}")
+            new_column = f"{base_name}{tag}{channel_name}"
             column_mapping[old_column] = new_column
     table.rename(columns=column_mapping, inplace=True)
 
 
-def find_columns(df: pd.DataFrame, substring: str,
-                 must_be_substring: bool = False) -> list[str]:
-    """ Returns a list column names containing the substring.
+def find_columns(
+    df: pd.DataFrame, substring: str, must_be_substring: bool = False
+) -> list[str]:
+    """Returns a list column names containing the substring.
 
     Args:
         df: Columns of this pandas.DataFrame are queried.
@@ -104,9 +103,10 @@ def find_columns(df: pd.DataFrame, substring: str,
     return matched_columns
 
 
-def find_sample_columns(df: pd.DataFrame, substring: str,
-                        samples: list[str]) -> list[str]:
-    """ Returns a list column names containing the substring and any sample.
+def find_sample_columns(
+    df: pd.DataFrame, substring: str, samples: list[str]
+) -> list[str]:
+    """Returns a list column names containing the substring and any sample.
     Args:
         df: Columns of this pandas.DataFrame are queried.
         substring: String that must be part of column names.

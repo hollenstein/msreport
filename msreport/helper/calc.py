@@ -9,9 +9,10 @@ import scipy.optimize
 import maspy.peptidemethods
 
 
-def gaussian_imputation(table: pd.DataFrame, median_downshift: float,
-                        std_width: float) -> pd.DataFrame:
-    """ Impute missing values by drawing values from a normal distribution.
+def gaussian_imputation(
+    table: pd.DataFrame, median_downshift: float, std_width: float
+) -> pd.DataFrame:
+    """Impute missing values by drawing values from a normal distribution.
 
     Imputation is performed column wise, and the parameters for the normal
     distribution are calculated independently for each column.
@@ -42,7 +43,7 @@ def gaussian_imputation(table: pd.DataFrame, median_downshift: float,
 
 
 def solve_ratio_matrix(matrix: np.ndarray) -> np.ndarray:
-    """ Solve a square matrix containing pair wise log ratios. """
+    """Solve a square matrix containing pair wise log ratios."""
     # Not tested #
     assert matrix.shape[0] == matrix.shape[1]
     num_groups = matrix.shape[0]
@@ -65,12 +66,12 @@ def solve_ratio_matrix(matrix: np.ndarray) -> np.ndarray:
 
 
 def mode(values: Iterable) -> float:
-    """ Calculate the mode by using kernel-density estimation. """
+    """Calculate the mode by using kernel-density estimation."""
     median = np.median(values)
     bounds = (median - 1.5, median + 1.5)
     kde = scipy.stats.gaussian_kde(values)
     optimize_result = scipy.optimize.minimize_scalar(
-        lambda x: -kde(x)[0], method='Bounded', bounds=bounds
+        lambda x: -kde(x)[0], method="Bounded", bounds=bounds
     )
     mode = optimize_result.x
     # Maybe add fallback function if optimize was not successful
@@ -78,31 +79,35 @@ def mode(values: Iterable) -> float:
 
 
 def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
-    cleavage_rule = '[KR]'
+    cleavage_rule = "[KR]"
     missed_cleavage = 0
     min_length = 7
     max_length = 30
 
     digestion_products = maspy.peptidemethods.digestInSilico(
-        protein_sequence, removeNtermM=False,
-        cleavageRule=cleavage_rule, missedCleavage=missed_cleavage,
-        minLength=min_length, maxLength=max_length
+        protein_sequence,
+        removeNtermM=False,
+        cleavageRule=cleavage_rule,
+        missedCleavage=missed_cleavage,
+        minLength=min_length,
+        maxLength=max_length,
     )
     unique_peptide_sequences = set([p for p, i in digestion_products])
     return len(unique_peptide_sequences)
 
 
-def make_coverage_mask(protein_length: int,
-                       peptide_positions: list[(int, int)]) -> np.array:
-    coverage_mask = np.zeros(protein_length, dtype='bool')
+def make_coverage_mask(
+    protein_length: int, peptide_positions: list[(int, int)]
+) -> np.array:
+    coverage_mask = np.zeros(protein_length, dtype="bool")
     for start, end in peptide_positions:
-        coverage_mask[start - 1: end] = True
+        coverage_mask[start - 1 : end] = True
     return coverage_mask
 
 
-def calculate_sequence_coverage(protein_length: int,
-                                peptide_positions: list[(int, int)],
-                                ndigits: int = 1) -> np.array:
+def calculate_sequence_coverage(
+    protein_length: int, peptide_positions: list[(int, int)], ndigits: int = 1
+) -> np.array:
     coverage_mask = make_coverage_mask(protein_length, peptide_positions)
     coverage = round(coverage_mask.sum() / protein_length * 100, ndigits)
     return coverage

@@ -83,31 +83,34 @@ import msreport.rinterface
 
 
 def analyze_missingness(qtable: Qtable) -> None:
-    """ Adds a quantification of missing values in expression columns."""
+    """Adds a quantification of missing values in expression columns."""
     # TODO: not tested #
     missingness = pd.DataFrame()
     expr_table = qtable.make_expression_table(samples_as_columns=True)
     num_missing = np.isnan(expr_table).sum(axis=1)
     num_events = np.isfinite(expr_table).sum(axis=1)
-    missingness['Events total'] = num_events
-    missingness['Missing total'] = num_missing
+    missingness["Events total"] = num_events
+    missingness["Missing total"] = num_missing
     for experiment in qtable.get_experiments():
         exp_samples = qtable.get_samples(experiment)
         num_events = np.isfinite(expr_table[exp_samples]).sum(axis=1)
-        missingness[f'Events {experiment}'] = num_events
+        missingness[f"Events {experiment}"] = num_events
         num_missing = np.isnan(expr_table[exp_samples]).sum(axis=1)
-        missingness[f'Missing {experiment}'] = num_missing
+        missingness[f"Missing {experiment}"] = num_missing
         for sample in exp_samples:
             sample_missing = np.isnan(expr_table[sample])
-            missingness[f'Missing {sample}'] = sample_missing
+            missingness[f"Missing {sample}"] = sample_missing
     qtable.add_expression_features(missingness)
 
 
-def validate_proteins(qtable: Qtable, min_peptides: int = 0,
-                      remove_contaminants: bool = True,
-                      min_events: Optional[int] = None,
-                      max_missing: Optional[int] = None) -> None:
-    """ Validates protein entries by adding a 'Valid' column to the qtable.
+def validate_proteins(
+    qtable: Qtable,
+    min_peptides: int = 0,
+    remove_contaminants: bool = True,
+    min_events: Optional[int] = None,
+    max_missing: Optional[int] = None,
+) -> None:
+    """Validates protein entries by adding a 'Valid' column to the qtable.
 
     Attributes:
         min_peptides: Minimum number of unique peptides.
@@ -118,33 +121,34 @@ def validate_proteins(qtable: Qtable, min_peptides: int = 0,
         max_missing: Requires at least one experiment with this maximum number
             of missing values.
     """
-    valid_entries = (qtable.data['Total peptides'] >= min_peptides)
+    valid_entries = qtable.data["Total peptides"] >= min_peptides
     # TODO: not tested from here #
-    if remove_contaminants and 'Potential contaminant' in qtable.data:
-        valid_entries = np.all([
-            valid_entries, np.invert(qtable.data['Potential contaminant'])
-        ], axis=0)
+    if remove_contaminants and "Potential contaminant" in qtable.data:
+        valid_entries = np.all(
+            [valid_entries, np.invert(qtable.data["Potential contaminant"])], axis=0
+        )
 
     if max_missing is not None:
-        if 'Missing total' not in qtable.data:
-            raise Exception('Missing values need to be analyzed before.')
-        cols = [' '.join(['Missing', e]) for e in qtable.get_experiments()]
+        if "Missing total" not in qtable.data:
+            raise Exception("Missing values need to be analyzed before.")
+        cols = [" ".join(["Missing", e]) for e in qtable.get_experiments()]
         max_missing_valid = np.any(qtable.data[cols] <= max_missing, axis=1)
         valid_entries = max_missing_valid & valid_entries
 
     if min_events is not None:
-        cols = [' '.join(['Events', e]) for e in qtable.get_experiments()]
+        cols = [" ".join(["Events", e]) for e in qtable.get_experiments()]
         min_events_valid = np.any(qtable.data[cols] >= min_events, axis=1)
         valid_entries = min_events_valid & valid_entries
 
-    qtable.data['Valid'] = valid_entries
+    qtable.data["Valid"] = valid_entries
 
 
 def normalize_expression(
-        qtable: Qtable, method: str,
-        normalizer: Optional[msreport.normalize.BaseSampleNormalizer] = None
+    qtable: Qtable,
+    method: str,
+    normalizer: Optional[msreport.normalize.BaseSampleNormalizer] = None,
 ) -> msreport.normalize.BaseSampleNormalizer:
-    """ Normalizes expression values and returns a Normalizer instance.
+    """Normalizes expression values and returns a Normalizer instance.
 
     Attributes:
         qtable: Qtable instance that contains expression values for
@@ -155,21 +159,23 @@ def normalize_expression(
             ignored.
     """
     expression_matrix = qtable.make_expression_matrix(samples_as_columns=True)
-    if 'Valid' in qtable.data:
-        fitting_mask = qtable.data['Valid'].to_numpy()
+    if "Valid" in qtable.data:
+        fitting_mask = qtable.data["Valid"].to_numpy()
     else:
         fitting_mask = np.ones(expression_matrix.shape[0], dtype=bool)
 
     if normalizer is None:
-        if method == 'median':
+        if method == "median":
             normalizer = msreport.normalize.MedianNormalizer()
-        elif method == 'mode':
+        elif method == "mode":
             normalizer = msreport.normalize.ModeNormalizer()
-        elif method == 'lowess':
+        elif method == "lowess":
             normalizer = msreport.normalize.LowessNormalizer()
         else:
-            raise ValueError(f'"method" = {method} not allowed. '
-                             'Must be either "median", "mode" or "lowess".')
+            raise ValueError(
+                f'"method" = {method} not allowed. '
+                'Must be either "median", "mode" or "lowess".'
+            )
         normalizer.fit(expression_matrix[fitting_mask])
     else:
         # TODO check that normalizer is already fitted
@@ -181,7 +187,7 @@ def normalize_expression(
 
 
 def impute_missing_values(qtable: Qtable) -> None:
-    """ Impute missing expression values.
+    """Impute missing expression values.
 
     Imputes missing values (nan) from expression columns and thus requires that
     expression columns are defined.
@@ -201,21 +207,22 @@ def impute_missing_values(qtable: Qtable) -> None:
 
 
 def calculate_experiment_means(qtable: Qtable) -> None:
-    """ Calculate mean expression values for each experiment. """
+    """Calculate mean expression values for each experiment."""
     experiment_means = {}
     for experiment in qtable.get_experiments():
         samples = qtable.get_samples(experiment)
         columns = [qtable.get_expression_column(s) for s in samples]
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore', category=RuntimeWarning)
+            warnings.simplefilter("ignore", category=RuntimeWarning)
             row_means = np.nanmean(qtable.data[columns], axis=1)
-        experiment_means[f'Expression {experiment}'] = row_means
+        experiment_means[f"Expression {experiment}"] = row_means
     qtable.add_expression_features(pd.DataFrame(experiment_means))
 
 
-def two_group_comparison(qtable: Qtable, groups: list[str],
-                         filter_valid: bool = False) -> None:
-    """ Calculates comparison values for two experiments.
+def two_group_comparison(
+    qtable: Qtable, groups: list[str], filter_valid: bool = False
+) -> None:
+    """Calculates comparison values for two experiments.
 
     Expects log2 transformed values
     """
@@ -224,12 +231,12 @@ def two_group_comparison(qtable: Qtable, groups: list[str],
 
     # TODO: filtering should be able via "make_expression_table"
     if filter_valid:
-        invalid = np.invert(qtable.data['Valid'].to_numpy())
+        invalid = np.invert(qtable.data["Valid"].to_numpy())
     else:
         invalid = np.full(table.shape[0], False)
 
     with warnings.catch_warnings():
-        warnings.simplefilter('ignore', category=RuntimeWarning)
+        warnings.simplefilter("ignore", category=RuntimeWarning)
         group_expressions = []
         for experiment in groups:
             samples = qtable.get_samples(experiment)
@@ -237,18 +244,23 @@ def two_group_comparison(qtable: Qtable, groups: list[str],
         ratios = group_expressions[0] - group_expressions[1]
         average_expressions = np.nanmean(group_expressions, axis=0)
 
-    comparison_table = pd.DataFrame({
-        f'Average expression {groups[0]} vs {groups[1]}': average_expressions,
-        f'logFC {groups[0]} vs {groups[1]}': ratios,
-    })
+    comparison_table = pd.DataFrame(
+        {
+            f"Average expression {groups[0]} vs {groups[1]}": average_expressions,
+            f"logFC {groups[0]} vs {groups[1]}": ratios,
+        }
+    )
     comparison_table[invalid] = np.nan
     qtable.add_expression_features(comparison_table)
 
 
-def calculate_two_group_limma(qtable: Qtable, groups: list[str],
-                              filter_valid: bool = True,
-                              limma_trend: bool = True) -> pd.DataFrame:
-    """ Use limma to calculate two sample differential expression from qtable.
+def calculate_two_group_limma(
+    qtable: Qtable,
+    groups: list[str],
+    filter_valid: bool = True,
+    limma_trend: bool = True,
+) -> pd.DataFrame:
+    """Use limma to calculate two sample differential expression from qtable.
 
     Requires that expression columns are set. All rows with missing values are
     ignored, use imputation of missing values to prevent this. The qtable.data
@@ -268,12 +280,12 @@ def calculate_two_group_limma(qtable: Qtable, groups: list[str],
     """
     # TODO: not tested #
     expression_table = qtable.make_expression_table(
-        samples_as_columns=True, features=['Representative protein']
+        samples_as_columns=True, features=["Representative protein"]
     )
 
     # TODO: filtering should be able via "make_expression_table"
     if filter_valid:
-        valid = qtable.data['Valid']
+        valid = qtable.data["Valid"]
     else:
         valid = np.full(expression_table.shape[0], True)
 
@@ -282,11 +294,11 @@ def calculate_two_group_limma(qtable: Qtable, groups: list[str],
         mapping = {s: experiment for s in qtable.get_samples(experiment)}
         samples_to_experiment.update(mapping)
 
-    table_columns = ['Representative protein']
+    table_columns = ["Representative protein"]
     table_columns.extend(samples_to_experiment.keys())
     table = expression_table[table_columns]
-    table = table.set_index('Representative protein')
-    not_nan = (table.isna().sum(axis=1) == 0)
+    table = table.set_index("Representative protein")
+    not_nan = table.isna().sum(axis=1) == 0
 
     mask = np.all([valid, not_nan], axis=0)
     column_groups = list(samples_to_experiment.values())
@@ -304,8 +316,8 @@ def calculate_two_group_limma(qtable: Qtable, groups: list[str],
     limma_table[mask] = limma_result
     limma_table.fillna(np.nan, inplace=True)
 
-    group_name = f'{group1} vs {group2}'
-    mapping = {col: f'{col} {group_name}' for col in limma_table.columns}
+    group_name = f"{group1} vs {group2}"
+    mapping = {col: f"{col} {group_name}" for col in limma_table.columns}
     limma_table.rename(columns=mapping, inplace=True)
     qtable.add_expression_features(limma_table)
 
@@ -313,41 +325,43 @@ def calculate_two_group_limma(qtable: Qtable, groups: list[str],
 
 
 def count_missing_values(qtable: Qtable) -> pd.DataFrame:
-    """ Returns a quantification of missing values in expression columns.
+    """Returns a quantification of missing values in expression columns.
 
     --> Returns a dataframe with missing value counts in expression columns per
         row, for all sample columns and per experiment. 'Missing total'
     ! Requires expression columns to be set
     """
     warnings.warn(
-        'This method will be deprecated, use normalize_expression() instead',
-        DeprecationWarning, stacklevel=2
+        "This method will be deprecated, use normalize_expression() instead",
+        DeprecationWarning,
+        stacklevel=2,
     )
 
     missingness = pd.DataFrame()
     expr_table = qtable.make_expression_table(samples_as_columns=True)
     num_missing = expr_table.isna().sum(axis=1)
-    missingness['Missing total'] = num_missing
+    missingness["Missing total"] = num_missing
     for experiment in qtable.get_experiments():
         exp_samples = qtable.get_samples(experiment)
         num_missing = expr_table[exp_samples].isna().sum(axis=1)
-        column_name = ' '.join(['Missing', experiment])
+        column_name = " ".join(["Missing", experiment])
         missingness[column_name] = num_missing
     return missingness
 
 
 def median_normalize_samples(qtable: Qtable) -> None:
-    """ Normalize samples with median profiles. """
+    """Normalize samples with median profiles."""
     warnings.warn(
-        'This method will be deprecated, use normalize_expression() instead',
-        DeprecationWarning, stacklevel=2
+        "This method will be deprecated, use normalize_expression() instead",
+        DeprecationWarning,
+        stacklevel=2,
     )
 
     samples = qtable.get_samples()
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
-    if 'Valid' in qtable.data:
-        expr_table = expr_table[qtable.data['Valid']]
+    if "Valid" in qtable.data:
+        expr_table = expr_table[qtable.data["Valid"]]
 
     # calculate ratio matrix
     sample_combinations = list(itertools.combinations(range(num_samples), 2))
@@ -366,17 +380,18 @@ def median_normalize_samples(qtable: Qtable) -> None:
 
 
 def mode_normalize_samples(qtable: Qtable) -> None:
-    """ Normalize samples with median profiles. """
+    """Normalize samples with median profiles."""
     warnings.warn(
-        'This method will be deprecated, use normalize_expression() instead',
-        DeprecationWarning, stacklevel=2
+        "This method will be deprecated, use normalize_expression() instead",
+        DeprecationWarning,
+        stacklevel=2,
     )
 
     samples = qtable.get_samples()
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
-    if 'Valid' in qtable.data:
-        expr_table = expr_table[qtable.data['Valid']]
+    if "Valid" in qtable.data:
+        expr_table = expr_table[qtable.data["Valid"]]
 
     # calculate ratio matrix
     sample_combinations = list(itertools.combinations(range(num_samples), 2))
@@ -398,23 +413,25 @@ def mode_normalize_samples(qtable: Qtable) -> None:
 
 
 def lowess_normalize_samples(qtable: Qtable) -> None:
-    """ Normalize samples to pseudo reference with lowess. """
+    """Normalize samples to pseudo reference with lowess."""
     warnings.warn(
-        'This method will be deprecated, use normalize_expression() instead',
-        DeprecationWarning, stacklevel=2
+        "This method will be deprecated, use normalize_expression() instead",
+        DeprecationWarning,
+        stacklevel=2,
     )
 
     samples = qtable.get_samples()
     expr_table = qtable.make_expression_table(samples_as_columns=True)
 
-    ref_mask = (expr_table[samples].isna().sum(axis=1) == 0)
-    if 'Valid' in qtable.data:
-        ref_mask = np.all([ref_mask, qtable.data['Valid']], axis=0)
+    ref_mask = expr_table[samples].isna().sum(axis=1) == 0
+    if "Valid" in qtable.data:
+        ref_mask = np.all([ref_mask, qtable.data["Valid"]], axis=0)
     ref_intensities = expr_table.loc[ref_mask, samples].mean(axis=1)
 
     delta_span_percentage = 0.05
-    lowess_delta = ((ref_intensities.max() - ref_intensities.min())
-                    * delta_span_percentage)
+    lowess_delta = (
+        ref_intensities.max() - ref_intensities.min()
+    ) * delta_span_percentage
     sample_fits = {}
     for sample in samples:
         sample_intensities = expr_table.loc[ref_mask, sample]
