@@ -115,10 +115,10 @@ def test_sort_fasta_entries_with_sorting_by_tag():
 )
 def test_sort_order_proteins(proteins, contaminants, special_proteins, expected):
     proteins = ["C", "B", "A"]
-    sort_order = msreport.reader._sort_order_proteins(
+    sorted_proteins, _ = msreport.reader._sort_proteins_and_contaminants(
         proteins, special_proteins=special_proteins, contaminants=contaminants
     )
-    sorted_proteins = [proteins[i] for i in sort_order]
+    # sorted_proteins = [proteins[i] for i in sort_order]
     assert sorted_proteins == expected
 
 
@@ -163,6 +163,64 @@ class TestSortLeadingProteins:
         )
         assert df["Leading proteins"].tolist() == leading_proteins
         assert df["Representative protein"].tolist() == representative_protein
+
+
+class TestProcessProteinEntries:
+    @pytest.fixture(autouse=True)
+    def _init_dataframe(self):
+        self.leading_protein_entries = [
+            ["B", "A"],
+            ["D"],
+            ["E"],
+            ["G", "H", "I"],
+            ["CON__x|J|x", "J"],
+            ["CON__x|K|x"],
+        ]
+
+    def test_without_sorting(self):
+        contaminant_tag = "CON__"
+        sort_proteins = False
+        table = msreport.reader._process_protein_entries(
+            self.leading_protein_entries,
+            contaminant_tag,
+            sort_proteins,
+        )
+
+        leading_proteins = ["B;A", "D", "E", "G;H;I", "J;J", "K"]
+        representative_protein = ["B", "D", "E", "G", "J", "K"]
+        protein_reported_by_software = representative_protein
+        is_contaminant = [False, False, False, False, True, True]
+
+        assert table["Leading proteins"].tolist() == leading_proteins
+        assert table["Representative protein"].tolist() == representative_protein
+        assert (
+            table["Protein reported by software"].tolist()
+            == protein_reported_by_software
+        )
+        assert table["Potential contaminant"].tolist() == is_contaminant
+
+    def test_with_sorting(self):
+        contaminant_tag = "CON__"
+        sort_proteins = True
+        special_proteins = ["H"]
+        table = msreport.reader._process_protein_entries(
+            self.leading_protein_entries,
+            contaminant_tag,
+            sort_proteins,
+            special_proteins,
+        )
+        leading_proteins = ["A;B", "D", "E", "H;G;I", "J;J", "K"]
+        representative_protein = ["A", "D", "E", "H", "J", "K"]
+        protein_reported_by_software = ["B", "D", "E", "G", "J", "K"]
+        is_contaminant = [False, False, False, False, False, True]
+
+        assert table["Leading proteins"].tolist() == leading_proteins
+        assert table["Representative protein"].tolist() == representative_protein
+        assert (
+            table["Protein reported by software"].tolist()
+            == protein_reported_by_software
+        )
+        assert table["Potential contaminant"].tolist() == is_contaminant
 
 
 class TestAddIbaqIntensities:
@@ -314,85 +372,16 @@ class TestMQReader:
         is_idbysite = table["Only identified by site"] == "+"
         assert not is_idbysite.any()
 
-    def test_add_protein_entries(self):
+    def test_collect_leading_protein_entries(self):
         table = pd.DataFrame(
             {
                 "Majority protein IDs": ["B;A;C", "D", "E;F", "G;H;I"],
                 "Peptide counts (all)": ["5;5;3", "3", "6;3", "6;6;6"],
             }
         )
-        leading_proteins = ["B;A", "D", "E", "G;H;I"]
-        representative_protein = ["B", "D", "E", "G"]
-        protein_reported_by_software = representative_protein
-
-        table = self.reader._add_protein_entries(table)
-        assert table["Leading proteins"].tolist() == leading_proteins
-        assert table["Representative protein"].tolist() == representative_protein
-        assert (
-            table["Protein reported by software"].tolist()
-            == protein_reported_by_software
-        )
-
-    def test_process_protein_entries(self):
-        table = pd.DataFrame(
-            {
-                "Majority protein IDs": [
-                    "B;A;C",
-                    "D",
-                    "E;F",
-                    "G;H;I",
-                    "CON__x|J|x;J",
-                    "CON__x|K|x",
-                ],
-                "Peptide counts (all)": ["5;5;3", "3", "6;3", "6;6;6", "4;4", "4"],
-            }
-        )
-        leading_proteins = ["B;A", "D", "E", "G;H;I", "J;J", "K"]
-        representative_protein = ["B", "D", "E", "G", "J", "K"]
-        protein_reported_by_software = representative_protein
-        is_contaminant = [False, False, False, False, True, True]
-
-        self.reader._contaminant_tag = "CON__"
-        table = self.reader._process_protein_entries(table, sort_proteins=False)
-        assert table["Leading proteins"].tolist() == leading_proteins
-        assert table["Representative protein"].tolist() == representative_protein
-        assert (
-            table["Protein reported by software"].tolist()
-            == protein_reported_by_software
-        )
-        assert table["Potential contaminant"].tolist() == is_contaminant
-
-    def test_process_protein_entries_with_sorting(self):
-        table = pd.DataFrame(
-            {
-                "Majority protein IDs": [
-                    "B;A;C",
-                    "D",
-                    "E;F",
-                    "G;H;I",
-                    "CON__x|J|x;J",
-                    "CON__x|K|x",
-                ],
-                "Peptide counts (all)": ["5;5;3", "3", "6;3", "6;6;6", "4;4", "4"],
-            }
-        )
-        special_proteins = ["H"]
-        leading_proteins = ["A;B", "D", "E", "H;G;I", "J;J", "K"]
-        representative_protein = ["A", "D", "E", "H", "J", "K"]
-        protein_reported_by_software = ["B", "D", "E", "G", "J", "K"]
-        is_contaminant = [False, False, False, False, False, True]
-
-        self.reader._contaminant_tag = "CON__"
-        table = self.reader._process_protein_entries(
-            table, sort_proteins=True, special_proteins=special_proteins
-        )
-        assert table["Leading proteins"].tolist() == leading_proteins
-        assert table["Representative protein"].tolist() == representative_protein
-        assert (
-            table["Protein reported by software"].tolist()
-            == protein_reported_by_software
-        )
-        assert table["Potential contaminant"].tolist() == is_contaminant
+        expected = [["B", "A"], ["D"], ["E"], ["G", "H", "I"]]
+        leading_proteins = self.reader._collect_leading_protein_entries(table)
+        assert leading_proteins == expected
 
     def test_integration_import_proteins(self):
         table = self.reader.import_proteins(
@@ -428,7 +417,23 @@ class TestFPReader:
     def test_testdata_setup(self):
         assert os.path.isdir(self.reader.data_directory)
 
-    def test_add_protein_entries(self):
+    def test_collect_leading_protein_entries(self):
+        table = pd.DataFrame(
+            {
+                "Protein": ["x|B|b", "x|D|d", "x|E|e", "x|G|g"],
+                "Indistinguishable Proteins": ["x|A|a", "", "", "x|H|h, x|I|i"],
+            }
+        )
+        expected = [
+            ["x|B|b", "x|A|a"],
+            ["x|D|d"],
+            ["x|E|e"],
+            ["x|G|g", "x|H|h", "x|I|i"],
+        ]
+        leading_proteins = self.reader._collect_leading_protein_entries(table)
+        assert leading_proteins == expected
+
+    def test_add_protein_entries_without_sorting(self):
         table = pd.DataFrame(
             {
                 "Protein": ["x|B|b", "x|D|d", "x|E|e", "x|G|g"],
@@ -439,7 +444,7 @@ class TestFPReader:
         representative_protein = ["B", "D", "E", "G"]
         protein_reported_by_software = representative_protein
 
-        table = self.reader._add_protein_entries(table)
+        table = self.reader._add_protein_entries(table, False)
         assert table["Leading proteins"].tolist() == leading_proteins
         assert table["Representative protein"].tolist() == representative_protein
         assert (
