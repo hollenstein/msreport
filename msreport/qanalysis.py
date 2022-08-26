@@ -85,22 +85,24 @@ import msreport.rinterface
 def analyze_missingness(qtable: Qtable) -> None:
     """Adds a quantification of missing values in expression columns."""
     # TODO: not tested #
-    missingness = pd.DataFrame()
+    missing_events = pd.DataFrame()
+    quant_events = pd.DataFrame()
     expr_table = qtable.make_expression_table(samples_as_columns=True)
     num_missing = np.isnan(expr_table).sum(axis=1)
     num_events = np.isfinite(expr_table).sum(axis=1)
-    missingness["Events total"] = num_events
-    missingness["Missing total"] = num_missing
+    quant_events["Events total"] = num_events
+    missing_events["Missing total"] = num_missing
     for experiment in qtable.get_experiments():
         exp_samples = qtable.get_samples(experiment)
         num_events = np.isfinite(expr_table[exp_samples]).sum(axis=1)
-        missingness[f"Events {experiment}"] = num_events
+        quant_events[f"Events {experiment}"] = num_events
         num_missing = np.isnan(expr_table[exp_samples]).sum(axis=1)
-        missingness[f"Missing {experiment}"] = num_missing
+        missing_events[f"Missing {experiment}"] = num_missing
         for sample in exp_samples:
             sample_missing = np.isnan(expr_table[sample])
-            missingness[f"Missing {sample}"] = sample_missing
-    qtable.add_expression_features(missingness)
+            missing_events[f"Missing {sample}"] = sample_missing
+    qtable.add_expression_features(missing_events)
+    qtable.add_expression_features(quant_events)
 
 
 def validate_proteins(
