@@ -218,7 +218,6 @@ def impute_missing_values(qtable: Qtable) -> None:
 
 def calculate_experiment_means(qtable: Qtable) -> None:
     """Calculate mean expression values for each experiment."""
-    # TODO not tested #
     experiment_means = {}
     for experiment in qtable.get_experiments():
         samples = qtable.get_samples(experiment)

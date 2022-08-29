@@ -23,8 +23,10 @@ def example_data():
             "Representative protein": ["A", "B", "C"],
             "Intensity Sample_A1": [10, np.nan, 10.3],
             "Intensity Sample_A2": [10, np.nan, 10.3],
-            "Intensity Sample_B1": [15, np.nan, np.nan],
+            "Intensity Sample_B1": [11, np.nan, np.nan],
             "Intensity Sample_B2": [15, np.nan, 10.3],
+            "Mean Experiment_A": [10, np.nan, 10.3],  # <- Adjust to Sample_A1/A2
+            "Mean Experiment_B": [13, np.nan, 10.3],  # <- Adjust to Sample_A1/A2
         }
     )
     missing_values = pd.DataFrame(
@@ -76,3 +78,18 @@ def test_impute_missing_values(example_qtable):
     expr_table = example_qtable.make_expression_table()
     number_missing_values = expr_table.isna().sum().sum()
     assert number_missing_values == 0
+
+
+def test_calculate_experiment_means(example_data, example_qtable):
+    msreport.qanalysis.calculate_experiment_means(example_qtable)
+
+    experiments = example_qtable.get_experiments()
+    assert all([f"Expression {e}" in example_qtable.data for e in experiments])
+    assert all(
+        [f"Expression {e}" in example_qtable._expression_features for e in experiments]
+    )
+    assert np.allclose(
+        example_qtable.data["Expression Experiment_B"],
+        example_data["data"]["Mean Experiment_B"],
+        equal_nan=True,
+    )

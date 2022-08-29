@@ -79,19 +79,6 @@ class Qtable:
             table.rename(columns=mapping, inplace=True)
         return table
 
-    def make_expression_matrix(self, samples_as_columns: bool = False) -> pd.DataFrame:
-        """Returns a new dataframe containing the expression columns.
-
-        Args:
-            samples_as_columns: If true, replace expression column names with
-                sample names. Requires that the experimental design is set.
-        """
-        raise DeprecationWarning()
-        matrix = self.data[self._expression_columns].copy()
-        if samples_as_columns:
-            matrix.rename(columns=self._expression_sample_mapping, inplace=True)
-        return matrix
-
     def make_expression_table(
         self,
         samples_as_columns: bool = False,
@@ -203,45 +190,6 @@ class Qtable:
             self.data[new_column] = new_data[new_column].to_numpy()
             if new_column not in self._expression_features:
                 self._expression_features.append(new_column)
-
-    def calculate_experiment_means(self) -> None:
-        """Calculate mean expression values for each experiment."""
-        # TODO: move to quanalysis
-        warnings.warn(
-            "This method will be deprecated, "
-            "use qanalysis.calculate_experiment_means() instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        experiment_means = {}
-        for experiment in self.get_experiments():
-            samples = self.get_samples(experiment)
-            columns = [self.get_expression_column(s) for s in samples]
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=RuntimeWarning)
-                row_means = np.nanmean(self.data[columns], axis=1)
-            experiment_means[experiment] = row_means
-        self.add_expression_features(pd.DataFrame(experiment_means))
-
-    def impute_missing_values(self) -> None:
-        """Impute missing expression values.
-
-        Missing values are imputed independently for each column by drawing
-        random values from a normal distribution. The parameters of the normal
-        distribution are calculated from the observed values. Mu is the
-        observed median, downshifted by 1.8 standard deviations. Sigma is the
-        observed standard deviation multiplied by 0.3.
-        """
-        warnings.warn(
-            "This method will be deprecated", DeprecationWarning, stacklevel=2
-        )
-
-        median_downshift = 1.8
-        std_width = 0.3
-
-        expr = self.make_expression_table()
-        imputed = helper.gaussian_imputation(expr, median_downshift, std_width)
-        self.data[expr.columns] = imputed[expr.columns]
 
     def _set_expression(
         self,

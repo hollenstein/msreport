@@ -409,24 +409,3 @@ class TestQtableMakeExpressionTable:
             features=["id"], samples_as_columns=True
         )
         assert isinstance(expr_table_by_qtable, pd.DataFrame)
-
-
-def test_qtable_impute_missing_values(example_qtable):
-    example_qtable.impute_missing_values()
-
-    expr_table = example_qtable.make_expression_table()
-    number_missing_values = expr_table.isna().sum().sum()
-    assert number_missing_values == 0
-
-
-def test_qtable_calculate_experiment_means(example_data, example_qtable):
-    example_qtable.calculate_experiment_means()
-
-    experiments = example_qtable.get_experiments()
-    assert all([e in example_qtable.data for e in experiments])
-    assert all([e in example_qtable._expression_features for e in experiments])
-    assert np.allclose(
-        example_qtable.data["Experiment_A"],
-        example_data["data"]["Mean_Experiment_A1"],
-        equal_nan=True,
-    )
