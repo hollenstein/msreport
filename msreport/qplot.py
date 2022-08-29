@@ -216,23 +216,23 @@ def sample_intensities(
     Returns:
         A matplotlib Figure and Axes object containing the intensity plots.
     """
-    matrix = qtable.make_sample_matrix(tag, samples_as_columns=True)
+    table = qtable.make_sample_table(tag, samples_as_columns=True)
     if remove_invalid and "Valid" in qtable.data:
-        matrix = matrix[qtable.data["Valid"]]
+        table = table[qtable.data["Valid"]]
 
-    matrix = matrix.replace({0: np.nan})
-    if msreport.helper.intensities_in_logspace(matrix):
-        log2_matrix = matrix
-        matrix = np.power(2, log2_matrix)
+    table = table.replace({0: np.nan})
+    if msreport.helper.intensities_in_logspace(table):
+        log2_table = table
+        table = np.power(2, log2_table)
     else:
-        log2_matrix = np.log2(matrix)
-    samples = matrix.columns.tolist()
+        log2_table = np.log2(table)
+    samples = table.columns.tolist()
 
-    finite_values = log2_matrix.isna().sum(axis=1) == 0
-    pseudo_ref = np.nanmean(log2_matrix[finite_values], axis=1)
-    log2_ratios = log2_matrix[finite_values].subtract(pseudo_ref, axis=0)
+    finite_values = log2_table.isna().sum(axis=1) == 0
+    pseudo_ref = np.nanmean(log2_table[finite_values], axis=1)
+    log2_ratios = log2_table[finite_values].subtract(pseudo_ref, axis=0)
 
-    bar_values = matrix.sum()
+    bar_values = table.sum()
     box_values = [log2_ratios[c] for c in log2_ratios.columns]
     color_wheel = ColorWheelDict()
     colors = [color_wheel[exp] for exp in qtable.get_experiments(samples)]
@@ -268,23 +268,23 @@ def sample_pca(
         A matplotlib Figure and Axes object containing the PCA plots.
     """
 
-    matrix = qtable.make_sample_matrix(tag, samples_as_columns=True)
+    table = qtable.make_sample_table(tag, samples_as_columns=True)
     if remove_invalid and "Valid" in qtable.data:
-        matrix = matrix[qtable.data["Valid"]]
+        table = table[qtable.data["Valid"]]
 
-    matrix = matrix.replace({0: np.nan})
-    matrix = matrix[np.isfinite(matrix).sum(axis=1) > 0]
-    if not msreport.helper.intensities_in_logspace(matrix):
-        matrix = np.log2(matrix)
-    matrix[matrix.isna()] = 0
+    table = table.replace({0: np.nan})
+    table = table[np.isfinite(table).sum(axis=1) > 0]
+    if not msreport.helper.intensities_in_logspace(table):
+        table = np.log2(table)
+    table[table.isna()] = 0
 
-    matrix = matrix.transpose()
-    sample_index = matrix.index.tolist()
-    matrix = sklearn.preprocessing.scale(matrix, with_std=False)
+    table = table.transpose()
+    sample_index = table.index.tolist()
+    table = sklearn.preprocessing.scale(table, with_std=False)
 
     n_components = min(len(sample_index), 9)
     pca = sklearn.decomposition.PCA(n_components=n_components)
-    components = pca.fit_transform(matrix)
+    components = pca.fit_transform(table)
     component_labels = ["PC{}".format(i + 1) for i in range(components.shape[1])]
     components_table = pd.DataFrame(
         data=components, columns=component_labels, index=sample_index
@@ -489,7 +489,7 @@ def contaminants(
     qtable: Qtable, ibaq_tag: str = "iBAQ intensity"
 ) -> (plt.Figure, plt.Axes):
     """Returns a barplot of relative contaminant amounts per sample."""
-    data = qtable.make_sample_matrix(ibaq_tag, samples_as_columns=True)
+    data = qtable.make_sample_table(ibaq_tag, samples_as_columns=True)
     ibaq_sums = data.sum()
     ribaq = data / ibaq_sums * 100
     contaminants = qtable.data["Potential contaminant"]

@@ -13,7 +13,7 @@ class BaseSampleNormalizer(abc.ABC):
     """Base class for all sample normalizers."""
 
     @abc.abstractmethod
-    def fit(self, matrix: pd.DataFrame) -> "Self":
+    def fit(self, table: pd.DataFrame) -> "Self":
         pass
 
     @abc.abstractmethod
@@ -25,7 +25,7 @@ class BaseSampleNormalizer(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def transform_matrix(self, matrix: pd.DataFrame) -> pd.DataFrame:
+    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
         pass
 
 
@@ -52,11 +52,11 @@ class FixedValueNormalizer(BaseSampleNormalizer):
         self._fit_function = center_function
         self._sample_fits = None
 
-    def fit(self, matrix: pd.DataFrame) -> BaseSampleNormalizer:
+    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer:
         if self._comparison_mode == "paired":
-            self._fit_with_paired_samples(matrix)
+            self._fit_with_paired_samples(table)
         elif self._comparison_mode == "reference":
-            self._fit_with_pseudo_reference(matrix)
+            self._fit_with_pseudo_reference(table)
         return self
 
     def is_fitted(self) -> bool:
@@ -68,33 +68,33 @@ class FixedValueNormalizer(BaseSampleNormalizer):
         data[mask] = data[mask] - self._sample_fits[sample]
         return data
 
-    def transform_matrix(self, matrix: pd.DataFrame) -> pd.DataFrame:
-        _matrix = matrix.copy()
-        for sample in matrix.columns:
-            _matrix[sample] = self.transform(sample, _matrix[sample])
-        return _matrix
+    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+        _table = table.copy()
+        for sample in table.columns:
+            _table[sample] = self.transform(sample, _table[sample])
+        return _table
 
-    def _fit_with_paired_samples(self, matrix: pd.DataFrame) -> None:
-        samples = matrix.columns.tolist()
+    def _fit_with_paired_samples(self, table: pd.DataFrame) -> None:
+        samples = table.columns.tolist()
         num_samples = len(samples)
         sample_combinations = list(itertools.combinations(range(num_samples), 2))
-        ratio_matrix = np.full((num_samples, num_samples), np.nan)
+        ratio_table = np.full((num_samples, num_samples), np.nan)
         for i, j in sample_combinations:
-            ratios = matrix[samples[i]] - matrix[samples[j]]
+            ratios = table[samples[i]] - table[samples[j]]
             ratios = ratios[np.isfinite(ratios)]
             center_value = self._fit_function(ratios)
-            ratio_matrix[i, j] = center_value
-        profile = msreport.helper.solve_ratio_matrix(ratio_matrix)
+            ratio_table[i, j] = center_value
+        profile = msreport.helper.solve_ratio_matrix(ratio_table)
         self._sample_fits = dict(zip(samples, profile))
 
-    def _fit_with_pseudo_reference(self, matrix: pd.DataFrame) -> None:
-        ref_mask = matrix.isna().sum(axis=1) == 0
-        ref_values = matrix[ref_mask].mean(axis=1)
-        samples = matrix.columns.tolist()
+    def _fit_with_pseudo_reference(self, table: pd.DataFrame) -> None:
+        ref_mask = table.isna().sum(axis=1) == 0
+        ref_values = table[ref_mask].mean(axis=1)
+        samples = table.columns.tolist()
 
         self._sample_fits = {}
         for sample in samples:
-            sample_values = matrix.loc[ref_mask, sample]
+            sample_values = table.loc[ref_mask, sample]
             sample_fit = self._fit_function(sample_values - ref_values)
             self._sample_fits[sample] = sample_fit
 
@@ -116,8 +116,8 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
         self._sample_fits = None
         self._fit_function = fit_function
 
-    def fit(self, matrix: pd.DataFrame) -> BaseSampleNormalizer:
-        self._fit_with_pseudo_reference(matrix)
+    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer:
+        self._fit_with_pseudo_reference(table)
         return self
 
     def is_fitted(self) -> bool:
@@ -132,20 +132,20 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
         data[mask] = data[mask] - np.interp(data[mask], fit_values, fit_deviations)
         return data
 
-    def transform_matrix(self, matrix: pd.DataFrame) -> pd.DataFrame:
-        _matrix = matrix.copy()
-        for sample in matrix.columns:
-            _matrix[sample] = self.transform(sample, _matrix[sample])
-        return _matrix
+    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+        _table = table.copy()
+        for sample in table.columns:
+            _table[sample] = self.transform(sample, _table[sample])
+        return _table
 
-    def _fit_with_pseudo_reference(self, matrix: pd.DataFrame) -> None:
-        ref_mask = matrix.isna().sum(axis=1) == 0
-        ref_values = matrix[ref_mask].mean(axis=1)
-        samples = matrix.columns.tolist()
+    def _fit_with_pseudo_reference(self, table: pd.DataFrame) -> None:
+        ref_mask = table.isna().sum(axis=1) == 0
+        ref_values = table[ref_mask].mean(axis=1)
+        samples = table.columns.tolist()
 
         self._sample_fits = {}
         for sample in samples:
-            sample_values = matrix.loc[ref_mask, sample]
+            sample_values = table.loc[ref_mask, sample]
             sample_fit = self._fit_function(sample_values, ref_values)
             self._sample_fits[sample] = sample_fit
 

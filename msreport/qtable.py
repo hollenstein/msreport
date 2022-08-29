@@ -62,80 +62,82 @@ class Qtable:
             expression_column = ""
         return expression_column
 
-    def make_sample_matrix(
+    def make_sample_table(
         self, tag: str, samples_as_columns: bool = False
     ) -> pd.DataFrame:
         """Returns a new dataframe with sample columns containing the 'tag'.
 
-        Attributes:
+        Args:
             samples_as_columns: If true, replace expression column names with
                 sample names. Requires that the experimental design is set.
         """
         samples = self.get_samples()
         columns = helper.find_sample_columns(self.data, tag, samples)
-        matrix = self.data[columns].copy()
+        table = self.data[columns].copy()
         if samples_as_columns:
             mapping = _str_to_substr_mapping(columns, samples)
-            matrix.rename(columns=mapping, inplace=True)
-        return matrix
+            table.rename(columns=mapping, inplace=True)
+        return table
 
     def make_expression_matrix(self, samples_as_columns: bool = False) -> pd.DataFrame:
         """Returns a new dataframe containing the expression columns.
 
-        Attributes:
+        Args:
             samples_as_columns: If true, replace expression column names with
                 sample names. Requires that the experimental design is set.
         """
+        raise DeprecationWarning()
         matrix = self.data[self._expression_columns].copy()
         if samples_as_columns:
             matrix.rename(columns=self._expression_sample_mapping, inplace=True)
         return matrix
 
     def make_expression_table(
-        self, features: Optional[list[str]] = None, samples_as_columns: bool = False
+        self,
+        samples_as_columns: bool = False,
+        features: Optional[list[str]] = None,
     ) -> pd.DataFrame:
-        """Returns a new dataframe containing the expression columns and
-        additional expression related features.
+        """Returns a new dataframe containing the expression columns.
 
-        Attributes:
-            features: A list of additional columns that will be added from the
-                qtable.data table to the expression table.
+        Args:
+            features: A list of additional columns that will be added from qtable.data
+                to the expression table.
             samples_as_columns: If true, replace expression column names with
                 sample names. Requires that the experimental design is set.
         """
-        expr_table = self.make_expression_matrix(samples_as_columns=samples_as_columns)
-
-        target_columns = []
-        target_columns.extend(self._expression_features)
+        columns = []
+        columns.extend(self._expression_columns)
         if features is not None:
-            target_columns.extend(features)
-        for column in target_columns:
-            expr_table[column] = self.data[column].copy()
+            columns.extend(features)
 
-        return expr_table
+        table = self.data[columns].copy()
+        if samples_as_columns:
+            table.rename(columns=self._expression_sample_mapping, inplace=True)
 
-    def add_design(self, design_matrix: pd.DataFrame) -> None:
-        """Add an experimental design matrix
+        return table
 
-        Attributes:
-            design_matrix: A dataframe that must contain the columns 'Sample'
+    def add_design(self, design_table: pd.DataFrame) -> None:
+        """Add an experimental design table
+
+        Args:
+            design_table: A dataframe that must contain the columns 'Sample'
                 and 'Experiment'. The 'Sample' entries should correspond to the
                 Sample names present in the quantitative columns of the table.
         """
-        matrix_columns = design_matrix.columns.tolist()
+        columns = design_table.columns.tolist()
         required_columns = ["Experiment", "Sample"]
-        if not all([c in matrix_columns for c in required_columns]):
+        if not all([c in columns for c in required_columns]):
             exception_message = "".join(
                 [
-                    "The design matrix must at least contain the columns: ",
+                    "The design table must at least contain the columns: ",
                     ", ".join(f'"{c}"' for c in required_columns),
                     ". " "It only contains the columns: ",
-                    ", ".join(f'"{c}"' for c in matrix_columns),
+                    ", ".join(f'"{c}"' for c in columns),
                     ".",
                 ]
             )
             raise ValueError(exception_message)
-        self.design = design_matrix
+        self.design = design_table
 
     def set_expression_by_tag(
         self, tag: str, zerotonan: bool = False, log2: bool = False
@@ -144,7 +146,7 @@ class Qtable:
 
         Previous expression columns and expression features are deleted.
 
-        Attributes:
+        Args:
             tag: Identifies columns that contain this substring
             zerotonan: If true, zeros in expression columns are replace by NaN
             log2: If true, expression column values are log2 transformed and 0
@@ -169,7 +171,7 @@ class Qtable:
 
         Previous expression columns and expression features are deleted.
 
-        Attributes:
+        Args:
             columns_to_samples: Mapping of expression columns to sample names-
                 They keys of the dictionary must correspond to columns of the
                 data table, and are used to define expression columns.
@@ -184,7 +186,7 @@ class Qtable:
     def add_expression_features(self, new_data: pd.DataFrame) -> None:
         """Add expression features as new columns to qtable.data
 
-        Attributes:
+        Args:
             new_data: DataFrame or Series that will be added to qtable.data as
                 new columns, and added to the list of expression features. The
                 number and order of new_data rows must be equal to qtable.data.
@@ -237,7 +239,7 @@ class Qtable:
         median_downshift = 1.8
         std_width = 0.3
 
-        expr = self.make_expression_matrix()
+        expr = self.make_expression_table()
         imputed = helper.gaussian_imputation(expr, median_downshift, std_width)
         self.data[expr.columns] = imputed[expr.columns]
 
@@ -249,7 +251,7 @@ class Qtable:
     ) -> None:
         """Define expresssion columns and delete previous expression features.
 
-        Arguments:
+        Args:
             expr_sample_mapping: mapping of expression columns to sample names
             zerotonan: If true, zeros in expression columns are replace by NaN
             log2: If true, expression column values are log2 transformed and 0

@@ -87,20 +87,20 @@ def analyze_missingness(qtable: Qtable) -> None:
     # TODO: not tested #
     missing_events = pd.DataFrame()
     quant_events = pd.DataFrame()
-    expr_table = qtable.make_expression_table(samples_as_columns=True)
-    num_missing = np.isnan(expr_table).sum(axis=1)
-    num_events = np.isfinite(expr_table).sum(axis=1)
+    table = qtable.make_expression_table(samples_as_columns=True)
+    num_missing = np.isnan(table).sum(axis=1)
+    num_events = np.isfinite(table).sum(axis=1)
     quant_events["Events total"] = num_events
     missing_events["Missing total"] = num_missing
     for experiment in qtable.get_experiments():
         exp_samples = qtable.get_samples(experiment)
-        num_events = np.isfinite(expr_table[exp_samples]).sum(axis=1)
+        num_events = np.isfinite(table[exp_samples]).sum(axis=1)
         quant_events[f"Events {experiment}"] = num_events
-        num_missing = np.isnan(expr_table[exp_samples]).sum(axis=1)
+        num_missing = np.isnan(table[exp_samples]).sum(axis=1)
         missing_events[f"Missing {experiment}"] = num_missing
-        for sample in exp_samples:
-            sample_missing = np.isnan(expr_table[sample])
-            missing_events[f"Missing {sample}"] = sample_missing
+    for sample in qtable.get_samples():
+        sample_missing = np.isnan(table[sample])
+        missing_events[f"Missing {sample}"] = sample_missing
     qtable.add_expression_features(missing_events)
     qtable.add_expression_features(quant_events)
 
@@ -179,20 +179,20 @@ def normalize_expression(
                 f"must be one of {*default_normalizers,}."
             )
 
-    expression_matrix = qtable.make_expression_matrix(samples_as_columns=True)
+    expression_table = qtable.make_expression_table(samples_as_columns=True)
 
     if normalizer is None:
         if "Valid" in qtable.data:
             fitting_mask = qtable.data["Valid"].to_numpy()
         else:
-            fitting_mask = np.ones(expression_matrix.shape[0], dtype=bool)
+            fitting_mask = np.ones(expression_table.shape[0], dtype=bool)
 
         normalizer = default_normalizers[method]
-        normalizer.fit(expression_matrix[fitting_mask])
+        normalizer.fit(expression_table[fitting_mask])
 
-    samples = expression_matrix.columns.tolist()
+    samples = expression_table.columns.tolist()
     columns = [qtable.get_expression_column(s) for s in samples]
-    qtable.data[columns] = normalizer.transform_matrix(expression_matrix)
+    qtable.data[columns] = normalizer.transform_table(expression_table)
     return normalizer
 
 
@@ -211,9 +211,9 @@ def impute_missing_values(qtable: Qtable) -> None:
     median_downshift = 1.8
     std_width = 0.3
 
-    expr = qtable.make_expression_matrix()
-    imputed = helper.gaussian_imputation(expr, median_downshift, std_width)
-    qtable.data[expr.columns] = imputed[expr.columns]
+    table = qtable.make_expression_table()
+    imputed = helper.gaussian_imputation(table, median_downshift, std_width)
+    qtable.data[table.columns] = imputed[table.columns]
 
 
 def calculate_experiment_means(qtable: Qtable) -> None:
@@ -238,7 +238,7 @@ def two_group_comparison(
     Expects log2 transformed values
     """
     # TODO: not tested #
-    table = qtable.make_expression_matrix(samples_as_columns=True)
+    table = qtable.make_expression_table(samples_as_columns=True)
 
     # TODO: filtering should be able via "make_expression_table"
     if filter_valid:

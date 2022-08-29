@@ -73,6 +73,6 @@ class TestValidateProteins:
 def test_impute_missing_values(example_qtable):
     msreport.qanalysis.impute_missing_values(example_qtable)
 
-    expr_matrix = example_qtable.make_expression_matrix()
-    number_missing_values = expr_matrix.isna().sum().sum()
+    expr_table = example_qtable.make_expression_table()
+    number_missing_values = expr_table.isna().sum().sum()
     assert number_missing_values == 0

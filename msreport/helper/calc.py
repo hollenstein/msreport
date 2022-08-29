@@ -17,7 +17,7 @@ def gaussian_imputation(
     Imputation is performed column wise, and the parameters for the normal
     distribution are calculated independently for each column.
 
-    Attributes:
+    Args:
         table: table containing missing values that will be replaced
         median_downshift: number of standard deviations the median of the
             measured values is downshifted for the normal distribution

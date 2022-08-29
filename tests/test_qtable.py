@@ -355,7 +355,7 @@ def test_qtable_get_expression_column(example_data, example_qtable):
     assert expected_columns == columns
 
 
-class TestQtableMakeSampleMatrix:
+class TestQtableMakeSampleTable:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_qtable):
         self.qtable = example_qtable
@@ -364,40 +364,18 @@ class TestQtableMakeSampleMatrix:
         expected = example_data["data"][example_data["intensity_columns"]]
         tag = example_data["expression_tag"]
 
-        expr_matrix = self.qtable.make_sample_matrix(tag)
+        expr_table = self.qtable.make_sample_table(tag)
         assert np.array_equal(
-            expr_matrix.to_numpy(), expected.to_numpy(), equal_nan=True
+            expr_table.to_numpy(), expected.to_numpy(), equal_nan=True
         )
 
     def test_with_samples_as_columns(self, example_data):
         sample_names = example_data["design"]["Sample"].tolist()
         tag = example_data["expression_tag"]
 
-        expr_matrix = self.qtable.make_sample_matrix(tag, samples_as_columns=True)
-        expr_matrix_columns = expr_matrix.columns.tolist()
-        assert expr_matrix_columns == sample_names
-
-
-class TestQtableMakeExpressionMatrix:
-    @pytest.fixture(autouse=True)
-    def _init_qtable(self, example_qtable):
-        self.qtable = example_qtable
-
-    def test_default_args(self, example_data):
-        expected = example_data["data"][example_data["intensity_columns"]]
-
-        # Test for correct values in dataframe
-        expr_matrix = self.qtable.make_expression_matrix()
-        assert np.array_equal(
-            expr_matrix.to_numpy(), expected.to_numpy(), equal_nan=True
-        )
-
-    def test_with_samples_as_columns(self, example_data):
-        sample_names = example_data["design"]["Sample"].tolist()
-
-        expr_matrix = self.qtable.make_expression_matrix(samples_as_columns=True)
-        expr_matrix_columns = expr_matrix.columns.tolist()
-        assert expr_matrix_columns == sample_names
+        expr_table = self.qtable.make_sample_table(tag, samples_as_columns=True)
+        expr_table_columns = expr_table.columns.tolist()
+        assert expr_table_columns == sample_names
 
 
 class TestQtableMakeExpressionTable:
@@ -436,8 +414,8 @@ class TestQtableMakeExpressionTable:
 def test_qtable_impute_missing_values(example_qtable):
     example_qtable.impute_missing_values()
 
-    expr_matrix = example_qtable.make_expression_matrix()
-    number_missing_values = expr_matrix.isna().sum().sum()
+    expr_table = example_qtable.make_expression_table()
+    number_missing_values = expr_table.isna().sum().sum()
     assert number_missing_values == 0
 
 
