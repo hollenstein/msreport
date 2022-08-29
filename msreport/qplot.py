@@ -560,34 +560,35 @@ def expression_comparison(
     )
 
     for ax, mask, exp in [(axes[2], only_exp_1, exp_1), (axes[0], only_exp_2, exp_2)]:
-        values = data[mask]
-        s = scattersize(values)
-        y_variable = f"Expression {exp}"
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", category=UserWarning)
-            try:
-                sns.swarmplot(
-                    y=values[y_variable],
-                    size=np.sqrt(s * 2),
-                    marker="o",
-                    alpha=0.75,
-                    color="#606060",
-                    edgecolor="none",
-                    ax=ax,
-                )
-            except UserWarning:
-                ax.cla()
-                sns.stripplot(
-                    y=values[y_variable],
-                    jitter=True,
-                    size=np.sqrt(s * 2),
-                    marker="o",
-                    alpha=0.75,
-                    color="#606060",
-                    edgecolor="none",
-                    ax=ax,
-                )
-                ax.set_xlim(-0.2, 0.2)
+        if mask.sum() > 0:
+            values = data[mask]
+            s = scattersize(values)
+            y_variable = f"Expression {exp}"
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", category=UserWarning)
+                try:
+                    sns.swarmplot(
+                        y=values[y_variable],
+                        size=np.sqrt(s * 2),
+                        marker="o",
+                        alpha=0.75,
+                        color="#606060",
+                        edgecolor="none",
+                        ax=ax,
+                    )
+                except UserWarning:
+                    ax.cla()
+                    sns.stripplot(
+                        y=values[y_variable],
+                        jitter=True,
+                        size=np.sqrt(s * 2),
+                        marker="o",
+                        alpha=0.75,
+                        color="#606060",
+                        edgecolor="none",
+                        ax=ax,
+                    )
+                    ax.set_xlim(-0.2, 0.2)
         ax.grid(axis="y", linestyle="dotted", linewidth=1)
         ax.set_ylabel(f"Average expression {exp}")
     axes[0].set_title(f"Absent in\n{exp_1}", fontsize=9)
