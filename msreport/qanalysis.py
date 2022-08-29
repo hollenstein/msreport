@@ -114,7 +114,7 @@ def validate_proteins(
 ) -> None:
     """Validates protein entries by adding a 'Valid' column to the qtable.
 
-    Attributes:
+    Args:
         min_peptides: Minimum number of unique peptides.
         remove_contaminants: If true, the 'Potential contaminant' column is
             used to remove invalid entries.
@@ -147,12 +147,12 @@ def validate_proteins(
 
 def normalize_expression(
     qtable: Qtable,
-    method: str,
+    method: Optional[str] = None,
     normalizer: Optional[msreport.normalize.BaseSampleNormalizer] = None,
 ) -> msreport.normalize.BaseSampleNormalizer:
     """Normalizes expression values and returns a Normalizer instance.
 
-    Attributes:
+    Args:
         qtable: Qtable instance that contains expression values for
             normalization.
         method: Normalization method "median", "mode" or "lowess".
@@ -160,32 +160,40 @@ def normalize_expression(
             for normalization of expression values and the "method" argument is
             ignored.
     """
-    expression_matrix = qtable.make_expression_matrix(samples_as_columns=True)
-    if "Valid" in qtable.data:
-        fitting_mask = qtable.data["Valid"].to_numpy()
+    # TODO not tested #
+    default_normalizers = {
+        "median": msreport.normalize.MedianNormalizer(),
+        "mode": msreport.normalize.ModeNormalizer(),
+        "lowess": msreport.normalize.LowessNormalizer(),
+    }
+
+    if method is None and normalizer is None:
+        raise ValueError(f"Either 'method' or 'normalizer' must be specified.")
+    elif normalizer is not None:
+        if not normalizer.is_fitted():
+            raise Exception("'normalizer' must be fitted, call normalizer.fit()")
     else:
-        fitting_mask = np.ones(expression_matrix.shape[0], dtype=bool)
+        if method not in default_normalizers:
+            raise ValueError(
+                f"'method' = '{method}'' not allowed, "
+                f"must be one of {*default_normalizers,}."
+            )
+
+    expression_matrix = qtable.make_expression_matrix(samples_as_columns=True)
 
     if normalizer is None:
-        if method == "median":
-            normalizer = msreport.normalize.MedianNormalizer()
-        elif method == "mode":
-            normalizer = msreport.normalize.ModeNormalizer()
-        elif method == "lowess":
-            normalizer = msreport.normalize.LowessNormalizer()
+        if "Valid" in qtable.data:
+            fitting_mask = qtable.data["Valid"].to_numpy()
         else:
-            raise ValueError(
-                f'"method" = {method} not allowed. '
-                'Must be either "median", "mode" or "lowess".'
-            )
+            fitting_mask = np.ones(expression_matrix.shape[0], dtype=bool)
+
+        normalizer = default_normalizers[method]
         normalizer.fit(expression_matrix[fitting_mask])
-    else:
-        # TODO check that normalizer is already fitted
-        pass
 
     samples = expression_matrix.columns.tolist()
     columns = [qtable.get_expression_column(s) for s in samples]
     qtable.data[columns] = normalizer.transform_matrix(expression_matrix)
+    return normalizer
 
 
 def impute_missing_values(qtable: Qtable) -> None:
@@ -210,6 +218,7 @@ def impute_missing_values(qtable: Qtable) -> None:
 
 def calculate_experiment_means(qtable: Qtable) -> None:
     """Calculate mean expression values for each experiment."""
+    # TODO not tested #
     experiment_means = {}
     for experiment in qtable.get_experiments():
         samples = qtable.get_samples(experiment)
@@ -268,7 +277,7 @@ def calculate_two_group_limma(
     ignored, use imputation of missing values to prevent this. The qtable.data
     column 'Representative protein' is used as the index.
 
-    Attributes:
+    Args:
         qtable: Qtable instance that contains expresion values for differential
             expression analysis.
         groups: two experiments to compare
@@ -334,7 +343,7 @@ def count_missing_values(qtable: Qtable) -> pd.DataFrame:
     ! Requires expression columns to be set
     """
     warnings.warn(
-        "This method will be deprecated, use normalize_expression() instead",
+        "This method will be deprecated, use analyze_missingness() instead",
         DeprecationWarning,
         stacklevel=2,
     )

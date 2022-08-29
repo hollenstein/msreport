@@ -4,7 +4,7 @@ from typing import Callable, Iterable
 
 import numpy as np
 import pandas as pd
-from statsmodels.nonparametric.smoothers_lowess import lowess
+import statsmodels.nonparametric.smoothers_lowess
 
 import msreport.helper
 
@@ -14,6 +14,10 @@ class BaseSampleNormalizer(abc.ABC):
 
     @abc.abstractmethod
     def fit(self, matrix: pd.DataFrame) -> "Self":
+        pass
+
+    @abc.abstractmethod
+    def is_fitted(self) -> bool:
         pass
 
     @abc.abstractmethod
@@ -32,11 +36,12 @@ class FixedValueNormalizer(BaseSampleNormalizer):
     """
 
     def __init__(self, center_function: Callable, comparison: str):
-        """
+        """Inits a FixedValueNormalizer.
 
         Args:
             center_function: A function that accepts a sequence of values and
                 returns a center value such as the median.
+            comparison: "paired" or "reference"
         """
         if comparison not in ["paired", "reference"]:
             raise ValueError(
@@ -53,6 +58,9 @@ class FixedValueNormalizer(BaseSampleNormalizer):
         elif self._comparison_mode == "reference":
             self._fit_with_pseudo_reference(matrix)
         return self
+
+    def is_fitted(self) -> bool:
+        return self._sample_fits is not None
 
     def transform(self, sample: str, values: Iterable) -> np.ndarray:
         data = np.array(values, dtype=float)
@@ -98,12 +106,22 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
     """
 
     def __init__(self, fit_function: Callable):
+        """Inits a ValueDependentNormalizer.
+
+        Args:
+            fit_function: A function that accepts a sequence of values and returns numpy
+                array with two columns. The first column contains the values and the
+                second column the associated deviations.
+        """
         self._sample_fits = None
         self._fit_function = fit_function
 
     def fit(self, matrix: pd.DataFrame) -> BaseSampleNormalizer:
         self._fit_with_pseudo_reference(matrix)
         return self
+
+    def is_fitted(self) -> bool:
+        return self._sample_fits is not None
 
     def transform(self, sample: str, values: Iterable) -> np.ndarray:
         data = np.array(values, dtype=float)
@@ -160,4 +178,6 @@ def _value_dependent_fit_lowess(
     delta_span_percentage = 0.05
     delta = (reference_values.max() - reference_values.min()) * delta_span_percentage
     deviations = values - reference_values
-    return lowess(deviations, values, delta=delta, it=5)
+    return statsmodels.nonparametric.smoothers_lowess.lowess(
+        deviations, values, delta=delta, it=5
+    )
