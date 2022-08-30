@@ -92,7 +92,7 @@ def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
         minLength=min_length,
         maxLength=max_length,
     )
-    unique_peptide_sequences = set([p for p, i in digestion_products])
+    unique_peptide_sequences = [p for p, i in digestion_products]
     return len(unique_peptide_sequences)
 
 

@@ -31,6 +31,8 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+import re
+
 
 try:
     import maspy._proteindb_refactoring as ProtDB
@@ -86,7 +88,7 @@ class ResultReader:
             # Original columns have already been replaced with new names
             if tag in self.column_tag_mapping:
                 tag = self.column_tag_mapping[tag]
-            new_df = _rearrange_column_tag(new_df, tag, prefix_tag)
+            new_df = _rearrange_column_tag(new_df, tag.strip(), prefix_tag)
         return new_df
 
     def _drop_columns(
@@ -485,6 +487,175 @@ class FPReader(ResultReader):
         return leading_protein_entries
 
 
+class SpectronautReader(ResultReader):
+    """Import and preprocess Spectronaut DIA result files.
+
+    For now, look for a file that ends with report.X (X=xls, tsv, csv)
+    """
+
+    column_mapping: dict[str, str] = dict(
+        [
+            ("PG.Cscore", "Protein cscore"),
+            ("PG.NrOfStrippedSequencesIdentified (Experiment-wide)", "Total peptides"),
+            ("PG.NrOfPrecursorsIdentified (Experiment-wide)", "Total ions"),
+            ("PG.Cscore", "Cscore"),
+        ]
+    )
+    sample_column_tags: list[str] = [
+        ".PG.NrOfPrecursorsIdentified",
+        ".PG.IBAQ",
+        ".PG.Quantity",
+        ".PG.NrOfPrecursorsUsedForQuantification",
+        ".PG.NrOfStrippedSequencesUsedForQuantification",
+    ]
+    column_tag_mapping: OrderedDict[str, str] = OrderedDict(
+        [
+            (".PG.NrOfPrecursorsIdentified", " Ion count"),
+            (".PG.IBAQ", " iBAQ intensity"),
+            (".PG.Quantity", " Intensity"),
+            (".PG.NrOfPrecursorsUsedForQuantification", " Quantified ion count"),
+            (
+                ".PG.NrOfStrippedSequencesUsedForQuantification",
+                " Total quantified peptides",
+            ),
+        ]
+    )
+    protein_info_columns: list[str] = [
+        "PG.ProteinGroups",
+        "PG.ProteinAccessions",
+        "PG.Genes",
+        "PG.Organisms",
+        "PG.ProteinDescriptions",
+        "PG.UniProtIds",
+        "PG.ProteinNames",
+        "PG.FastaHeaders",
+        "PG.OrganismId",
+        "PG.MolecularWeight",
+    ]
+    protein_info_tags: list[str] = []
+
+    def __init__(self, directory: str, contaminant_tag: str = "contam_") -> None:
+        self._add_data_directory(directory)
+        self._contaminant_tag: str = contaminant_tag
+        self.filenames: dict[str, str] = {}
+        self.design: Optional[pd.DataFrame] = None
+        self._import_design()
+
+    def import_proteins(
+        self,
+        filename: Optional[str] = None,
+        rename_columns: bool = True,
+        prefix_column_tags: bool = True,
+        sort_proteins: bool = True,
+        drop_protein_info: bool = True,
+        mark_contaminants: bool = True,
+        special_proteins: list[str] = [],
+    ) -> pd.DataFrame:
+        """Read and process a Spectronaut protein report file."""
+        # Find report filename
+        if filename is None:
+            report_endings = ["report.xls", "report.tsv", "report.csv"]
+            matched_filenames = []
+            for filename in os.listdir(self.data_directory):
+                if any([filename.lower().endswith(s) for s in report_endings]):
+                    matched_filenames.append(filename)
+            filename = matched_filenames[0]
+
+        df = self._read_file(filename)
+        df = self._replace_samples_in_columns(df)
+        df = self._remove_leading_brackets(df)
+
+        df = self._add_protein_entries(df, sort_proteins, special_proteins)
+        if drop_protein_info:
+            df = self._drop_columns(df, self.protein_info_columns)
+            for tag in self.protein_info_tags:
+                df = self._drop_columns_by_tag(df, tag)
+        if rename_columns:
+            df = self._rename_columns(df, prefix_column_tags)
+        return df
+
+    def _import_design(self):
+        report_endings = [f"conditionsetup{s}" for s in (".xls", ".tsv", ".csv")]
+        matched_filenames = []
+        for filename in os.listdir(self.data_directory):
+            if any([filename.lower().endswith(s) for s in report_endings]):
+                matched_filenames.append(filename)
+        filename = matched_filenames[0]
+        condition_setup = self._read_file(filename)
+
+        condition_setup["Sample"] = (
+            condition_setup["Condition"]
+            + "_"
+            + condition_setup["Replicate"].astype(str)
+        )
+        self.design = pd.DataFrame(
+            {
+                "Sample": condition_setup["Sample"],
+                "Experiment": condition_setup["Condition"],
+                "File name": condition_setup["File Name"],
+                "Run label": condition_setup["Run Label"],
+            }
+        )
+
+    def _add_protein_entries(
+        self,
+        df: pd.DataFrame,
+        sort_proteins: bool = False,
+        special_proteins: Optional[list] = None,
+    ) -> pd.DataFrame:
+        """Adds standardized protein entry columns to the data frame.
+
+        Added columns are 'Leading proteins', 'Representative protein', and 'Protein
+        reported by software'.
+
+        'Leading proteins' contains all protein entries from the original 'Protein'
+        plus 'Indistinguishable Proteins' columns. Multiple protein entries are
+        separated by ';'. 'Protein reported by software' and 'Representative protein'
+        contain the first entry from the new 'Leading proteins' column.
+
+        TODO: Needs expansion for sorting, contaminants and special proteins
+        """
+        # not tested directly, only via integration #
+        leading_protein_entries = self._collect_leading_protein_entries(df)
+        protein_entry_table = _process_protein_entries(
+            leading_protein_entries,
+            self._contaminant_tag,
+            sort_proteins,
+            special_proteins,
+        )
+        for key in protein_entry_table:
+            df[key] = protein_entry_table[key]
+        return df
+
+    def _collect_leading_protein_entries(self, df: pd.DataFrame) -> list[str]:
+        """TODO"""
+        leading_protein_entries = [
+            entries.split(";") for entries in df["PG.ProteinAccessions"]
+        ]
+        return leading_protein_entries
+
+    def _replace_samples_in_columns(self, df):
+        if self.design is not None:
+            column_mapping = {}
+            for column in df.columns:
+                for sample, label in zip(
+                    self.design["Sample"], self.design["Run label"]
+                ):
+                    if label in column:
+                        column_mapping[column] = column.replace(label, sample)
+            df.rename(columns=column_mapping, inplace=True)
+        return df
+
+    def _remove_leading_brackets(self, df):
+        column_mapping = {}
+        for column in df.columns:
+            match = re.search("^\[[0-9]+\] ", column)
+            if match:
+                column_mapping[column] = column[match.span()[1] :]
+        df.rename(columns=column_mapping, inplace=True)
+        return df
+
+
 def add_protein_annotations(
     table: pd.DataFrame, fasta_path: str, id_column: str = "Representative protein"
 ) -> None:
@@ -561,8 +732,7 @@ def add_sequence_coverage(
 
 def add_ibaq_intensities(
     table: pd.DataFrame,
-    normalize_total_intensity: bool = True,
-    peptide_column: str = "Total peptides",
+    normalize: bool = True,
     ibaq_peptide_column: str = "iBAQ peptides",
     intensity_tag: str = "Intensity",
     ibaq_tag: str = "iBAQ intensity",
@@ -570,13 +740,16 @@ def add_ibaq_intensities(
     """Calculates iBAQ intensities.
 
     Requires a column containing the theoretical number of iBAQ peptides.
+
+    Args:
+        normalize: Scales iBAQ intensities per sample so that the sum of all iBAQ
+            intensities is equal to the sum of all Intensities.
     """
-    ibaq_factor = table[peptide_column] / table[ibaq_peptide_column]
     for intensity_column in helper.find_columns(table, intensity_tag):
         ibaq_column = intensity_column.replace(intensity_tag, ibaq_tag)
-        table[ibaq_column] = table[intensity_column] * ibaq_factor
+        table[ibaq_column] = table[intensity_column] / table[ibaq_peptide_column]
 
-        if normalize_total_intensity:
+        if normalize:
             factor = table[intensity_column].sum() / table[ibaq_column].sum()
             table[ibaq_column] = table[ibaq_column] * factor
 

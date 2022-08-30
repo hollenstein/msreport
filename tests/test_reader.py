@@ -228,8 +228,7 @@ class TestAddIbaqIntensities:
     def _init_qtable(self):
         self.table = pd.DataFrame(
             {
-                "peptides": [2, 2],
-                "ibaq_petides": [2, 2],
+                "ibaq_petides": [2, 4],
                 "intensity": [100.0, 200.0],
             }
         )
@@ -237,7 +236,6 @@ class TestAddIbaqIntensities:
     def test_ibaq_intensity_added(self):
         msreport.reader.add_ibaq_intensities(
             self.table,
-            peptide_column="peptides",
             ibaq_peptide_column="ibaq_petides",
             intensity_tag="intensity",
             ibaq_tag="ibaq",
@@ -245,31 +243,21 @@ class TestAddIbaqIntensities:
         assert "ibaq" in self.table.columns
 
     @pytest.mark.parametrize(
-        "compare_ibaq_intensities, num_petides, normalize_intensity",
+        "expected_ibaq, normalize_intensity",
         [
-            (np.equal, 2, False),
-            (np.less, 1, False),
-            (np.greater, 3, False),
-            (np.equal, 2, True),
-            (np.equal, 1, True),
-            (np.equal, 3, True),
+            ([50, 50], False),
+            ([150, 150], True),
         ],
     )
-    def test_correct_ibaq_intensities(
-        self, compare_ibaq_intensities, num_petides, normalize_intensity
-    ):
-        self.table["peptides"] = num_petides
+    def test_correct_ibaq_intensities(self, expected_ibaq, normalize_intensity):
         msreport.reader.add_ibaq_intensities(
             self.table,
-            normalize_total_intensity=normalize_intensity,
-            peptide_column="peptides",
+            normalize=normalize_intensity,
             ibaq_peptide_column="ibaq_petides",
             intensity_tag="intensity",
             ibaq_tag="ibaq",
         )
-        assert np.all(
-            compare_ibaq_intensities(self.table["ibaq"], self.table["intensity"])
-        )
+        assert np.all(np.equal(self.table["ibaq"], expected_ibaq))
 
 
 class TestResultReader:
