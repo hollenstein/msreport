@@ -24,15 +24,6 @@ def test_extract_sample_names():
     assert set(sample_names) == set(["Column 1", "Column 2", "Column 3"])
 
 
-def test_replace_column_tag():
-    df = pd.DataFrame(columns=["Tag", "Tag A", "Tag B", "Something else"])
-    old_tag = "Tag"
-    new_tag = "New"
-    new_df = msreport.reader._replace_column_tag(df, old_tag, new_tag)
-    new_columns = new_df.columns.tolist()
-    assert new_columns == ["New", "New A", "New B", "Something else"]
-
-
 def test_rearrange_column_tag():
     df = pd.DataFrame(
         columns=["Tag1 Text1", "Tag1 Text2", "Tag1", "Text1 Tag2", "Text2 Tag2", "Tag2"]

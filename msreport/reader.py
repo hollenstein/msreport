@@ -91,13 +91,12 @@ class ResultReader:
         # Rename columns
         new_df.rename(columns=self.column_mapping, inplace=True)
         for old_tag, new_tag in self.column_tag_mapping.items():
-            new_df = _replace_column_tag(new_df, old_tag, new_tag)
+            new_df.columns = new_df.columns.str.replace(old_tag, new_tag)
 
         for tag in self.sample_column_tags:
             # Original columns have already been replaced with new names
-            if tag in self.column_tag_mapping:
-                tag = self.column_tag_mapping[tag]
-            new_df = _rearrange_column_tag(new_df, tag.strip(), prefix_tag)
+            tag = self.column_tag_mapping.get(tag, tag).strip()
+            new_df = _rearrange_column_tag(new_df, tag, prefix_tag)
 
         # Rename protected columns
         protected_column_mapping = {}
@@ -579,22 +578,13 @@ class SpectronautReader(ResultReader):
                     matched_filenames.append(filename)
             filename = matched_filenames[0]
 
-        # Default read file
         df = self._read_file(filename)
-
-        # Spectronaut tidy up sample columns
-        df = self._replace_samples_in_columns(df)
-        df = self._remove_leading_brackets(df)
-
-        # Add default protein entries
+        df = self._tidy_up_sample_columns(df)
         df = self._add_protein_entries(df, sort_proteins, special_proteins)
-
         if drop_protein_info:
             df = self._drop_columns(df, self.protein_info_columns)
             for tag in self.protein_info_tags:
                 df = self._drop_columns_by_tag(df, tag)
-
-        # Default column renaming
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
         return df
@@ -659,25 +649,16 @@ class SpectronautReader(ResultReader):
         ]
         return leading_protein_entries
 
-    def _replace_samples_in_columns(self, df):
+    def _tidy_up_sample_columns(self, df):
+        df = df.copy()
+        columns = df.columns
+        # Remove leading brackets
+        columns = columns.str.replace(r"^\[[0-9]+\] ", "")
+        # Replace Spectronaut sample names with run labels
         if self.design is not None:
-            column_mapping = {}
-            for column in df.columns:
-                for sample, label in zip(
-                    self.design["Sample"], self.design["Run label"]
-                ):
-                    if label in column:
-                        column_mapping[column] = column.replace(label, sample)
-            df.rename(columns=column_mapping, inplace=True)
-        return df
-
-    def _remove_leading_brackets(self, df):
-        column_mapping = {}
-        for column in df.columns:
-            match = re.search("^\[[0-9]+\] ", column)
-            if match:
-                column_mapping[column] = column[match.span()[1] :]
-        df.rename(columns=column_mapping, inplace=True)
+            for sample, label in zip(self.design["Sample"], self.design["Run label"]):
+                columns = columns.str.replace(sample, label)
+        df.columns = columns
         return df
 
 
@@ -833,14 +814,6 @@ def extract_sample_names(df: pd.DataFrame, tag: str) -> list[str]:
     columns = helper.find_columns(df, tag)
     sample_names = _find_remaining_substrings(columns, tag)
     return sample_names
-
-
-def _replace_column_tag(df: pd.DataFrame, old_tag: str, new_tag: str) -> pd.DataFrame:
-    """Replace column substrings old_tag with new_tag"""
-    old_columns = helper.find_columns(df, old_tag)
-    new_columns = [c.replace(old_tag, new_tag) for c in old_columns]
-    mapping = dict(zip(old_columns, new_columns))
-    return df.rename(columns=mapping, inplace=False)
 
 
 def _rearrange_column_tag(df: pd.DataFrame, tag: str, prefix: bool) -> pd.DataFrame:
