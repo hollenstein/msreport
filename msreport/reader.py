@@ -557,7 +557,7 @@ class SpectronautReader(ResultReader):
         self._contaminant_tag: str = contaminant_tag
         self.filenames: dict[str, str] = {}
         self.design: Optional[pd.DataFrame] = None
-        self._import_design()
+        self._import_spectronaut_design()
 
     def import_proteins(
         self,
@@ -590,28 +590,31 @@ class SpectronautReader(ResultReader):
             df = self._rename_columns(df, prefix_column_tags)
         return df
 
-    def _import_design(self):
+    def _import_spectronaut_design(self):
         report_endings = [f"conditionsetup{s}" for s in (".xls", ".tsv", ".csv")]
         matched_filenames = []
         for filename in os.listdir(self.data_directory):
             if any([filename.lower().endswith(s) for s in report_endings]):
                 matched_filenames.append(filename)
-        filename = matched_filenames[0]
-        condition_setup = self._read_file(filename)
+        if matched_filenames:
+            filename = matched_filenames[0]
+            condition_setup = self._read_file(filename)
 
-        condition_setup["Sample"] = (
-            condition_setup["Condition"]
-            + "_"
-            + condition_setup["Replicate"].astype(str)
-        )
-        self.design = pd.DataFrame(
-            {
-                "Sample": condition_setup["Sample"],
-                "Experiment": condition_setup["Condition"],
-                "File name": condition_setup["File Name"],
-                "Run label": condition_setup["Run Label"],
-            }
-        )
+            condition_setup["Sample"] = (
+                condition_setup["Condition"]
+                + "_"
+                + condition_setup["Replicate"].astype(str)
+            )
+            self.design = pd.DataFrame(
+                {
+                    "Sample": condition_setup["Sample"],
+                    "Experiment": condition_setup["Condition"],
+                    "File name": condition_setup["File Name"],
+                    "Run label": condition_setup["Run Label"],
+                }
+            )
+        else:
+            self.design = None
 
     def _add_protein_entries(
         self,
