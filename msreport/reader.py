@@ -28,10 +28,10 @@ Todos:
 from collections import OrderedDict
 import os
 from typing import Optional
+import warnings
 
 import numpy as np
 import pandas as pd
-import re
 
 
 try:
@@ -78,7 +78,8 @@ class ResultReader:
 
         First columns are renamed according to self.column_mapping. Next, tags in
         columns are renamed according to self.column_tag_mapping. Then, for columns
-        containing sample names, sample names are and tags are rearranged.
+        containing sample names, sample names are and tags are rearranged. Columns from
+        self.protected_column_positions are not modified.
         """
         new_df = df.copy()
 
@@ -91,7 +92,7 @@ class ResultReader:
         # Rename columns
         new_df.rename(columns=self.column_mapping, inplace=True)
         for old_tag, new_tag in self.column_tag_mapping.items():
-            new_df.columns = new_df.columns.str.replace(old_tag, new_tag)
+            new_df.columns = [c.replace(old_tag, new_tag) for c in new_df.columns]
 
         for tag in self.sample_column_tags:
             # Original columns have already been replaced with new names
@@ -652,13 +653,18 @@ class SpectronautReader(ResultReader):
     def _tidy_up_sample_columns(self, df):
         df = df.copy()
         columns = df.columns
-        # Remove leading brackets
-        columns = columns.str.replace(r"^\[[0-9]+\] ", "")
-        # Replace Spectronaut sample names with run labels
-        if self.design is not None:
-            for sample, label in zip(self.design["Sample"], self.design["Run label"]):
-                columns = columns.str.replace(sample, label)
-        df.columns = columns
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore", category=FutureWarning)
+
+            # Remove leading brackets
+            columns = columns.str.replace(r"^\[[0-9]+\] ", "")
+            # Replace Spectronaut run labels with sample names
+            if self.design is not None:
+                for sample, label in zip(
+                    self.design["Sample"], self.design["Run label"]
+                ):
+                    columns = columns.str.replace(label, sample)
+            df.columns = columns
         return df
 
 
