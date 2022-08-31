@@ -24,12 +24,54 @@ import msreport.helper as helper
 from msreport.qtable import Qtable
 
 
+def contaminants_to_clipboard(qtable: Qtable) -> pd.DataFrame:
+    """Creates a contaminant table and writes it to the system clipboard."""
+    columns = [
+        "Representative protein",
+        "Protein entry name",
+        "Gene name",
+        "Fasta header",
+        "Protein length",
+        "Total peptides",
+        "iBAQ peptides",
+        "iBAQ intensity total",
+    ]
+    column_tags = ["iBAQ rank", "riBAQ", "iBAQ intensity", "Intensity", "Expression"]
+
+    samples = qtable.get_samples()
+    data = qtable.data.copy()
+
+    data["iBAQ intensity total"] = np.nansum(
+        data[[f"iBAQ intensity {s}" for s in samples]], axis=1
+    ) / len(samples)
+    for sample in samples:
+        data.loc[data[f"Missing {sample}"], f"Expression {sample}"] = np.nan
+
+        ibaq_values = data[f"iBAQ intensity {sample}"]
+        order = np.argsort(ibaq_values)[::-1]
+        rank = np.empty_like(ibaq_values, dtype=int)
+        rank[order] = np.arange(1, len(ibaq_values) + 1)
+        data[f"iBAQ rank {sample}"] = rank
+        data[f"riBAQ {sample}"] = ibaq_values / ibaq_values.sum() * 100
+
+    for column_tag in column_tags:
+        columns.extend(helper.find_sample_columns(data, column_tag, samples))
+    columns = np.array(columns)[[c in data.columns for c in columns]]
+
+    contaminants = qtable.data["Potential contaminant"]
+    data = data.loc[contaminants, columns]
+
+    data.sort_values("iBAQ intensity total", ascending=False, inplace=True)
+    data.to_clipboard()
+
+
 def to_amica(
     qtable: Qtable,
     directory,
     table_name: str = "amica_table.tsv",
     design_name: str = "amica_design.tsv",
 ) -> None:
+    """Writes an amica input table and design from a qtable."""
     amica_table = _amica_table_from(qtable.data)
     amica_table_path = os.path.join(directory, table_name)
     amica_table.to_csv(amica_table_path, sep="\t", index=False)
