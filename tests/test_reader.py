@@ -266,6 +266,12 @@ class TestResultReader:
         self.reader = msreport.reader.ResultReader()
         self.reader._add_data_directory("./tests/testdata/common")
         self.reader.filenames = {"table": "table.txt"}
+        self.reader.protected_columns = []
+        self.reader.column_mapping = {}
+        self.reader.column_tag_mapping = {}
+        self.reader.sample_column_tags = []
+
+        self.table = self.reader._read_file("table")
         self.table_nrows = 5
         self.table_ncolumns = 8
 
@@ -280,26 +286,21 @@ class TestResultReader:
         assert table.shape == (self.table_nrows, self.table_ncolumns)
 
     def test_rename_columns_with_mapping(self):
-        table = self.reader._read_file("table.txt")
         self.reader.column_mapping = {"Column 1": "Renamed column"}
-        self.reader.column_tag_mapping = {}
-        self.reader.sample_column_tags = []
 
-        assert "Column 1" in table.columns
-        assert "Renamed column" not in table.columns
-        table = self.reader._rename_columns(table, prefix_tag=False)
-        assert "Column 1" not in table.columns
-        assert "Renamed column" in table.columns
+        assert "Column 1" in self.table.columns
+        assert "Renamed column" not in self.table.columns
+        self.table = self.reader._rename_columns(self.table, prefix_tag=False)
+        assert "Column 1" not in self.table.columns
+        assert "Renamed column" in self.table.columns
 
     def test_rename_columns_with_column_tag_mapping(self):
-        table = self.reader._read_file("table.txt")
-        self.reader.column_mapping = {}
         self.reader.column_tag_mapping = {"Another_tag": "B_tag"}
-        self.reader.sample_column_tags = []
-        assert "B_tag Column 1" not in table.columns
-        table = self.reader._rename_columns(table, prefix_tag=False)
-        assert all(["Another_tag" not in c for c in table.columns])
-        assert "B_tag Column 1" in table.columns
+
+        assert "B_tag Column 1" not in self.table.columns
+        self.table = self.reader._rename_columns(self.table, prefix_tag=False)
+        assert all(["Another_tag" not in c for c in self.table.columns])
+        assert "B_tag Column 1" in self.table.columns
 
     @pytest.mark.parametrize(
         "prefix, expected_columns",
@@ -309,12 +310,20 @@ class TestResultReader:
         ],
     )
     def test_rename_columns_with_sample_column_tags(self, prefix, expected_columns):
-        table = self.reader._read_file("table.txt")
-        self.reader.column_mapping = {}
-        self.reader.column_tag_mapping = {}
         self.reader.sample_column_tags = ["A_tag"]
-        table = self.reader._rename_columns(table, prefix_tag=prefix)
-        assert all([c in table.columns for c in expected_columns])
+
+        self.table = self.reader._rename_columns(self.table, prefix_tag=prefix)
+        assert all([c in self.table.columns for c in expected_columns])
+
+    def test_rename_columns_with_protected_columns(self):
+        self.reader.protected_columns = ["Column 3 A_tag"]
+        self.reader.column_tag_mapping = {"A_tag": "B_tag"}
+
+        self.table = self.reader._rename_columns(self.table, prefix_tag=False)
+        table_columns = self.table.columns.tolist()
+        assert "Column 3 A_tag" in table_columns
+        assert "B_tag Column 1" in table_columns
+        assert "B_tag Column 2" in table_columns
 
     @pytest.mark.parametrize(
         "drop_columns, num_dropped_columns",
@@ -326,15 +335,13 @@ class TestResultReader:
         ],
     )
     def test_drop_columns(self, drop_columns, num_dropped_columns):
-        table = self.reader._read_file("table.txt")
-        table = self.reader._drop_columns(table, drop_columns)
-        assert table.shape[1] == self.table_ncolumns - num_dropped_columns
+        self.table = self.reader._drop_columns(self.table, drop_columns)
+        assert self.table.shape[1] == self.table_ncolumns - num_dropped_columns
 
     def test_drop_columns_by_tag(self):
-        table = self.reader._read_file("table.txt")
-        table = self.reader._drop_columns_by_tag(table, "A_tag")
-        assert all(["A_tag" not in c for c in table.columns])
-        assert table.shape[1] < self.table_ncolumns
+        self.table = self.reader._drop_columns_by_tag(self.table, "A_tag")
+        assert all(["A_tag" not in c for c in self.table.columns])
+        assert self.table.shape[1] < self.table_ncolumns
 
 
 class TestMQReader:

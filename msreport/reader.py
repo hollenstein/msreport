@@ -46,6 +46,7 @@ class ResultReader:
     """Base Reader class, is by itself not functional."""
 
     filenames_default: dict[str, str]
+    protected_columns: list[str]
     column_mapping: dict[str, str]
     column_tag_mapping: OrderedDict[str, str]
     sample_column_tags: list[str]
@@ -80,6 +81,14 @@ class ResultReader:
         containing sample names, sample names are and tags are rearranged.
         """
         new_df = df.copy()
+
+        # Collect protected column positions
+        protected_column_positions = {}
+        for col in self.protected_columns:
+            if col in new_df.columns:
+                protected_column_positions[col] = new_df.columns.get_loc(col)
+
+        # Rename columns
         new_df.rename(columns=self.column_mapping, inplace=True)
         for old_tag, new_tag in self.column_tag_mapping.items():
             new_df = _replace_column_tag(new_df, old_tag, new_tag)
@@ -89,6 +98,12 @@ class ResultReader:
             if tag in self.column_tag_mapping:
                 tag = self.column_tag_mapping[tag]
             new_df = _rearrange_column_tag(new_df, tag.strip(), prefix_tag)
+
+        # Rename protected columns
+        protected_column_mapping = {}
+        for col, col_idx in protected_column_positions.items():
+            protected_column_mapping[new_df.columns[col_idx]] = col
+        new_df.rename(columns=protected_column_mapping, inplace=True)
         return new_df
 
     def _drop_columns(
@@ -138,6 +153,7 @@ class MQReader(ResultReader):
         "peptides": "peptides.txt",
         "ions": "evidence.txt",
     }
+    protected_columns: list[str] = ["iBAQ peptides"]
     sample_column_tags: list[str] = [
         "LFQ intensity",
         "Intensity",
@@ -261,7 +277,7 @@ class MQReader(ResultReader):
         separated by ';'. 'Protein reported by software' and 'Representative protein'
         contain the first entry from the new 'Leading proteins' column.
 
-        TODO: Needs expansion for sorting, contaminants and special proteins
+        TODO: Docstring needs expansion for sorting, contaminants and special proteins
         """
         # not tested directly, only via integration #
         leading_protein_entries = self._collect_leading_protein_entries(df)
@@ -334,6 +350,7 @@ class FPReader(ResultReader):
         "peptides": "peptide.tsv",
         "ions": "ion.tsv",
     }
+    protected_columns: list[str] = []
     sample_column_tags: list[str] = [
         "Spectral Count",
         "Unique Spectral Count",
@@ -461,7 +478,7 @@ class FPReader(ResultReader):
         separated by ';'. 'Protein reported by software' and 'Representative protein'
         contain the first entry from the new 'Leading proteins' column.
 
-        TODO: Needs expansion for sorting, contaminants and special proteins
+        TODO: Docstring needs expansion for sorting, contaminants and special proteins
         """
         leading_protein_entries = self._collect_leading_protein_entries(df)
         protein_entry_table = _process_protein_entries(
@@ -493,6 +510,7 @@ class SpectronautReader(ResultReader):
     For now, look for a file that ends with report.X (X=xls, tsv, csv)
     """
 
+    protected_columns: list[str] = []
     column_mapping: dict[str, str] = dict(
         [
             ("PG.Cscore", "Protein cscore"),
@@ -561,15 +579,22 @@ class SpectronautReader(ResultReader):
                     matched_filenames.append(filename)
             filename = matched_filenames[0]
 
+        # Default read file
         df = self._read_file(filename)
+
+        # Spectronaut tidy up sample columns
         df = self._replace_samples_in_columns(df)
         df = self._remove_leading_brackets(df)
 
+        # Add default protein entries
         df = self._add_protein_entries(df, sort_proteins, special_proteins)
+
         if drop_protein_info:
             df = self._drop_columns(df, self.protein_info_columns)
             for tag in self.protein_info_tags:
                 df = self._drop_columns_by_tag(df, tag)
+
+        # Default column renaming
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
         return df
@@ -613,7 +638,7 @@ class SpectronautReader(ResultReader):
         separated by ';'. 'Protein reported by software' and 'Representative protein'
         contain the first entry from the new 'Leading proteins' column.
 
-        TODO: Needs expansion for sorting, contaminants and special proteins
+        TODO: Docstring needs expansion for sorting, contaminants and special proteins
         """
         # not tested directly, only via integration #
         leading_protein_entries = self._collect_leading_protein_entries(df)
