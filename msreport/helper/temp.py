@@ -42,7 +42,6 @@ def parse_fasta(fasta_path):
 def importProteinDatabase(
     fasta_path: str,
     database: Optional[ProteinDatabase] = None,
-    contaminationTag: Optional[str] = None,
 ) -> ProteinDatabase:
     if database is None:
         database = ProteinDatabase()

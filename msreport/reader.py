@@ -681,7 +681,14 @@ def add_protein_annotations(
     """
     # not tested #
     # protein_db = ProtDB.importProteinDatabase(fasta_path, contaminationTag="contam_")
-    protein_db = helper.importProteinDatabase(fasta_path, contaminationTag="contam_")
+    if isinstance(fasta_path, str):
+        fasta_paths = [fasta_path]
+    else:
+        fasta_paths = fasta_path
+
+    protein_db = None
+    for path in fasta_paths:
+        protein_db = helper.importProteinDatabase(path, database=protein_db)
 
     new_columns = {
         "Protein entry name": [],
@@ -780,7 +787,14 @@ def add_peptide_positions(
     # TODO: replace fasta_path by a dictionary of protein sequences
     # not tested #
     # protein_db = ProtDB.importProteinDatabase(fasta_path, contaminationTag="contam_")
-    protein_db = helper.importProteinDatabase(fasta_path, contaminationTag="contam_")
+    if isinstance(fasta_path, str):
+        fasta_paths = [fasta_path]
+    else:
+        fasta_paths = fasta_path
+
+    protein_db = None
+    for path in fasta_paths:
+        protein_db = helper.importProteinDatabase(path, database=protein_db)
 
     peptide_positions = {"Start": [], "End": []}
     for peptide, protein_id in zip(table[peptide_column], table[protein_column]):
