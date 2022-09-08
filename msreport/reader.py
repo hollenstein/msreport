@@ -164,6 +164,7 @@ class MQReader(ResultReader):
     column_mapping: dict[str, str] = dict(
         [
             ("Peptides", "Total peptides"),
+            ("Sequence coverage [%]", "Sequence coverage"),
         ]
     )
     column_tag_mapping: OrderedDict[str, str] = OrderedDict(
@@ -172,7 +173,8 @@ class MQReader(ResultReader):
     protein_info_columns: list[str] = [
         "Protein names",
         "Gene names",
-        "Fasta headers" "Sequence coverage [%]",
+        "Fasta headers",
+        "Sequence coverage [%]",
         "Unique + razor sequence coverage [%]",
         "Unique sequence coverage [%]",
         "Mol. weight [kDa]",

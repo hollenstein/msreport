@@ -62,7 +62,7 @@ def contaminants_to_clipboard(qtable: Qtable) -> pd.DataFrame:
     data = data.loc[contaminants, columns]
 
     data.sort_values("iBAQ intensity total", ascending=False, inplace=True)
-    data.to_clipboard()
+    data.to_clipboard(index=False)
 
 
 def to_amica(

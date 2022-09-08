@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional
 import warnings
 
@@ -27,7 +28,8 @@ class Qtable:
         self.data.to_clipboard(sep="\t", index=index)
 
     def get_design(self) -> pd.DataFrame:
-        return self.design
+        """Returns a copy of the design table."""
+        return self.design.copy()
 
     def get_samples(self, experiment: str = None) -> list[str]:
         design = self.get_design()
@@ -264,11 +266,12 @@ class Qtable:
         self._expression_features = []
         self._expression_sample_mapping = {}
 
-    def copy(self) -> "Self":
+    def copy(self) -> Qtable:
+        """Returns a copy of itself."""
         # not tested #
         return self.__copy__()
 
-    def __copy__(self) -> "Self":
+    def __copy__(self) -> Qtable:
         # not tested #
         new_instance = Qtable(self.data, self.design)
         # Copy all private attributes

@@ -15,13 +15,13 @@ setup(
         "scipy",
         "seaborn",
         "statsmodels",
-        "xlsxwriter"  # Excel report
-        "yaml"  # Excel report
-        "rpy2"  # R interface
-        "pytest",  # tests
+        "yaml",
     ],
     extras_require={
         "test": ["pytest"],
+    },
+    extras_require={
+        "limma": ["rpy2"],
     },
     python_requires=">=3.9",
     packages=find_packages(

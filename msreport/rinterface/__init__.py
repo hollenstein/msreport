@@ -19,7 +19,7 @@ def two_group_limma(
 ) -> pd.DataFrame:
     """Use limma to calculate differential expression of two groups.
 
-    Attributes:
+    Args:
         column_groups: A list that contains a group name for each column.
             Group names must correspond either to 'group1' or 'group2'.
         group1: Experimental group 1

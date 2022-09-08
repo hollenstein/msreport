@@ -1,3 +1,4 @@
+from __future__ import annotations
 import abc
 import itertools
 from typing import Callable, Iterable
@@ -13,7 +14,7 @@ class BaseSampleNormalizer(abc.ABC):
     """Base class for all sample normalizers."""
 
     @abc.abstractmethod
-    def fit(self, table: pd.DataFrame) -> "Self":
+    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer:
         pass
 
     @abc.abstractmethod
