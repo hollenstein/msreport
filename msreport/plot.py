@@ -195,7 +195,7 @@ def missing_values_horizontal(
 
 def sample_intensities(
     qtable: Qtable, tag: str = "Intensity", remove_invalid: bool = True
-) -> (plt.Figure, plt.Axes):
+) -> (plt.Figure, list[plt.Axes]):
     """Figure to compare the overall quantitative similarity of samples.
 
     Generates two subplots to compare the intensities of multiple samples. For
@@ -244,13 +244,63 @@ def sample_intensities(
     return fig, axes
 
 
+def experiment_ratios(
+    qtable: Qtable, remove_invalid: bool = True
+) -> (plt.Figure, list[plt.Axes]):
+    tag: str = "Expression"
+    ylim = (-2, 2)
+
+    data = qtable.data.copy()
+    if remove_invalid and "Valid" in data:
+        data = data[qtable.data["Valid"]]
+
+    experiments = qtable.design["Experiment"].unique().tolist()
+    column_mapping = {f"{tag} {exp}": exp for exp in experiments}
+    exp_data = data[column_mapping.keys()]
+    exp_data = exp_data.rename(columns=column_mapping)
+
+    quant_mask = np.all([(data[f"Events {exp}"] > 0) for exp in experiments], axis=0)
+    exp_data = exp_data[quant_mask]
+    pseudo_ref = np.nanmean(exp_data, axis=1)
+    exp_ratios = exp_data.subtract(pseudo_ref, axis=0)
+
+    color_wheel = ColorWheelDict()
+    num_experiments = len(experiments)
+    figwidth = (num_experiments * 0.75) + 0.75
+    figsize = (figwidth, 3)
+
+    sns.set_style("whitegrid")
+    fig, axes = plt.subplots(1, num_experiments, figsize=figsize, sharey=True)
+
+    for exp_pos, experiment in enumerate(experiments):
+        ax = axes[exp_pos]
+        values = exp_ratios[experiment]
+        sns.kdeplot(y=values, fill=True, ax=ax, zorder=3, color=color_wheel[experiment])
+        ax.set_xticklabels("")
+        ax.set_xlabel(experiment, rotation=90)
+
+    axes[0].set_ylabel("Protein ratios [log2]\nto pseudo reference")
+    axes[0].set_ylim(ylim)
+
+    for ax_pos, ax in enumerate(axes):
+        for spine in ["bottom", "left"]:
+            ax.spines[spine].set_color("#000000")
+            ax.spines[spine].set_linewidth(1)
+        ax.plot(ax.get_xlim(), (0, 0), color="#999999", lw=1, zorder=2)
+        ax.grid(False, axis="x")
+        ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
+    sns.despine(top=True, right=True)
+    fig.tight_layout()
+    return fig, axes
+
+
 def sample_pca(
     qtable: Qtable,
     tag: str = "Intensity",
     pc_x: str = "PC1",
     pc_y: str = "PC2",
     remove_invalid: bool = True,
-) -> (plt.Figure, plt.Axes):
+) -> (plt.Figure, list[plt.Axes]):
     """Figure to compare sample similarities with PCA.
 
     PCA of log2 transformed, mean centered intensity values.
@@ -366,7 +416,7 @@ def box_and_bars(
     bar_values: Iterable[float],
     group_names: list[str],
     colors: Optional[list[str]] = None,
-) -> (plt.Figure, plt.Axes):
+) -> (plt.Figure, list[plt.Axes]):
     """Generates a figure with horizontally aligned box and bar subplots.
 
     In the top subplot the box_values are displayed as box plots, in lower
@@ -437,7 +487,7 @@ def box_and_bars(
     return fig, axes
 
 
-def volcano_ma(qtable) -> list[(plt.Figure, plt.Axes)]:
+def volcano_ma(qtable) -> list[(plt.Figure, list[plt.Axes])]:
     """Returns volcano and ma figure for each comparison group."""
     comparison_tag = " vs "
     data = qtable.data.copy()
@@ -494,13 +544,17 @@ def contaminants(
     ribaq = data / ibaq_sums * 100
     contaminants = qtable.data["Potential contaminant"]
     sample_names = data.columns.to_list()
+    num_samples = len(sample_names)
 
     x_values = range(ribaq.shape[1])
     bar_values = ribaq[contaminants].sum(axis=0)
-    width = 0.8
-    colors = "#C0C0C0"
 
-    fig, ax = plt.subplots()
+    colors = "#C0C0C0"
+    width = 0.8
+    figwidth = (num_samples * 0.25) + 0.75
+    figsize = (figwidth, 3)
+
+    fig, ax = plt.subplots(figsize=figsize)
     ax.bar(
         x_values, bar_values, width=width, color=colors, edgecolor="#000000", zorder=3
     )
@@ -516,7 +570,7 @@ def contaminants(
     ax.grid(False, axis="x")
     ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
 
-    fig.suptitle("Relative amount of contaminants")
+    ax.set_title("Relative amount of contaminants")
 
     fig.tight_layout()
     return fig, ax
