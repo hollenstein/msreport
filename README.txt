@@ -22,25 +22,25 @@ Development is currently in early alpha and the interface is not yet stable.
 
 Scope
 -----
-The Reader module contains software specific reader classes that provide access
+The "Reader" module contains software specific reader classes that provide access
 to the outputs of the respective software. The reader is aware of the file
 structure and naming conventions of the respective software and allows access
 to protein and ion tables with standardized column names and data format.
 
-QTable contains quantitative data from one specific abstraction level, such as
+"Qtable" contains quantitative data from one specific abstraction level, such as
 ions or proteins. The data are in a wide format, meaning that the quantitative
 data from each sample is stored in a separate column. The QTable is aware of
 the experimental design, which are samples and experiments, and should provide
 convenient access to this data.
 
-QAnalyze provides a high level interface for post-processing of data present in
+"Analyze" provides a high level interface for post-processing of data present in
 a qtable class, such as filtering, normalization, imputation, and statistical
 testing with the R package LIMMA.
 
-QPlot allows generation of plots directly from the QTable for quality control
+"Plot" allows generation of plots directly from the QTable for quality control
 and data analysis.
 
-QExport
+"Export"
 - Generate amica input files
 - Generate a contaminant table
 

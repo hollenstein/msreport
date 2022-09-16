@@ -13,7 +13,7 @@ import sklearn.preprocessing
 import sklearn.decomposition
 
 from msreport.qtable import Qtable
-import msreport.qanalysis
+import msreport.helper
 
 
 def set_dpi(dpi: int) -> None:

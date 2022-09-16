@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 import msreport.qtable
-import msreport.qanalysis
+import msreport.analyze
 
 
 @pytest.fixture
@@ -49,7 +49,7 @@ def example_qtable(example_data):
 
 
 def test_count_missing_values(example_data, example_qtable):
-    missing_values = msreport.qanalysis.count_missing_values(example_qtable)
+    missing_values = msreport.analyze.count_missing_values(example_qtable)
     expected = example_data["missing_values"]
     assert missing_values.to_dict() == expected.to_dict()
 
@@ -60,7 +60,7 @@ class TestValidateProteins:
         self.qtable = example_qtable
 
     def test_validate_proteins(self):
-        msreport.qanalysis.validate_proteins(self.qtable)
+        msreport.analyze.validate_proteins(self.qtable)
         data_columns = self.qtable.data.columns.to_list()
         assert "Valid" in data_columns
 
@@ -68,12 +68,12 @@ class TestValidateProteins:
         "min_peptides, expected_valid", [(0, 3), (1, 3), (2, 2), (3, 0)]
     )
     def test_with_min_peptides(self, min_peptides, expected_valid):
-        msreport.qanalysis.validate_proteins(self.qtable, min_peptides=min_peptides)
+        msreport.analyze.validate_proteins(self.qtable, min_peptides=min_peptides)
         assert expected_valid == self.qtable.data["Valid"].sum()
 
 
 def test_impute_missing_values(example_qtable):
-    msreport.qanalysis.impute_missing_values(example_qtable)
+    msreport.analyze.impute_missing_values(example_qtable)
 
     expr_table = example_qtable.make_expression_table()
     number_missing_values = expr_table.isna().sum().sum()
@@ -81,7 +81,7 @@ def test_impute_missing_values(example_qtable):
 
 
 def test_calculate_experiment_means(example_data, example_qtable):
-    msreport.qanalysis.calculate_experiment_means(example_qtable)
+    msreport.analyze.calculate_experiment_means(example_qtable)
 
     experiments = example_qtable.get_experiments()
     assert all([f"Expression {e}" in example_qtable.data for e in experiments])
