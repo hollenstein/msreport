@@ -1,19 +1,16 @@
 """
 Columns that are not yet present in the amica ouptut at the moment:
-Index(['Protein Probability', 'Top Peptide Probability', 'Total peptides',
-       'LFQ intensity H900Y000_1', 'LFQ intensity H900Y000_2',
-       'LFQ intensity H900Y000_3', 'LFQ intensity H900Y030_1',
-       'LFQ intensity H900Y030_2', 'LFQ intensity H900Y030_3',
-       'LFQ intensity H900Y100_1', 'LFQ intensity H900Y100_2',
-       'LFQ intensity H900Y100_3',
-       'Leading proteins', 'Protein entry name',
-       'Fasta header', 'Protein length', 'iBAQ peptides',
-       'iBAQ intensity H900Y000_1', 'iBAQ intensity H900Y000_2',
-       'iBAQ intensity H900Y000_3', 'iBAQ intensity H900Y030_1',
-       'iBAQ intensity H900Y030_2', 'iBAQ intensity H900Y030_3',
-       'iBAQ intensity H900Y100_1', 'iBAQ intensity H900Y100_2',
-       'iBAQ intensity H900Y100_3', 'Sequence coverage',
-       ], dtype='object')
+Index([
+    'Protein Probability',
+    'Top Peptide Probability',
+    'Total peptides',
+    'Leading proteins',
+    'Protein entry name',
+    'Fasta header',
+    'Protein length',
+    'iBAQ peptides',
+    'Sequence coverage',
+], dtype='object')
 """
 import os
 
@@ -88,6 +85,7 @@ def _amica_table_from(table: pd.DataFrame) -> pd.DataFrame:
         table: A dataframe containing experimental data. Requires that columns are named
         according to the MsReport defaults.
     """
+    filter_columns = ["Valid", "Potential contaminant"]
     amica_column_mapping = {
         "Representative protein": "Majority.protein.IDs",
         "Gene name": "Gene.names",
@@ -124,16 +122,20 @@ def _amica_table_from(table: pd.DataFrame) -> pd.DataFrame:
         new_column = old_column.replace(*amica_comparison_tag)
         amica_table.rename(columns={old_column: new_column}, inplace=True)
 
-    for column in ["Valid", "Potential contaminant"]:
-        amica_table[column] = ["+" if i else "" for i in amica_table[column]]
+    for column in filter_columns:
+        if column in amica_table.columns:
+            amica_table[column] = ["+" if i else "" for i in amica_table[column]]
 
     for old_tag, new_tag in amica_column_tags.items():
         for old_column in helper.find_columns(amica_table, old_tag):
             new_column = old_column.replace(old_tag, new_tag)
             amica_column_mapping[old_column] = new_column
             amica_table.rename(columns={old_column: new_column}, inplace=True)
+
     amica_table.rename(columns=amica_column_mapping, inplace=True)
-    amica_columns = list(amica_column_mapping.values())
+    amica_columns = [
+        col for col in amica_column_mapping.values() if col in amica_table.columns
+    ]
     return amica_table[amica_columns]
 
 
