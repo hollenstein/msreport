@@ -34,10 +34,10 @@ import numpy as np
 import pandas as pd
 
 
-try:
-    import maspy._proteindb_refactoring as ProtDB
-except ModuleNotFoundError:
-    import maspy.proteindb as ProtDB
+# try:
+#     import maspy._proteindb_refactoring as ProtDB
+# except ModuleNotFoundError:
+#     import maspy.proteindb as ProtDB
 
 import msreport.helper as helper
 
@@ -785,7 +785,7 @@ def add_peptide_positions(
     protein_column: str = "Representative protein",
     peptide_column: str = "Peptide Sequence",
 ) -> None:
-    """Adds protein 'Start' and 'End' positions fo peptides to the table."""
+    """Adds protein 'Start' and 'End' positions of peptides to the table."""
     # TODO: replace fasta_path by a dictionary of protein sequences
     # not tested #
     # protein_db = ProtDB.importProteinDatabase(fasta_path, contaminationTag="contam_")

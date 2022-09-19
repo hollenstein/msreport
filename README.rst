@@ -11,8 +11,9 @@ MaxQuant, FragPipe, and Spectronaut. Other data analysis pipelines can be added
 by writing a software specific reader module.
 
 MsReport is primarily developed as a tool for the Mass Spectrometry Facility at
-the Max Perutz Labs (University of Vienna) to facilitate the generation of
-Quantitative Protein and PTM reports.
+the Max Perutz Labs (University of Vienna) to allow the generation of
+Quantitative Protein and PTM reports, and to facilitate project specific data
+anylsis tasks.
 
 
 Release
@@ -22,10 +23,11 @@ Development is currently in early alpha and the interface is not yet stable.
 
 Scope
 -----
-The "Reader" module contains software specific reader classes that provide access
-to the outputs of the respective software. The reader is aware of the file
-structure and naming conventions of the respective software and allows access
-to protein and ion tables with standardized column names and data format.
+The "Reader" module contains software specific reader classes that provide
+access to the outputs of the respective software. The reader is aware of the
+file structure and naming conventions of the respective software and allows
+access to protein and ion tables with standardized column names and data
+format.
 
 "Qtable" contains quantitative data from one specific abstraction level, such as
 ions or proteins. The data are in a wide format, meaning that the quantitative
@@ -45,4 +47,5 @@ and data analysis.
 - Generate a contaminant table
 
 Additional scripts
-- excel report: protein / ptm / combined (Uses the ExcelReport library)
+- excel report: protein (Uses the ExcelReport library)
+- planned excel reports: ptm / combined (Uses the ExcelReport library)
