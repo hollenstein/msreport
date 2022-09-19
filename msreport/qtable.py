@@ -9,22 +9,38 @@ import msreport.helper as helper
 
 
 class Qtable:
-    def __init__(self, table: pd.DataFrame, design: Optional[pd.DataFrame] = None):
+    """Stores and providess access to quantitative proteomics data.
+
+    Attributes:
+        data: A pandas.DataFrame containing quantitative proteomics data.
+        design: A pandas.DataFrame describing the experimental design.
+    """
+
+    def __init__(self, data: pd.DataFrame, design: Optional[pd.DataFrame] = None):
+        """Initializes the Qtable.
+
+        Args:
+            data: A DataFrame containing quantitative proteomics data in a wide format.
+            design: A DataFrame describing the experimental design that must at least
+                contain the columns 'Sample' and 'Experiment'. The 'Sample' entries
+                should correspond to the Sample names present in the quantitative
+                columns of the data.
+        """
+        self.data: pd.DataFrame = data.copy()
         self.design: pd.DataFrame
+
+        if design is not None:
+            self.add_design(design)
         self._expression_columns: list[str] = []
         self._expression_features: list[str] = []
         self._expression_sample_mapping: dict[str, str] = {}
 
-        self.data: pd.DataFrame = table.copy()
-        if design is not None:
-            self.add_design(design)
-
     def to_tsv(self, path: str, index: bool = False):
-        """Writes table to a tab-separated values (tsv) file."""
+        """Writes table to a .tsv (tab-separated values) file."""
         self.data.to_csv(path, sep="\t", index=index)
 
     def to_clipboard(self, index: bool = False):
-        """Writes table to the system clipboard, which can be pasted into Excel."""
+        """Writes table to the system clipboard, which can be pasted e.g. into Excel."""
         self.data.to_clipboard(sep="\t", index=index)
 
     def get_design(self) -> pd.DataFrame:
@@ -32,6 +48,14 @@ class Qtable:
         return self.design.copy()
 
     def get_samples(self, experiment: str = None) -> list[str]:
+        """Returns a list of samples present in the design table.
+
+        Args:
+            experiment: If specified, only samples from this experiment are returned.
+
+        Returns:
+            A list of sample names.
+        """
         design = self.get_design()
         if experiment is not None:
             samples = design[design["Experiment"] == experiment]["Sample"]
@@ -40,11 +64,27 @@ class Qtable:
         return samples.tolist()
 
     def get_experiment(self, sample: str) -> str:
+        """Looks up the expriment of the specified sample from the design table.
+
+        Args:
+            sample: A sample name.
+
+        Returns:
+            An experiment name.
+        """
         design = self.get_design()
         experiment = design[design["Sample"] == sample]["Experiment"].values[0]
         return experiment
 
     def get_experiments(self, samples: list[str] = None) -> list[str]:
+        """Returns a list of experiments present in the design table.
+
+        Args:
+            samples: If specified, only experiments from these samples are returned.
+
+        Returns:
+            A list of experiments names.
+        """
         if samples is not None:
             experiments = []
             for sample in samples:
@@ -55,7 +95,14 @@ class Qtable:
         return experiments
 
     def get_expression_column(self, sample: str) -> str:
-        """Return expression column associated with a sample."""
+        """Returns the expression column associated with a sample.
+
+        Args:
+            sample: A sample name.
+
+        Returns:
+            The name of the expression column associated with the sample.
+        """
         column_to_sample = self._expression_sample_mapping
         sample_to_column = {v: k for k, v in column_to_sample.items()}
         if sample in sample_to_column:
@@ -67,11 +114,20 @@ class Qtable:
     def make_sample_table(
         self, tag: str, samples_as_columns: bool = False
     ) -> pd.DataFrame:
-        """Returns a new dataframe with sample columns containing the 'tag'.
+        """Returns a new DataFrame with sample columns containing the 'tag'.
 
         Args:
-            samples_as_columns: If true, replace expression column names with
+            tag: Substring that must be present in selected columns.
+            samples_as_columns: If true, replaces expression column names with
                 sample names. Requires that the experimental design is set.
+
+        Returns:
+            A new DataFrame generated from self.data with sample columns that also
+                contained the specified 'tag'.
+
+        Returns:
+            A copied DataFrame that contains only the specified columns from the
+            quantitative proteomics data.
         """
         samples = self.get_samples()
         columns = helper.find_sample_columns(self.data, tag, samples)
@@ -86,13 +142,17 @@ class Qtable:
         samples_as_columns: bool = False,
         features: Optional[list[str]] = None,
     ) -> pd.DataFrame:
-        """Returns a new dataframe containing the expression columns.
+        """Returns a new DataFrame containing the expression columns.
 
         Args:
             features: A list of additional columns that will be added from qtable.data
-                to the expression table.
-            samples_as_columns: If true, replace expression column names with
+                to the newly generated DataFrame.
+            samples_as_columns: If true, replaces expression column names with
                 sample names. Requires that the experimental design is set.
+
+        Returns:
+            A copied DataFrame that contains only the specified columns from the
+            quantitative proteomics data.
         """
         columns = []
         columns.extend(self._expression_columns)
@@ -105,15 +165,16 @@ class Qtable:
 
         return table
 
-    def add_design(self, design_table: pd.DataFrame) -> None:
-        """Add an experimental design table
+    def add_design(self, design: pd.DataFrame) -> None:
+        """Adds an experimental design table
 
         Args:
-            design_table: A dataframe that must contain the columns 'Sample'
-                and 'Experiment'. The 'Sample' entries should correspond to the
-                Sample names present in the quantitative columns of the table.
+            design: A DataFrame describing the experimental design that must at least
+                contain the columns 'Sample' and 'Experiment'. The 'Sample' entries
+                should correspond to the Sample names present in the quantitative
+                columns of the table.
         """
-        columns = design_table.columns.tolist()
+        columns = design.columns.tolist()
         required_columns = ["Experiment", "Sample"]
         if not all([c in columns for c in required_columns]):
             exception_message = "".join(
@@ -126,22 +187,25 @@ class Qtable:
                 ]
             )
             raise ValueError(exception_message)
-        self.design = design_table
+        self.design = design
 
     def set_expression_by_tag(
         self, tag: str, zerotonan: bool = False, log2: bool = False
     ) -> None:
         """Sets columns that contain the 'tag' as expression columns.
 
-        Previous expression columns and expression features are deleted.
+        Generates a copy of all identified expression columns and renames them to
+        "Expression sample_name". All columns containing the 'tag' must also contain a
+        sample name that is present in the experimental design. When this method is
+        called, previously generated expression columns and expression features are
+        deleted.
 
         Args:
-            tag: Identifies columns that contain this substring
+            tag: Identifies columns that contain this substring.
             zerotonan: If true, zeros in expression columns are replace by NaN
-            log2: If true, expression column values are log2 transformed and 0
-                are replaced by NaN. Evaluates wheter intensities are likely to
-                be already in logspace, which prevents another log2
-                transformation.
+            log2: If true, expression column values are log2 transformed and zeros are
+                replaced by NaN. Evaluates wheter intensities are likely to be already
+                in logspace, which prevents another log2 transformation.
         """
         columns = helper.find_columns(self.data, tag, must_be_substring=True)
         column_mapping = {}
@@ -156,40 +220,45 @@ class Qtable:
         zerotonan: bool = False,
         log2: bool = False,
     ) -> None:
-        """Defines a list of expression columns and their sample mapping.
+        """Sets as expression columns by using the keys from 'columns_to_samples'.
 
-        Previous expression columns and expression features are deleted.
+        Generates a copy of all specified expression columns and renames them to
+        "Expression sample_name", according to the 'columns_to_samples' mapping. When
+        this method is called, previously generated expression columns and expression
+        features are deleted.
 
         Args:
-            columns_to_samples: Mapping of expression columns to sample names-
-                They keys of the dictionary must correspond to columns of the
-                data table, and are used to define expression columns.
+            columns_to_samples: Mapping of expression columns to sample names. The keys
+                of the dictionary must correspond to columns of the proteomics data and
+                are used to identify expression columns. The value of each expression
+                column specifies the sample name and must correspond to an entry of the
+                experimental design table.
             zerotonan: If true, zeros in expression columns are replace by NaN
-            log2: If true, expression column values are log2 transformed and 0
-                are replaced by NaN. Evaluates wheter intensities are likely to
-                be already in logspace, which prevents another log2
-                transformation.
+            log2: If true, expression column values are log2 transformed and zeros are
+                replaced by NaN. Evaluates wheter intensities are likely to be already
+                in logspace, which prevents another log2 transformation.
         """
         self._set_expression(columns_to_samples, zerotonan=zerotonan, log2=log2)
 
-    def add_expression_features(self, new_data: pd.DataFrame) -> None:
-        """Add expression features as new columns to qtable.data
+    def add_expression_features(self, expression_features: pd.DataFrame) -> None:
+        """Adds expression features as new columns to the proteomics data.
 
         Args:
-            new_data: DataFrame or Series that will be added to qtable.data as
-                new columns, and added to the list of expression features. The
-                number and order of new_data rows must be equal to qtable.data.
+            expression_features: DataFrame or Series that will be added to qtable.data
+                as new columns, column names are added to the list of expression
+                features. The number and order of rows in 'expression_features' must
+                correspond to qtable.data.
         """
         # TODO: join all columns at once using pd.concat(axis=1) instead
-        assert isinstance(new_data, (pd.DataFrame, pd.Series))
-        assert self.data.shape[0] == new_data.shape[0]
+        assert isinstance(expression_features, (pd.DataFrame, pd.Series))
+        assert self.data.shape[0] == expression_features.shape[0]
 
-        if isinstance(new_data, pd.Series):
-            new_data = new_data.to_frame()
+        if isinstance(expression_features, pd.Series):
+            expression_features = expression_features.to_frame()
 
-        for new_column in new_data.columns:
-            # to_numpy() is used to remove the index
-            self.data[new_column] = new_data[new_column].to_numpy()
+        for new_column in expression_features.columns:
+            # to_numpy() is required to remove the index
+            self.data[new_column] = expression_features[new_column].to_numpy()
             if new_column not in self._expression_features:
                 self._expression_features.append(new_column)
 
@@ -199,15 +268,20 @@ class Qtable:
         zerotonan: bool = False,
         log2: bool = False,
     ) -> None:
-        """Define expresssion columns and delete previous expression features.
+        """Defines expresssion columns and deletes previous expression features.
+
+        Generates a copy of all specified expression columns and renames them to
+        "Expression sample_name", according to the 'columns_to_samples' mapping.
 
         Args:
-            expr_sample_mapping: mapping of expression columns to sample names
+            expr_sample_mapping: Mapping of expression columns to sample names. The keys
+                of the dictionary must correspond to columns of self.data, the values
+                specify the sample name and must correspond to entries in
+                self.design["Sample"].
             zerotonan: If true, zeros in expression columns are replace by NaN
-            log2: If true, expression column values are log2 transformed and 0
-                are replaced by NaN. Uses helper.intensities_in_logspace() to
-                evaluate wheter intensities are already in logspace, which
-                prevents another log2 transformation.
+            log2: If true, expression column values are log2 transformed and zeros are
+                replaced by NaN. Evaluates wheter intensities are likely to be already
+                in logspace, which prevents another log2 transformation.
         """
         data_columns = self.data.columns.tolist()
         expression_columns = list(expr_sample_mapping.keys())
@@ -252,7 +326,7 @@ class Qtable:
         self.data[new_column_names] = expression_data
 
     def _reset_expression(self) -> None:
-        """Remove previously added expression and expression feature data."""
+        """Removes previously added expression and expression feature columns."""
         no_expression_columns = []
         for col in self.data.columns:
             if col in self._expression_columns:
@@ -267,7 +341,7 @@ class Qtable:
         self._expression_sample_mapping = {}
 
     def copy(self) -> Qtable:
-        """Returns a copy of itself."""
+        """Returns a copy of this Qtable instance."""
         # not tested #
         return self.__copy__()
 
