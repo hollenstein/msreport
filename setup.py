@@ -14,21 +14,16 @@ setup(
         "numpy",
         "pandas",
         "pyteomics",
+        "rpy2",
         "scipy",
         "seaborn",
         "sklearn",
         "statsmodels",
-        "yaml",
     ],
     extras_require={
         "test": ["pytest"],
     },
-    extras_require={
-        "limma": ["rpy2"],
-    },
     python_requires=">=3.9",
-    packages=find_packages(
-        where="msreport",
-    ),
+    packages=find_packages(),
     keywords=["proteomics", "mass spectrometry", "data analysis", "data processing"],
 )
