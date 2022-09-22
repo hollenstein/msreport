@@ -25,7 +25,7 @@ def gaussian_imputation(
             standard deviation of the measured values
 
     Returns:
-        A new pandas.DataFrame containing imputed values
+        A new DataFrame containing imputed values.
     """
     imputed_table = table.copy()
     for column in imputed_table:
@@ -43,7 +43,14 @@ def gaussian_imputation(
 
 
 def solve_ratio_matrix(matrix: np.ndarray) -> np.ndarray:
-    """Solve a square matrix containing pair wise log ratios."""
+    """Solves a square matrix containing pair wise log ratios.
+
+    Args:
+        matrix: A two dimensional array with equal length in both dimensions.
+
+    Returns:
+        An array containing the least-squares solution.
+    """
     # Not tested #
     assert matrix.shape[0] == matrix.shape[1]
     num_groups = matrix.shape[0]
@@ -66,7 +73,14 @@ def solve_ratio_matrix(matrix: np.ndarray) -> np.ndarray:
 
 
 def mode(values: Iterable) -> float:
-    """Calculate the mode by using kernel-density estimation."""
+    """Calculate the mode by using kernel-density estimation.
+
+    Args:
+        values: Sequence of values for which the mode will be estimated.
+
+    Returns:
+        The estimated mode.
+    """
     median = np.median(values)
     bounds = (median - 1.5, median + 1.5)
     kde = scipy.stats.gaussian_kde(values)
@@ -79,6 +93,18 @@ def mode(values: Iterable) -> float:
 
 
 def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
+    """Calculates the number of tryptic iBAQ peptides.
+
+    The number of iBAQ peptides is calculated as the number of tryptic peptides with a
+    length between 7 and 30 amino acids. Multiple peptides with the same sequence are
+    counted multiple times.
+
+    Args:
+        protein_sequence: Amino acid sequence of a protein.
+
+    Returns:
+        Number of tryptic iBAQ peptides for the given protein sequence.
+    """
     cleavage_rule = "[KR]"
     missed_cleavage = 0
     min_length = 7
@@ -99,6 +125,15 @@ def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
 def make_coverage_mask(
     protein_length: int, peptide_positions: list[(int, int)]
 ) -> np.array:
+    """Returns a boolean array with True for positions present in 'peptide_positions'.
+
+    Args:
+        protein_length: The number of amino acids in the protein sequence.
+        peptide_positions: List of peptide start and end positions.
+
+    Returns:
+        A 1-dimensional boolean array with length equal to 'protein_length'.
+    """
     coverage_mask = np.zeros(protein_length, dtype="bool")
     for start, end in peptide_positions:
         coverage_mask[start - 1 : end] = True
@@ -108,6 +143,16 @@ def make_coverage_mask(
 def calculate_sequence_coverage(
     protein_length: int, peptide_positions: list[(int, int)], ndigits: int = 1
 ) -> np.array:
+    """Calculates the protein sequence coverage given a list of peptide positions.
+
+    Args:
+        protein_length: The number of amino acids in the protein sequence.
+        peptide_positions: List of peptide start and end positions.
+        ndigits: Optional, number of decimal places for rounding the sequence coverage.
+
+    Returns:
+        Sequence coverage in percent, with values ranging from 0 to 100.
+    """
     coverage_mask = make_coverage_mask(protein_length, peptide_positions)
     coverage = round(coverage_mask.sum() / protein_length * 100, ndigits)
     return coverage
