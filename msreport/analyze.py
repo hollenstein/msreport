@@ -1,5 +1,4 @@
-""" The quanalysis module contains methods for analysing quantification
-results.
+""" The quanalysis module contains methods for analysing quantification results.
 
 
 Required test data

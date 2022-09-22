@@ -1,4 +1,5 @@
-""" Module for reading and homogenizing result tables from various MS analysis tools.
+""" Module for reading result tables from various MS analysis tools and converting them
+to a standardized format following the MsReport conventions.
 
 Currently MaxQuant and FragPipe protein tables are fully supported, and ion and peptide
 tables are partly supported.

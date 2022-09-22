@@ -20,14 +20,15 @@ def two_group_limma(
     """Use limma to calculate differential expression of two groups.
 
     Args:
+        table: Contains quantitative data for differential expression analysis.
         column_groups: A list that contains a group name for each column.
             Group names must correspond either to 'group1' or 'group2'.
         group1: Experimental group 1
         group2: Experimental group 2, used as the coefficient
 
     Returns:
-        A dataframe containing 'Average expression', 'logFC', 'P-value', and
-        'Adjusted p-value'.
+        A dataframe containing "Average expression", "logFC", "P-value", and
+        "Adjusted p-value".
     """
     rscript_path = _find_rscript_paths()["limma.R"]
     robjects.r["source"](rscript_path)
@@ -46,8 +47,12 @@ def two_group_limma(
     return limma_result[keep_columns].rename(columns=column_mapping)
 
 
-def _find_rscript_paths():
-    """Returns a mapping of files from the 'rscripts' folder."""
+def _find_rscript_paths() -> dict[str, str]:
+    """Returns a mapping for filepaths from the msreport.rinterface.rscripts folder.
+
+    Returns:
+        A dictionary with filenames as keys and filepaths as values.
+    """
     script_paths = {}
     _module_path = os.path.dirname(os.path.realpath(__file__))
     _scripts_path = os.path.join(_module_path, "rscripts")
