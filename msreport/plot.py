@@ -17,25 +17,34 @@ import msreport.helper
 
 
 def set_dpi(dpi: int) -> None:
-    """Changes the default dots per inch settings.
+    """Changes the default dots per inch settings for matplotlib plots.
 
-    This effectively makes figures smaller or larger, without affecting the
-    relative sizes of elements within the figures.
+    This effectively makes figures smaller or larger, without affecting the relative
+    sizes of elements within the figures.
+
+    Args:
+        dpi: New default dots per inch.
     """
     plt.rcParams["figure.dpi"] = dpi
 
 
 class ColorWheelDict(UserDict):
-    """Lookup dictionary that maps keys to hexcolors.
+    """Lookup dictionary that maps keys to hexcolors by using a color wheel.
 
-    When a key is not present the first color of the color wheel is added as
-    the value, and the color is moved from the beginning to the end of the
-    color wheel. If no list of colors is specified, a default list of ten
-    colors is added to the color wheel. It is also possible to manually set
-    key and color pairs by using the same syntax as for a regular dictionary.
+    When a key is not present the first color of the color wheel is added as the value,
+    and the color is moved from the beginning to the end of the color wheel. If no list
+    of colors is specified, a default list of ten colors is added to the color wheel.
+    It is also possible to manually set key and color pairs by using the same syntax as
+    for a regular dictionary.
     """
 
     def __init__(self, colors: Optional[list[str]] = None):
+        """Initializes a ColorWheelDict.
+
+        Args:
+            colors: Optional, a list of hex colors used for the color wheel. By default
+                a list with ten colors is used.
+        """
         self.data = {}
 
         if colors is not None:
@@ -75,27 +84,26 @@ class ColorWheelDict(UserDict):
 
 def missing_values_vertical(
     qtable: Qtable,
-    remove_invalid: bool = True,
-) -> (plt.Figure, plt.Axes):
+    exclude_invalid: bool = True,
+) -> (plt.Figure, list[plt.Axes]):
     """Vertical bar plot to analyze the completeness of quantification.
 
-    The expression columns are used to analyze the number of samples with
-    missing values per experiment. This figure must be generated before
-    imputing missing values.
+    Requires the columns "Missing experiment_name" and "Events experiment_name", which
+    are added by calling msreport.analyze.analyze_missingness(qtable: Qtable).
 
     Args:
-        qtable: msreport.qtable.Qtable instance, which data is used for
-            plotting.
-        remove_invalid: If true and the column 'Valid' is present, rows are
-            filtered according to the boolean entries of 'Valid'.
+        qtable: A Qtable instance, which data is used for plotting.
+        exclude_invalid: If True and the column "Valid" is present, rows are filtered
+            according to the boolean entries of "Valid"; default True.
     Returns:
-        A matplotlib Figure and Axes object containing the missing values plot.
+        A matplotlib Figure and a list of Axes objects containing the missing values
+        plots.
     """
     experiments = qtable.get_experiments()
     num_experiments = len(experiments)
 
     table = qtable.data.copy()
-    if remove_invalid and "Valid" in qtable.data:
+    if exclude_invalid and "Valid" in qtable.data:
         table = table[qtable.data["Valid"]]
 
     barwidth = 0.8
@@ -135,28 +143,25 @@ def missing_values_vertical(
 
 def missing_values_horizontal(
     qtable: Qtable,
-    remove_invalid: bool = True,
+    exclude_invalid: bool = True,
 ) -> (plt.Figure, plt.Axes):
     """Horizontal bar plot to analyze the completeness of quantification.
 
-    The expression columns are used to analyze the number of samples with
-    missing values per experiment. This figure must be generated before
-    imputing missing values.
+    Requires the columns "Missing experiment_name" and "Events experiment_name", which
+    are added by calling msreport.analyze.analyze_missingness(qtable: Qtable).
 
     Args:
-        qtable: msreport.qtable.Qtable instance, which data is used for
-            plotting.
-        remove_invalid: If true and the column 'Valid' is present, rows are
-            filtered according to the boolean entries of 'Valid'.
-
+        qtable: A Qtable instance, which data is used for plotting.
+        exclude_invalid: If True and the column "Valid" is present, rows are filtered
+            according to the boolean entries of "Valid"; default True.
     Returns:
-        A matplotlib Figure and Axes object containing the missing values plot.
+        A matplotlib Figure and Axes object, containing the missing values plot.
     """
     experiments = qtable.get_experiments()
     num_experiments = len(experiments)
 
     table = qtable.data.copy()
-    if remove_invalid and "Valid" in qtable.data:
+    if exclude_invalid and "Valid" in qtable.data:
         table = table[qtable.data["Valid"]]
 
     data = {"exp": [], "max": [], "some": [], "min": []}
@@ -193,31 +198,85 @@ def missing_values_horizontal(
     return fig, ax
 
 
+def contaminants(
+    qtable: Qtable, ibaq_tag: str = "iBAQ intensity"
+) -> (plt.Figure, plt.Axes):
+    """A barplot that displays relative contaminant amounts (riBAQ) per sample.
+
+    The relative iBAQ (riBAQ) values are calculated as:
+    sum of contaminant iBAQ intensities / sum of all iBAQ intensities * 100
+
+    Requires "iBAQ intensity" columns for each sample, and a "Potential contaminant"
+    column to identify the potential contaminant entries.
+
+    Args:
+        qtable: A Qtable instance, which data is used for plotting.
+        ibaq_tag: String used for matching the iBAQ intensity columns; default
+            "iBAQ intensity", which correpsonds to the MsReport convention.
+
+    Returns:
+        A matplotlib Figure and Axes object, containing the contaminants plot.
+    """
+    data = qtable.make_sample_table(ibaq_tag, samples_as_columns=True)
+    ribaq = data / data.sum() * 100
+    contaminants = qtable.data["Potential contaminant"]
+    samples = data.columns.to_list()
+    num_samples = len(samples)
+
+    x_values = range(ribaq.shape[1])
+    bar_values = ribaq[contaminants].sum(axis=0)
+
+    color_wheel = ColorWheelDict()
+    colors = [color_wheel[exp] for exp in qtable.get_experiments(samples)]
+    width = 0.8
+    figwidth = (num_samples * 0.25) + 0.75
+    figsize = (figwidth, 3)
+
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.bar(
+        x_values, bar_values, width=width, color=colors, edgecolor="#000000", zorder=3
+    )
+    ax.set_xticks(x_values)
+    ax.set_xticklabels(samples, rotation=90)
+    ax.set_ylabel("Sum riBAQ [%]")
+
+    ax.set_ylim(0, max(5, ax.get_ylim()[1]))
+    sns.despine(top=True, right=True)
+    for spine in ["bottom", "left"]:
+        ax.spines[spine].set_color("#000000")
+        ax.spines[spine].set_linewidth(1)
+    ax.grid(False, axis="x")
+    ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
+
+    ax.set_title("Relative amount of contaminants")
+
+    fig.tight_layout()
+    return fig, ax
+
+
 def sample_intensities(
-    qtable: Qtable, tag: str = "Intensity", remove_invalid: bool = True
+    qtable: Qtable, tag: str = "Intensity", exclude_invalid: bool = True
 ) -> (plt.Figure, list[plt.Axes]):
     """Figure to compare the overall quantitative similarity of samples.
 
-    Generates two subplots to compare the intensities of multiple samples. For
-    the top subplot a pseudo reference sample is generated by calculating the
-    average intensity values of all samples. For each row and sample the log2
-    ratios to the pseudo reference are calculated. Only rows without missing
-    values are selected and for each sample the log2 ratios to the pseudo
-    reference are displayed as a box plots. The lower subplot displays the
-    summed up intensities of all rows per sample as bar plots.
+    Generates two subplots to compare the intensities of multiple samples. For the top
+    subplot a pseudo reference sample is generated by calculating the average intensity
+    values of all samples. For each row and sample the log2 ratios to the pseudo
+    reference are calculated. Only rows without missing values are selected and for
+    each sample the log2 ratios to the pseudo reference are displayed as a box plots.
+    The lower subplot displays the summed intensity of all rows per sample as bar plots.
 
     Args:
-        qtable: msreport.qtable.Qtable instance, which data is used for
-            plotting.
+        qtable: A Qtable instance, which data is used for plotting.
         tag: String used for matching the intensity columns.
-        remove_invalid: If true and the column 'Valid' is present, rows are
-            filtered according to the boolean entries of 'Valid'.
+        exclude_invalid: If True and the column "Valid" is present, rows are filtered
+            according to the boolean entries of "Valid"; default True.
 
     Returns:
-        A matplotlib Figure and Axes object containing the intensity plots.
+        A matplotlib Figure and a list of Axes objects, containing the intensity plots.
     """
     table = qtable.make_sample_table(tag, samples_as_columns=True)
-    if remove_invalid and "Valid" in qtable.data:
+    if exclude_invalid and "Valid" in qtable.data:
         table = table[qtable.data["Valid"]]
 
     table = table.replace({0: np.nan})
@@ -245,13 +304,29 @@ def sample_intensities(
 
 
 def experiment_ratios(
-    qtable: Qtable, remove_invalid: bool = True
+    qtable: Qtable, exclude_invalid: bool = True
 ) -> (plt.Figure, list[plt.Axes]):
+    """Figure to compare the similarity of expression values between experiments.
+
+    Intended to evaluate the bulk distribution of expression values after normalization.
+    For each experiment a subplot is generated, which displays the distribution of log2
+    ratios to a pseudo reference experiment as a density plot. The pseudo reference
+    values are calculated as the average intensity values of all experiments. Only rows
+    with quantitative values in all experiment are considered.
+
+    Requires that average experiment expression values are calculated. Which can be done
+    by calling msreport.analyze.calculate_experiment_means(qtable: Qtable).
+
+    Args:
+        qtable: A Qtable instance, which data is used for plotting.
+        exclude_invalid: If True and the column "Valid" is present, rows are filtered
+            according to the boolean entries of "Valid"; default True.
+    """
     tag: str = "Expression"
     ylim = (-2, 2)
 
     data = qtable.data.copy()
-    if remove_invalid and "Valid" in data:
+    if exclude_invalid and "Valid" in data:
         data = data[qtable.data["Valid"]]
 
     experiments = qtable.design["Experiment"].unique().tolist()
@@ -299,27 +374,34 @@ def sample_pca(
     tag: str = "Intensity",
     pc_x: str = "PC1",
     pc_y: str = "PC2",
-    remove_invalid: bool = True,
+    exclude_invalid: bool = True,
 ) -> (plt.Figure, list[plt.Axes]):
-    """Figure to compare sample similarities with PCA.
+    """Figure to compare sample similarities with a principle component analysis.
 
-    PCA of log2 transformed, mean centered intensity values.
+    On the left subplots two PCA components of log2 transformed, mean centered intensity
+    values are shown. On the right subplot the explained variance of the principle
+    components is display as barplots.
 
     Args:
-        qtable: msreport.qtable.Qtable instance, which data is used for
-            plotting.
-        tag: String used for matching the intensity columns.
-        pc_x: Principle component to plot on x-axis of the scatter plot.
-        pc_y: Principle component to plot on y-axis of the scatter plot.
-        remove_invalid: If true and the column 'Valid' is present, rows are
-            filtered according to the boolean entries of 'Valid'.
+        qtable: A Qtable instance, which data is used for the PCA analysis.
+        tag: String used for matching the intensity columns. Intensity values are
+            evaluated wheter they are likely to be in logspace, and if not are log2
+            transformed for the PCA analysis.
+        pc_x: Principle component to plot on x-axis of the scatter plot, default "PC1".
+            The number of calculated principal compenents is equal to the number of
+            samples.
+        pc_y: Principle component to plot on y-axis of the scatter plot, default "PC2".
+            The number of calculated principal compenents is equal to the number of
+            samples.
+        exclude_invalid: If True and the column "Valid" is present, rows are filtered
+            according to the boolean entries of "Valid"; default True.
 
     Returns:
-        A matplotlib Figure and Axes object containing the PCA plots.
+        A matplotlib Figure and a list of Axes objects, containing the PCA plots.
     """
 
     table = qtable.make_sample_table(tag, samples_as_columns=True)
-    if remove_invalid and "Valid" in qtable.data:
+    if exclude_invalid and "Valid" in qtable.data:
         table = table[qtable.data["Valid"]]
 
     table = table.replace({0: np.nan})
@@ -411,84 +493,16 @@ def sample_pca(
     return fig, axes
 
 
-def box_and_bars(
-    box_values: Iterable[Iterable[float]],
-    bar_values: Iterable[float],
-    group_names: list[str],
-    colors: Optional[list[str]] = None,
-) -> (plt.Figure, list[plt.Axes]):
-    """Generates a figure with horizontally aligned box and bar subplots.
-
-    In the top subplot the box_values are displayed as box plots, in lower
-    subplot the bar_values are displayed as bar plots. The figure width is
-    automatically adjusted to the number of groups that will be plotted.
-    The length of group_names must be the same as the length of the of the
-    bar_values and the number of iterables from box_values. Each group from
-    box_values and bar_values is horizontally aligned between the two subplots.
+def volcano_ma(qtable: Qtable) -> list[(plt.Figure, list[plt.Axes])]:
+    """Generates volcano and ma plots for all comparison groups.
 
     Args:
-        box_values: A sequence of sequences that each contain y values for
-            generating a box plot.
-        bar_values: A sequence of y values for generating bar plots.
-        group_names: Used to label groups from box and bar plots.
-        colors: Sequence of hex color codes for each group that is used for the
-            boxes of the box and bar plots. Must be the same length as group
-            names. If colors is None, boxes are colored in light grey.
+        qtable: A Qtable instance, which data is used for plotting.
 
     Returns:
-        A matplotlib Figure and Axes object containing the box and bar plots.
+        A list of tuples of a matplotlib Figure object and a list of Axes objects. Each
+        Figure and list of Axes tuple corresponds to one comparison group.
     """
-    assert len(box_values) == len(bar_values) == len(group_names)
-    assert colors is None or len(colors) == len(group_names)
-    if colors is None:
-        colors = ["#D0D0D0" for _ in group_names]
-
-    num_samples = len(group_names)
-    x_values = range(num_samples)
-    width = 0.8
-    xlim = (-1 + 0.15, num_samples - 0.15)
-    figwidth = (num_samples * 0.25) + 1.1
-    figsize = (figwidth, 6)
-
-    sns.set_style("whitegrid")
-    fig, axes = plt.subplots(2, figsize=figsize, sharex=True)
-
-    # Plot boxplots using the box_values
-    ax = axes[0]
-    ax.plot(xlim, (0, 0), color="#999999", lw=1, zorder=2)
-    boxplots = ax.boxplot(
-        box_values,
-        positions=x_values,
-        vert=True,
-        showfliers=False,
-        patch_artist=True,
-        widths=width,
-        medianprops={"color": "#000000"},
-    )
-    for color, box in zip(colors, boxplots["boxes"]):
-        box.set(facecolor=color)
-    ylim = ax.get_ylim()
-    ax.set_ylim(min(-0.4, ylim[0]), max(0.401, ylim[1]))
-
-    # Plot barplots using the bar_values
-    ax = axes[1]
-    ax.bar(x_values, bar_values, width=width, color=colors, edgecolor="#000000")
-    ax.set_xticklabels(group_names, rotation=90)
-    for ax_pos, ax in enumerate(axes):
-        for spine in ["bottom", "left"]:
-            ax.spines[spine].set_color("#000000")
-            ax.spines[spine].set_linewidth(1)
-        ax.grid(False, axis="x")
-        ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
-    sns.despine(top=True, right=True)
-
-    ax.set_xlim(xlim)
-    fig.tight_layout()
-    return fig, axes
-
-
-def volcano_ma(qtable) -> list[(plt.Figure, list[plt.Axes])]:
-    """Returns volcano and ma figure for each comparison group."""
     comparison_tag = " vs "
     data = qtable.data.copy()
     if "Valid" in qtable.data:
@@ -535,54 +549,31 @@ def volcano_ma(qtable) -> list[(plt.Figure, list[plt.Axes])]:
     return figures
 
 
-def contaminants(
-    qtable: Qtable, ibaq_tag: str = "iBAQ intensity"
-) -> (plt.Figure, plt.Axes):
-    """Returns a barplot of relative contaminant amounts per sample."""
-    data = qtable.make_sample_table(ibaq_tag, samples_as_columns=True)
-    ibaq_sums = data.sum()
-    ribaq = data / ibaq_sums * 100
-    contaminants = qtable.data["Potential contaminant"]
-    sample_names = data.columns.to_list()
-    num_samples = len(sample_names)
-
-    x_values = range(ribaq.shape[1])
-    bar_values = ribaq[contaminants].sum(axis=0)
-
-    colors = "#C0C0C0"
-    width = 0.8
-    figwidth = (num_samples * 0.25) + 0.75
-    figsize = (figwidth, 3)
-
-    fig, ax = plt.subplots(figsize=figsize)
-    ax.bar(
-        x_values, bar_values, width=width, color=colors, edgecolor="#000000", zorder=3
-    )
-    ax.set_xticks(x_values)
-    ax.set_xticklabels(sample_names, rotation=90)
-    ax.set_ylabel("Sum riBAQ [%]")
-
-    ax.set_ylim(0, max(5, ax.get_ylim()[1]))
-    sns.despine(top=True, right=True)
-    for spine in ["bottom", "left"]:
-        ax.spines[spine].set_color("#000000")
-        ax.spines[spine].set_linewidth(1)
-    ax.grid(False, axis="x")
-    ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
-
-    ax.set_title("Relative amount of contaminants")
-
-    fig.tight_layout()
-    return fig, ax
-
-
 def expression_comparison(
     qtable: Qtable,
-    group: list[str, str],
+    experiment_pair: list[str, str],
     comparison_tag: str = " vs ",
-    optional: bool = False,
+    max_expression: bool = False,
 ) -> (plt.Figure, plt.Axes):
-    exp_1, exp_2 = group
+    """Generates an expression comparison plot for two experiments.
+
+    The subplot in the middle displays the average expression of the two experiments on
+    the y-axis and the log fold change on the x-axis. The subplots on the left and right
+    display entries with only missing values in one of the two experiments.
+
+    Args:
+        qtable: A Qtable instance, which data is used for the PCA analysis.
+        experiment_pair: The names of the two experiments that will be compared,
+            experiments must be present in qtable.design.
+        comparison_tag:
+        max_expression: If True, plot max expression instead of average expression.
+
+    Returns:
+        A list of tuples of a matplotlib Figure object and a list of Axes objects. Each
+        Figure, list of Axes tuple corresponds to one comparison group.
+    """
+
+    exp_1, exp_2 = experiment_pair
     comparison_group = "".join([exp_1, comparison_tag, exp_2])
 
     data = qtable.data.copy()
@@ -597,7 +588,7 @@ def expression_comparison(
     mask_both = np.invert(np.any([only_exp_1, only_exp_2], axis=0))
 
     # Test if plotting maximum intensity is better than average
-    if optional:
+    if max_expression:
         max_values = np.max(
             [data[f"Expression {exp_2}"], data[f"Expression {exp_1}"]], axis=0
         )
@@ -661,8 +652,84 @@ def expression_comparison(
     ax.scatter(x_values, y_values, s=s, alpha=0.75, color="#606060", zorder=3)
     ax.set_xlabel(x_variable, fontsize=9)
     ax.set_title(comparison_group, fontsize=12)
-    if optional:
+    if max_expression:
         ax.set_ylabel("Maximum expression")
 
+    fig.tight_layout()
+    return fig, axes
+
+
+def box_and_bars(
+    box_values: Iterable[Iterable[float]],
+    bar_values: Iterable[float],
+    group_names: list[str],
+    colors: Optional[list[str]] = None,
+) -> (plt.Figure, list[plt.Axes]):
+    """Generates a figure with horizontally aligned box and bar subplots.
+
+    In the top subplot the box_values are displayed as box plots, in lower subplot the
+    bar_values are displayed as bar plots. The figure width is automatically adjusted
+    to the number of groups that will be plotted. The length of group_names must be the
+    same as the length of the of the bar_values and the number of iterables from
+    box_values. Each group from box_values and bar_values is horizontally aligned
+    between the two subplots.
+
+    Args:
+        box_values: A sequence of sequences that each contain y values for generating a
+            box plot.
+        bar_values: A sequence of y values for generating bar plots.
+        group_names: Used to label groups from box and bar plots.
+        colors: Sequence of hex color codes for each group that is used for the boxes of
+            the box and bar plots. Must be the same length as group names. If 'colors'
+            is None, boxes are colored in light grey.
+
+    Returns:
+        A matplotlib Figure and a list of Axes objects containing the box and bar plots.
+    """
+    assert len(box_values) == len(bar_values) == len(group_names)
+    assert colors is None or len(colors) == len(group_names)
+    if colors is None:
+        colors = ["#D0D0D0" for _ in group_names]
+
+    num_samples = len(group_names)
+    x_values = range(num_samples)
+    width = 0.8
+    xlim = (-1 + 0.15, num_samples - 0.15)
+    figwidth = (num_samples * 0.25) + 1.1
+    figsize = (figwidth, 6)
+
+    sns.set_style("whitegrid")
+    fig, axes = plt.subplots(2, figsize=figsize, sharex=True)
+
+    # Plot boxplots using the box_values
+    ax = axes[0]
+    ax.plot(xlim, (0, 0), color="#999999", lw=1, zorder=2)
+    boxplots = ax.boxplot(
+        box_values,
+        positions=x_values,
+        vert=True,
+        showfliers=False,
+        patch_artist=True,
+        widths=width,
+        medianprops={"color": "#000000"},
+    )
+    for color, box in zip(colors, boxplots["boxes"]):
+        box.set(facecolor=color)
+    ylim = ax.get_ylim()
+    ax.set_ylim(min(-0.4, ylim[0]), max(0.401, ylim[1]))
+
+    # Plot barplots using the bar_values
+    ax = axes[1]
+    ax.bar(x_values, bar_values, width=width, color=colors, edgecolor="#000000")
+    ax.set_xticklabels(group_names, rotation=90)
+    for ax_pos, ax in enumerate(axes):
+        for spine in ["bottom", "left"]:
+            ax.spines[spine].set_color("#000000")
+            ax.spines[spine].set_linewidth(1)
+        ax.grid(False, axis="x")
+        ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
+    sns.despine(top=True, right=True)
+
+    ax.set_xlim(xlim)
     fig.tight_layout()
     return fig, axes

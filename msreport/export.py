@@ -21,8 +21,22 @@ import msreport.helper as helper
 from msreport.qtable import Qtable
 
 
-def contaminants_to_clipboard(qtable: Qtable) -> pd.DataFrame:
-    """Creates a contaminant table and writes it to the system clipboard."""
+def contaminants_to_clipboard(qtable: Qtable) -> None:
+    """Creates a contaminant table and writes it to the system clipboard.
+
+    The contimant table contains "iBAQ rank", "riBAQ", "iBAQ intensity", "Intensity",
+    and "Expression" columns for each sample. Imputed values in the "Expression" columns
+    are set to NaN.
+
+    The qtable must at least contain "iBAQ intensity" and "Missing" sample columns, and
+    a "Potential contaminant" column, expression columns must be set. For calculation
+    of iBAQ intensities refer to msreport.reader.add_ibaq_intensities(). "Missing"
+    sample columns can be added with msreport.analyze.analyze_missingness().
+
+    Args:
+        qtable: A Qtable instance. Requires that columns are named according to the
+            MsReport conventions.
+    """
     columns = [
         "Representative protein",
         "Protein entry name",
@@ -68,7 +82,16 @@ def to_amica(
     table_name: str = "amica_table.tsv",
     design_name: str = "amica_design.tsv",
 ) -> None:
-    """Writes an amica input table and design from a qtable."""
+    """Writes amica input and design tables from a qtable.
+
+    Args:
+        qtable: A Qtable instance.
+        directory: Output path of the generted files.
+        table_name: Optional, filename of the amica table file. Default is
+            "amica_table.tsv".
+        design_name: Optional, filename of the amica design file. Default is
+            "amica_design.tsv".
+    """
     amica_table = _amica_table_from(qtable.data)
     amica_table_path = os.path.join(directory, table_name)
     amica_table.to_csv(amica_table_path, sep="\t", index=False)
@@ -83,7 +106,7 @@ def _amica_table_from(table: pd.DataFrame) -> pd.DataFrame:
 
     Args:
         table: A dataframe containing experimental data. Requires that columns are named
-        according to the MsReport defaults.
+            according to the MsReport defaults.
     """
     filter_columns = ["Valid", "Potential contaminant"]
     amica_column_mapping = {

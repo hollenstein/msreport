@@ -94,23 +94,28 @@ def test_sort_fasta_entries_with_sorting_by_tag():
     assert names == ["pre_a", "b", "a_post"]
 
 
+# fmt: off
 @pytest.mark.parametrize(
-    "proteins, contaminants, special_proteins, expected",
+    "proteins, contaminants, special_proteins, expected_proteins, expected_contaminants",
     [
-        (["C", "B", "A"], None, None, ["A", "B", "C"]),
-        (["C", "B", "A"], None, "C", ["C", "A", "B"]),
-        (["C", "B", "A"], [False, False, True], None, ["B", "C", "A"]),
-        (["C", "B", "A"], [False, False, True], ["C"], ["C", "B", "A"]),
-        (["C", "B", "A"], [False, True, False], ["B"], ["B", "A", "C"]),
+        (["C", "B", "A"], None, None, ["A", "B", "C"], [None, None, None]),
+        (["C", "B", "A"], None, "C", ["C", "A", "B"], [None, None, None]),
+        (["C", "B", "A"], [False, False, True], None, ["B", "C", "A"], [False, False, True]),
+        (["C", "B", "A"], [False, False, True], ["C"], ["C", "B", "A"], [False, False, True]),
+        (["C", "B", "A"], [False, True, False], ["B"], ["B", "A", "C"], [True, False, False]),
     ],
 )
-def test_sort_order_proteins(proteins, contaminants, special_proteins, expected):
+def test_sort_order_proteins(
+    proteins, contaminants, special_proteins, expected_proteins, expected_contaminants
+):
     proteins = ["C", "B", "A"]
-    sorted_proteins, _ = msreport.reader._sort_proteins_and_contaminants(
+    sorted_proteins, sorted_contaminants = msreport.reader._sort_proteins_and_contaminants(
         proteins, special_proteins=special_proteins, contaminants=contaminants
     )
     # sorted_proteins = [proteins[i] for i in sort_order]
-    assert sorted_proteins == expected
+    assert sorted_contaminants == expected_contaminants
+    assert sorted_proteins == expected_proteins
+# fmt: on
 
 
 class TestSortLeadingProteins:
