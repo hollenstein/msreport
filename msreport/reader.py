@@ -1090,7 +1090,7 @@ def propagate_representative_protein(
 
     new_protein_ids = []
     for old in target_table["Protein reported by software"]:
-        new_protein_ids.append(protein_lookup[old])
+        new_protein_ids.append(protein_lookup[old] if old in protein_lookup else old)
     target_table["Representative protein"] = new_protein_ids
 
 
