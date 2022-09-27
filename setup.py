@@ -2,6 +2,10 @@ from setuptools import setup, find_packages
 
 
 VERSION = "0.0.1"
+
+packages = find_packages()
+packages.append("msreport.rinterface.rscripts")
+
 setup(
     name="msreport",
     version=VERSION,
@@ -24,6 +28,7 @@ setup(
         "test": ["pytest"],
     },
     python_requires=">=3.9",
-    packages=find_packages(),
+    packages=packages,
+    package_data={"msreport.rinterface.rscripts": ["*.r", "*.R"]},
     keywords=["proteomics", "mass spectrometry", "data analysis", "data processing"],
 )
