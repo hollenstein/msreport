@@ -576,60 +576,56 @@ def sample_pca(
     return fig, axes
 
 
-def volcano_ma(qtable: Qtable) -> list[(plt.Figure, list[plt.Axes])]:
-    """Generates volcano and ma plots for all comparison groups.
+def volcano_ma(
+    qtable: Qtable,
+    experiment_pair: list[str, str],
+    comparison_tag: str = " vs ",
+) -> (plt.Figure, list[plt.Axes]):
+    """Generates a volcano and an MA plot for the comparison of two experiments.
 
     Args:
         qtable: A Qtable instance, which data is used for plotting.
+        experiment_pair: The names of the two experiments that will be compared,
+            experiments must be present in qtable.design.
+        comparison_tag:
 
     Returns:
-        A list of tuples of a matplotlib Figure object and a list of Axes objects. Each
-        Figure and list of Axes tuple corresponds to one comparison group.
+        A matplotlib Figure object and a list of two Axes objects containing the volcano
+        and the MA plot.
     """
-    comparison_tag = " vs "
+    exp_1, exp_2 = experiment_pair
+    comparison_group = "".join([exp_1, comparison_tag, exp_2])
+
     data = qtable.data.copy()
     if "Valid" in qtable.data:
         data = data[qtable.data["Valid"]]
 
-    experiments = qtable.get_experiments()
-
-    possible_comparisons = itertools.permutations(experiments, 2)
-    comparison_groups = []
-    for i, j in possible_comparisons:
-        comparison_group = comparison_tag.join([i, j])
-        columns = msreport.helper.find_columns(data, comparison_group)
-        if columns:
-            comparison_groups.append(comparison_group)
-
     for variable in ["P-value", "Adjusted p-value"]:
         for column in msreport.helper.find_sample_columns(
-            data, variable, comparison_groups
+            data, variable, [comparison_group]
         ):
             data[column] = np.log10(data[column]) * -1
 
     scatter_size = 2 / (max(min(data.shape[0], 10000), 1000) / 1000)
 
-    figures = []
-    for comparison_group in comparison_groups:
-        fig, axes = plt.subplots(1, 2, figsize=[8, 4], sharex=True)
-        fig.suptitle(comparison_group)
+    fig, axes = plt.subplots(1, 2, figsize=[8, 4], sharex=True)
+    fig.suptitle(comparison_group)
 
-        for ax, x_variable, y_variable in [
-            (axes[0], "logFC", "P-value"),
-            (axes[1], "logFC", "Average expression"),
-        ]:
-            x_col = " ".join([x_variable, comparison_group])
-            y_col = " ".join([y_variable, comparison_group])
-            x_values = data[x_col]
-            y_values = data[y_col]
-            ax.grid(axis="both", linestyle="dotted", linewidth=1)
-            ax.scatter(x_values, y_values, s=scatter_size, color="#606060", zorder=3)
-            ax.set_xlabel(x_variable)
-            ax.set_ylabel(y_variable)
+    for ax, x_variable, y_variable in [
+        (axes[0], "logFC", "P-value"),
+        (axes[1], "logFC", "Average expression"),
+    ]:
+        x_col = " ".join([x_variable, comparison_group])
+        y_col = " ".join([y_variable, comparison_group])
+        x_values = data[x_col]
+        y_values = data[y_col]
+        ax.grid(axis="both", linestyle="dotted", linewidth=1)
+        ax.scatter(x_values, y_values, s=scatter_size, color="#606060", zorder=3)
+        ax.set_xlabel(x_variable)
+        ax.set_ylabel(y_variable)
 
-        fig.tight_layout()
-        figures.append((fig, axes))
-    return figures
+    fig.tight_layout()
+    return fig, axes
 
 
 def expression_comparison(
@@ -637,7 +633,7 @@ def expression_comparison(
     experiment_pair: list[str, str],
     comparison_tag: str = " vs ",
     max_expression: bool = False,
-) -> (plt.Figure, plt.Axes):
+) -> (plt.Figure, list[plt.Axes]):
     """Generates an expression comparison plot for two experiments.
 
     The subplot in the middle displays the average expression of the two experiments on
@@ -652,8 +648,8 @@ def expression_comparison(
         max_expression: If True, plot max expression instead of average expression.
 
     Returns:
-        A list of tuples of a matplotlib Figure object and a list of Axes objects. Each
-        Figure, list of Axes tuple corresponds to one comparison group.
+        A matplotlib Figure objects and a list of three Axes objects containing the
+        expression comparison plots.
     """
 
     exp_1, exp_2 = experiment_pair
