@@ -303,8 +303,89 @@ def sample_intensities(
     return fig, axes
 
 
+def replicate_ratios(
+    qtable: Qtable,
+    exclude_invalid: bool = True,
+    xlim: Iterable[float, float] = (-2, 2),
+) -> (plt.Figure, list[plt.Axes]):
+    """Figure to compare the similarity of expression values between replicates.
+
+    Intended to evaluate the bulk distribution of expression values within experiments,
+    after normalization. Plots from one experiments are placed in the same row. For each
+    experiment, samples are compared pair-wise and for each sample comparison the
+    distribution of the log2 ratios is shown as a density plot.
+
+    Requires log2 transformed expression values.
+
+    Args:
+        qtable: A Qtable instance, which data is used for plotting.
+        exclude_invalid: If True and the column "Valid" is present, rows are filtered
+            according to the boolean entries of "Valid"; default True.
+        xlim: Optional, specifies the displayed log2 ratio range on the x-axis. Default
+            is from -2 to 2.
+    """
+    tag: str = "Expression"
+
+    data = qtable.make_sample_table(tag, samples_as_columns=True)
+    if exclude_invalid and "Valid" in data:
+        data = data[qtable.data["Valid"]]
+
+    experiments = qtable.design["Experiment"].unique().tolist()
+    num_experiments = len(experiments)
+    max_replicates = max([len(qtable.get_samples(exp)) for exp in experiments])
+    max_combinations = len(list(itertools.combinations(range(max_replicates), 2)))
+
+    figheight = (num_experiments * 0.85) + 0.6
+    figwidth = (max_combinations * 1.5) + 0.75
+    figsize = (figwidth, figheight)
+
+    sns.set_style("whitegrid")
+    fig, axes = plt.subplots(
+        num_experiments, max_combinations, figsize=figsize, sharex=True
+    )
+
+    color_wheel = ColorWheelDict()
+    _ = [color_wheel[exp] for exp in experiments]
+
+    for x_pos, experiment in enumerate(experiments):
+        sample_combinations = itertools.combinations(qtable.get_samples(experiment), 2)
+        for y_pos, (s1, s2) in enumerate(sample_combinations):
+            s1_label = s1.replace(experiment, "").strip("_")
+            s2_label = s2.replace(experiment, "").strip("_")
+            ax = axes[x_pos, y_pos]
+            ratios = data[s1] - data[s2]
+            ratios = ratios[np.isfinite(ratios)]
+            ylabel = experiment if y_pos == 0 else ""
+            title = f"{s1_label} vs {s2_label}"
+
+            sns.kdeplot(
+                x=ratios, fill=True, ax=ax, zorder=3, color=color_wheel[experiment]
+            )
+            ax.set_title(title, fontsize=10)
+            ax.set_yticklabels("")
+            ax.set_ylabel(ylabel, rotation=90, fontsize=10, va="center")
+            ax.set_xlabel("")
+            ax.tick_params(axis="both", labelsize=8)
+
+    axes[0, 0].set_xlim(xlim)
+    for ax in axes.flatten():
+        for spine in ["bottom", "left"]:
+            ax.spines[spine].set_color("#000000")
+            ax.spines[spine].set_linewidth(0.5)
+        ax.plot((0, 0), ax.get_ylim(), color="#999999", lw=1, zorder=2)
+        ax.grid(False, axis="y")
+        ax.grid(axis="x", linestyle="dashed", linewidth=1, color="#cccccc")
+    sns.despine(top=True, right=True)
+    fig.suptitle("Protein ratios [log2] between replicates", fontsize=10)
+    fig.tight_layout()
+
+    return fig, axes
+
+
 def experiment_ratios(
-    qtable: Qtable, exclude_invalid: bool = True
+    qtable: Qtable,
+    exclude_invalid: bool = True,
+    ylim: Iterable[float, float] = (-2, 2),
 ) -> (plt.Figure, list[plt.Axes]):
     """Figure to compare the similarity of expression values between experiments.
 
@@ -321,9 +402,10 @@ def experiment_ratios(
         qtable: A Qtable instance, which data is used for plotting.
         exclude_invalid: If True and the column "Valid" is present, rows are filtered
             according to the boolean entries of "Valid"; default True.
+        ylim: Optional, specifies the displayed log2 ratio range on the y-axis. Default
+            is from -2 to 2.
     """
     tag: str = "Expression"
-    ylim = (-2, 2)
 
     data = qtable.data.copy()
     if exclude_invalid and "Valid" in data:
@@ -342,7 +424,8 @@ def experiment_ratios(
     color_wheel = ColorWheelDict()
     num_experiments = len(experiments)
     figwidth = (num_experiments * 0.75) + 0.75
-    figsize = (figwidth, 3)
+    figheight = 2.5
+    figsize = (figwidth, figheight)
 
     sns.set_style("whitegrid")
     fig, axes = plt.subplots(1, num_experiments, figsize=figsize, sharey=True)
@@ -352,15 +435,15 @@ def experiment_ratios(
         values = exp_ratios[experiment]
         sns.kdeplot(y=values, fill=True, ax=ax, zorder=3, color=color_wheel[experiment])
         ax.set_xticklabels("")
+        ax.tick_params(axis="both", labelsize=8)
         ax.set_xlabel(experiment, rotation=90)
 
     axes[0].set_ylabel("Protein ratios [log2]\nto pseudo reference")
     axes[0].set_ylim(ylim)
-
     for ax_pos, ax in enumerate(axes):
         for spine in ["bottom", "left"]:
             ax.spines[spine].set_color("#000000")
-            ax.spines[spine].set_linewidth(1)
+            ax.spines[spine].set_linewidth(0.5)
         ax.plot(ax.get_xlim(), (0, 0), color="#999999", lw=1, zorder=2)
         ax.grid(False, axis="x")
         ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
