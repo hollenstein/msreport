@@ -163,6 +163,7 @@ class MQReader(ResultReader):
         [
             ("Peptides", "Total peptides"),
             ("Sequence coverage [%]", "Sequence coverage"),
+            ("MS/MS count", "Spectral count Combined"),
         ]
     )
     column_tag_mapping: OrderedDict[str, str] = OrderedDict(
