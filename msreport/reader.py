@@ -163,7 +163,9 @@ class MQReader(ResultReader):
         [
             ("Peptides", "Total peptides"),
             ("Sequence coverage [%]", "Sequence coverage"),
-            ("MS/MS count", "Spectral count Combined"),
+            ("MS/MS count", "Spectral count Combined"),  # proteinGroups and evidence
+            ("MS/MS Count", "Spectral count Combined"),  # peptides
+            ("Sequence", "Peptide sequence"),  # peptides and evidence
         ]
     )
     column_tag_mapping: OrderedDict[str, str] = OrderedDict(
@@ -236,9 +238,11 @@ class MQReader(ResultReader):
                 in front of the sample names, e.g. "Intensity sample_name". If False,
                 column tags are added afterwards, e.g. "Sample_name Intensity"; default
                 True.
-            drop_decoy: If True, decoy entries are removed; default True.
+            drop_decoy: If True, decoy entries are removed and the "Reverse" column is
+                dropped; default True.
             drop_idbysite: If True, protein groups that were only identified by site are
-                removed; default True.
+                removed and the "Only identified by site" columns is dropped; default
+                True.
             sort_proteins: If True, protein entries in "Leading proteins" are sorted
                 alphabetically ascending, with the exception that decoy proteins are
                 always sorted to the back and special proteins are sorted to the front.
@@ -279,6 +283,9 @@ class MQReader(ResultReader):
     ) -> pd.DataFrame:
         """Reads a "peptides.txt" file and returns a processed DataFrame.
 
+        Adds a new column to comply with the MsReport conventions:
+        "Protein reported by software"
+
         Args:
             filename: allows specifying an alternative filename, otherwise the default
                 filename is used.
@@ -288,15 +295,19 @@ class MQReader(ResultReader):
                 in front of the sample names, e.g. "Intensity sample_name". If False,
                 column tags are added afterwards, e.g. "Sample_name Intensity"; default
                 True.
-            drop_decoy: If True, decoy entries are removed; default True.
+            drop_decoy: If True, decoy entries are removed and the "Reverse" column is
+                dropped; default True.
 
         Returns:
             A DataFrame containing the processed peptide table.
         """
-        raise NotImplementedError("Needs to be reimplemented")
+        # TODO: not tested
         df = self._read_file("peptides" if filename is None else filename)
-        # df = self._add_protein_entries(df)
+        df["Protein reported by software"] = _extract_protein_ids(
+            df["Leading razor protein"]
+        )
         # Note that _add_protein_entries would need to be adapted for the peptide table.
+        # df = self._add_protein_entries(df)
         if drop_decoy:
             df = self._drop_decoy(df)
         if rename_columns:
@@ -391,12 +402,20 @@ class MQReader(ResultReader):
         return leading_protein_entries
 
     def _drop_decoy(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Returns a DataFrame not containing decoy entries."""
-        return df.loc[df["Reverse"] != "+"]
+        """Returns a DataFrame not containing decoy entries.
+
+        Also removes the "Reverse" column.
+        """
+        return self._drop_columns(df.loc[df["Reverse"] != "+"], ["Reverse"])
 
     def _drop_idbysite(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Returns a DataFrame not containing entries only identified by site."""
-        return df.loc[df["Only identified by site"] != "+"]
+        """Returns a DataFrame not containing entries only identified by site.
+
+        Also removes the "Only identified by site" column.
+        """
+        return self._drop_columns(
+            df.loc[df["Only identified by site"] != "+"], ["Only identified by site"]
+        )
 
 
 class FPReader(ResultReader):
@@ -457,6 +476,10 @@ class FPReader(ResultReader):
     ]
     column_mapping: dict[str, str] = dict(
         [
+            ("Peptide Sequence", "Peptide sequence"),  # Peptide and ion
+            ("Modified Sequence", "Modified sequence"),  # Modified peptide and ion
+            ("Start", "Start position"),  # Peptide and ion
+            ("End", "End position"),  # Peptide and ion
             ("Combined Total Peptides", "Total peptides"),  # From LFQ
             ("Total Peptides", "Total peptides"),  # From TMT
         ]
@@ -563,6 +586,39 @@ class FPReader(ResultReader):
             df = self._drop_columns(df, self.protein_info_columns)
             for tag in self.protein_info_tags:
                 df = self._drop_columns_by_tag(df, tag)
+        if rename_columns:
+            df = self._rename_columns(df, prefix_column_tags)
+        return df
+
+    def import_peptides(
+        self,
+        filename: Optional[str] = None,
+        rename_columns: bool = True,
+        prefix_column_tags: bool = True,
+    ) -> pd.DataFrame:
+        """Reads a "combined_peptides.txt" file and returns a processed DataFrame.
+
+        Adds a new column to comply with the MsReport conventions:
+        "Protein reported by software"
+
+        Args:
+            filename: allows specifying an alternative filename, otherwise the default
+                filename is used.
+            rename_columns: If True, columns are renamed according to the MsReport
+                conventions; default True.
+            prefix_column_tags: If True, column tags such as "Intensity" are added
+                in front of the sample names, e.g. "Intensity sample_name". If False,
+                column tags are added afterwards, e.g. "Sample_name Intensity"; default
+                True.
+
+        Returns:
+            A DataFrame containing the processed peptide table.
+        """
+        # TODO: not tested
+        df = self._read_file("peptides" if filename is None else filename)
+        df["Protein reported by software"] = _extract_protein_ids(df["Protein"])
+        # Note that _add_protein_entries would need to be adapted for the peptide table.
+        # df = self._add_protein_entries(df)
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
         return df
@@ -745,8 +801,8 @@ def add_sequence_coverage(
     """Calculates "Sequence coverage" and adds a new column to the 'protein_table'.
 
     Sequence coverage is represented as a percentage, with values ranging from 0 to 100.
-    Requires the columns "Start" and "End" in the 'peptide_table', and "Protein length"
-    in the 'protein_table'.
+    Requires the columns "Start position" and "End position" in the 'peptide_table', and
+    "Protein length" in the 'protein_table'.
 
     Args:
         protein_table: DataFrame to which the "Sequence coverage" column is added.
@@ -759,9 +815,9 @@ def add_sequence_coverage(
     # not tested #
     peptide_positions = {}
     for protein_id, peptide_group in peptide_table.groupby(by=id_column):
-        positions = [
-            (s, e) for s, e in zip(peptide_group["Start"], peptide_group["End"])
-        ]
+        positions = list(
+            zip(peptide_group["Start position"], peptide_group["End position"])
+        )
         peptide_positions[protein_id] = sorted(positions)
 
     sequence_coverages = []
@@ -809,10 +865,10 @@ def add_ibaq_intensities(
 def add_peptide_positions(
     table: pd.DataFrame,
     fasta_path: Union[str, list[str]],
-    peptide_column: str = "Peptide Sequence",
+    peptide_column: str = "Peptide sequence",
     protein_column: str = "Representative protein",
 ) -> None:
-    """Adds peptide "Start" and "End" positions to the table.
+    """Adds peptide "Start position" and "End position" positions to the table.
 
     Args:
         table: DataFrame to which the protein annotations are added.
@@ -832,15 +888,15 @@ def add_peptide_positions(
     for path in fasta_paths:
         protein_db = helper.importProteinDatabase(path, database=protein_db)
 
-    peptide_positions = {"Start": [], "End": []}
+    peptide_positions = {"Start position": [], "End position": []}
     for peptide, protein_id in zip(table[peptide_column], table[protein_column]):
         sequence = protein_db[protein_id].sequence
         start = sequence.find(peptide) + 1
         end = start + len(peptide) - 1
         if start == 0:
             start, end = -1, -1
-        peptide_positions["Start"].append(start)
-        peptide_positions["End"].append(end)
+        peptide_positions["Start position"].append(start)
+        peptide_positions["End position"].append(end)
 
     for key in peptide_positions:
         table[key] = peptide_positions[key]
@@ -1062,9 +1118,10 @@ def _add_potential_contaminants(df: pd.DataFrame, contaminant_tag: str) -> pd.Da
         A copy of the input DataFrame, containing the "Potential contaminant" column.
     """
     # not tested #
-    contaminants = [contaminant_tag in e for e in df["Representative protein"]]
     df = df.copy()
-    df["Potential contaminant"] = contaminants
+    df["Potential contaminant"] = df["Representative protein"].str.contains(
+        contaminant_tag
+    )
     return df
 
 

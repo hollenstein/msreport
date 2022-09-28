@@ -359,9 +359,12 @@ class TestMQReader:
 
     def test_drop_idbysite(self):
         table = self.reader._read_file("proteins")
+        ids_by_site = table["Majority protein IDs"][
+            table["Only identified by site"] == "+"
+        ]
+
         table = self.reader._drop_idbysite(table)
-        is_idbysite = table["Only identified by site"] == "+"
-        assert not is_idbysite.any()
+        assert not ids_by_site.isin(table["Majority protein IDs"]).any()
 
     def test_collect_leading_protein_entries(self):
         table = pd.DataFrame(
@@ -384,8 +387,7 @@ class TestMQReader:
             drop_protein_info=True,
             special_proteins=[],  # Not tested
         )
-        assert not (table["Reverse"] == "+").any()
-        assert not (table["Only identified by site"] == "+").any()
+        assert not table.columns.isin(["Reverse", "Only identified by site"]).any()
         assert not table["Representative protein"].str.contains("REV__").any()
         assert "Total peptides" in table
         assert "12500amol_1 Intensity" in table
