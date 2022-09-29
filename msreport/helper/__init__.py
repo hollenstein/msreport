@@ -13,4 +13,4 @@ from .table import (
     find_sample_columns,
     rename_mq_reporter_channels,
 )
-from .temp import importProteinDatabase
+from .temp import importProteinDatabase, extract_modifications, modify_peptide

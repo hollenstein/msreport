@@ -99,6 +99,39 @@ def test_rename_mq_reporter_channels_with_count_and_corrected():
     assert table.columns.tolist() == expected_columns
 
 
+def test_extract_modifications():
+    modified_sequence = "(Acetyl (Protein N-term))ADSRDPASDQM(Oxidation (M))QHWK"
+    expected_modifications = [(0, "Acetyl (Protein N-term)"), (11, "Oxidation (M)")]
+    modifications = msreport.helper.extract_modifications(modified_sequence, "(", ")")
+    assert modifications == expected_modifications
+
+
+@pytest.mark.parametrize(
+    "sequence, modifications, expected_mofified_sequence",
+    [
+        ("ADSRDPASDQMQHWK", [], "ADSRDPASDQMQHWK"),
+        (
+            "ADSRDPASDQMQHWK",
+            [(0, "Acetyl (Protein N-term)"), (11, "Oxidation (M)")],
+            "[Acetyl (Protein N-term)]ADSRDPASDQM[Oxidation (M)]QHWK",
+        ),
+        (
+            "ADSRDPASDQMQHWK",
+            [(11, "Oxidation (M)"), (0, "Acetyl (Protein N-term)")],
+            "[Acetyl (Protein N-term)]ADSRDPASDQM[Oxidation (M)]QHWK",
+        ),
+        (
+            "ADSRDPASDQMQHWK",
+            [(0, "Oxidation (M)"), (0, "Acetyl (Protein N-term)")],
+            "[Acetyl (Protein N-term)][Oxidation (M)]ADSRDPASDQMQHWK",
+        ),
+    ],
+)
+def test_modify_peptide(sequence, modifications, expected_mofified_sequence):
+    modified_sequence = msreport.helper.modify_peptide(sequence, modifications)
+    assert modified_sequence == expected_mofified_sequence
+
+
 def test_guess_design():
     table = pd.DataFrame(
         columns=[
