@@ -1,4 +1,4 @@
-""" Module for reading result tables from various MS analysis tools and converting them
+"""Module for reading result tables from various MS analysis tools and converting them
 to a standardized format following the MsReport conventions.
 
 Currently MaxQuant and FragPipe protein tables are fully supported, and ion and peptide
@@ -18,10 +18,10 @@ Unified column names:
 - LFQ intensity "sample name"
 - iBAQ intensity "sample name"
 """
-from collections import OrderedDict
+
 import os
-from typing import Optional, Union
-import warnings
+from collections import OrderedDict
+from typing import Iterable, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -123,7 +123,9 @@ class MQReader(ResultReader):
         import_proteins: Reads a "proteinGroups.txt" file and returns a processed
             dataframe, conforming to the MsReport naming conventions.
         import_peptides: Reads a "peptides.txt" file and returns a processed
-            dataframe, conforming to the MsReport naming conventions.
+            DataFrame, conforming to the MsReport naming conventions.
+        import_ions: Reads an "evidence.xt" file and returns a processed DataFrame,
+            conforming to the MsReport naming conventions.
 
     Attributes:
         default_filenames: (class attribute) Look up of filenames for the result files
@@ -315,22 +317,45 @@ class MQReader(ResultReader):
         return df
 
     def import_ions(
-        self, filename: Optional[str] = None, drop_decoy: bool = True
+        self,
+        filename: Optional[str] = None,
+        rename_columns: bool = True,
+        rewrite_modifications: bool = True,
+        prefix_column_tags: bool = True,
+        drop_decoy: bool = True,
     ) -> pd.DataFrame:
         """Reads an "evidence.txt" file and returns a processed dataframe.
 
         Args:
             filename: allows specifying an alternative filename, otherwise the default
                 filename is used.
-            drop_decoy: If True, decoy entries are removed; default True.
+            rename_columns: If True, columns are renamed according to the MsReport
+                conventions; default True.
+            rewrite_modifications: If True, the peptide format in "Modified sequence" is
+                changed according to the MsReport convention, and a "Modifications" is
+                added to contains the amino acid position for all modifications.
+                Requires 'rename_columns' to be true. Default True.
+            prefix_column_tags: If True, column tags such as "Intensity" are added
+                in front of the sample names, e.g. "Intensity sample_name". If False,
+                column tags are added afterwards, e.g. "Sample_name Intensity"; default
+                True.
+            drop_decoy: If True, decoy entries are removed and the "Reverse" column is
+                dropped; default True.
 
         Returns:
             A dataframe containing the processed ion table.
         """
-        raise NotImplementedError("Needs to be reimplemented")
         df = self._read_file("ions")
+        df["Protein reported by software"] = _extract_protein_ids(
+            df["Leading razor protein"]
+        )
+        df["Representative protein"] = df["Leading razor protein"]
         if drop_decoy:
             df = self._drop_decoy(df)
+        if rename_columns:
+            df = self._rename_columns(df, prefix_column_tags)
+        if rewrite_modifications and rename_columns:
+            df = self._add_peptide_modification_entries(df)
         return df
 
     def _add_protein_entries(
@@ -400,6 +425,22 @@ class MQReader(ResultReader):
             ]
             leading_protein_entries.append(protein_entries)
         return leading_protein_entries
+
+    def _add_peptide_modification_entries(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Adds standardized "Modified sequence" and "Modifications columns".
+
+        Requires the columns "Peptide sequence" and "Modified sequence"
+        """
+        # TODO: add complete docstring
+        # TODO: not tested
+        mod_sequences = df["Modified sequence"].str.split("_").str[1]
+        mod_entries = _generate_modification_entries(
+            df["Peptide sequence"], mod_sequences, "(", ")"
+        )
+        new_df = df.copy()
+        new_df["Modified sequence"] = mod_entries["Modified sequence"]
+        new_df["Modifications"] = mod_entries["Modifications"]
+        return new_df
 
     def _drop_decoy(self, df: pd.DataFrame) -> pd.DataFrame:
         """Returns a dataframe not containing decoy entries.
@@ -627,6 +668,7 @@ class FPReader(ResultReader):
         self,
         filename: Optional[str] = None,
         rename_columns: bool = True,
+        rewrite_modifications: bool = True,
         prefix_column_tags: bool = True,
     ) -> pd.DataFrame:
         """Reads a "combined_ion.tsv" or "ion.tsv" file and returns a processed
@@ -641,27 +683,26 @@ class FPReader(ResultReader):
                 filename is used.
             rename_columns: If True, columns are renamed according to the MsReport
                 conventions; default True.
+            rewrite_modifications: If True, the peptide format in "Modified sequence" is
+                changed according to the MsReport convention, and a "Modifications" is
+                added to contains the amino acid position for all modifications.
+                Requires 'rename_columns' to be true. Default True.
             prefix_column_tags: If True, column tags such as "Intensity" are added
                 in front of the sample names, e.g. "Intensity sample_name". If False,
                 column tags are added afterwards, e.g. "Sample_name Intensity"; default
                 True.
         """
         # TODO: not tested #
-        warnings.warn(
-            "This function is only partially implemented.",
-            UserWarning,
-            stacklevel=2,
-        )
-
         df = self._read_file("ions" if filename is None else filename)
 
         # FUTURE: replace this by _add_protein_entries(df, False) if FragPipe adds
         #         'Indistinguishable Proteins' to the ion table.
-        df["Representative protein"] = df["Protein ID"]
         df["Protein reported by software"] = df["Protein ID"]
-
+        df["Representative protein"] = df["Protein reported by software"]
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
+        if rewrite_modifications and rename_columns:
+            df = self._add_peptide_modification_entries(df)
         return df
 
     def _add_protein_entries(
@@ -729,6 +770,24 @@ class FPReader(ResultReader):
                     protein_entries.append(entry)
             leading_protein_entries.append(protein_entries)
         return leading_protein_entries
+
+    def _add_peptide_modification_entries(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Adds standardized "Modified sequence" and "Modifications columns".
+
+        Requires the columns "Peptide sequence" and "Modified sequence"
+        """
+        mod_sequences = (
+            df["Modified sequence"]
+            .str.replace("n[", "[", regex=False)
+            .str.replace("c[", "[", regex=False)
+        )
+        mod_entries = _generate_modification_entries(
+            df["Peptide sequence"], mod_sequences, "[", "]"
+        )
+        new_df = df.copy()
+        new_df["Modified sequence"] = mod_entries["Modified sequence"]
+        new_df["Modifications"] = mod_entries["Modifications"]
+        return new_df
 
 
 def add_protein_annotations(
@@ -1185,6 +1244,32 @@ def _process_protein_entries(
         }
     )
     return table
+
+
+def _generate_modification_entries(
+    sequences: Iterable[str],
+    modified_sequences: Iterable[str],
+    tag_start: str,
+    tag_close: str,
+) -> pd.DataFrame:
+    """Creates standardized "Modified sequence" and "Modifications" values."""
+    # TODO: add complete docstring
+    # TODO: not tested
+    modified_sequence_entries = []
+    modification_entries = []
+    for sequence, modified_sequence in zip(sequences, modified_sequences):
+        modifications = helper.extract_modifications(
+            modified_sequence, tag_start, tag_close
+        )
+        modified_sequence = helper.modify_peptide(sequence, modifications)
+        modification_entry = ";".join([f"{p}:{m}" for p, m in modifications])
+        modified_sequence_entries.append(modified_sequence)
+        modification_entries.append(modification_entry)
+    entries = {
+        "Modified sequence": modified_sequence_entries,
+        "Modifications": modification_entries,
+    }
+    return entries
 
 
 def _extract_protein_ids(entries: list[str]) -> list[str]:

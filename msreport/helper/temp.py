@@ -62,8 +62,8 @@ def extract_modifications(
         tag_close: Symbol that indicates the end of a modification tag, e.g. "]".
 
     Returns:
-        A list of modification tuples, containing position and modification string
-        (excluding the tag_open and tag_close strings).
+        A sorted list of modification tuples, containing position and modification
+        string (excluding the tag_open and tag_close strings).
     """
     start_counter = 0
     tags = []
@@ -84,7 +84,7 @@ def extract_modifications(
         modification = peptide[tag_start + 1 : tag_end]
         modifications.append((mod_position, modification))
         last_position += tag_end - tag_start + 1
-    return modifications
+    return sorted(modifications)
 
 
 def modify_peptide(
@@ -96,7 +96,7 @@ def modify_peptide(
     """Returns a string containing the modifications within the peptide sequence.
 
     Returns:
-        Modified sequence, e.g. "PEPT[phospho]IDE" for sequence = "PEPTIDE" and
+        Modified sequence. For example "PEPT[phospho]IDE", for sequence = "PEPTIDE" and
         modifications = [(4, "phospho")]
     """
     last_pos = 0
