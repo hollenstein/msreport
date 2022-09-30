@@ -1,5 +1,5 @@
 """
-Columns that are not yet present in the amica ouptut at the moment:
+Columns that are not yet present in the amica output at the moment:
 Index([
     'Protein Probability',
     'Top Peptide Probability',
@@ -24,7 +24,7 @@ from msreport.qtable import Qtable
 def contaminants_to_clipboard(qtable: Qtable) -> None:
     """Creates a contaminant table and writes it to the system clipboard.
 
-    The contimant table contains "iBAQ rank", "riBAQ", "iBAQ intensity", "Intensity",
+    The contaminant table contains "iBAQ rank", "riBAQ", "iBAQ intensity", "Intensity",
     and "Expression" columns for each sample. Imputed values in the "Expression" columns
     are set to NaN.
 
@@ -34,8 +34,8 @@ def contaminants_to_clipboard(qtable: Qtable) -> None:
     sample columns can be added with msreport.analyze.analyze_missingness().
 
     Args:
-        qtable: A Qtable instance. Requires that columns are named according to the
-            MsReport conventions.
+        qtable: A Qtable instance. Requires that column names follow the MsReport
+            conventions.
     """
     columns = [
         "Representative protein",
@@ -86,7 +86,7 @@ def to_amica(
 
     Args:
         qtable: A Qtable instance.
-        directory: Output path of the generted files.
+        directory: Output path of the generated files.
         table_name: Optional, filename of the amica table file. Default is
             "amica_table.tsv".
         design_name: Optional, filename of the amica design file. Default is
@@ -105,8 +105,8 @@ def _amica_table_from(table: pd.DataFrame) -> pd.DataFrame:
     """Returns a dataframe in the amica format.
 
     Args:
-        table: A dataframe containing experimental data. Requires that columns are named
-            according to the MsReport defaults.
+        table: A dataframe containing experimental data. Requires that column names
+            follow the MsReport conventions.
     """
     filter_columns = ["Valid", "Potential contaminant"]
     amica_column_mapping = {
@@ -166,7 +166,7 @@ def _amica_design_from(design: pd.DataFrame) -> pd.DataFrame:
     """Returns an experimental design table in the amica format.
 
     Args:
-        design: A dataframe that must contain the columns 'Sample' and 'Experiment'.
+        design: A dataframe that must contain the columns "Sample" and "Experiment".
     """
     amica_design_columns = {"Sample": "samples", "Experiment": "groups"}
     amica_design = design.copy().rename(columns=amica_design_columns)

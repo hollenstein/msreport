@@ -9,7 +9,7 @@ import msreport.helper as helper
 
 
 class Qtable:
-    """Stores and providess access to quantitative proteomics data.
+    """Stores and provides access to quantitative proteomics data.
 
     Attributes:
         data: A pandas.DataFrame containing quantitative proteomics data.
@@ -20,9 +20,9 @@ class Qtable:
         """Initializes the Qtable.
 
         Args:
-            data: A DataFrame containing quantitative proteomics data in a wide format.
-            design: A DataFrame describing the experimental design that must at least
-                contain the columns 'Sample' and 'Experiment'. The 'Sample' entries
+            data: A dataframe containing quantitative proteomics data in a wide format.
+            design: A dataframe describing the experimental design that must at least
+                contain the columns "Sample" and "Experiment". The "Sample" entries
                 should correspond to the Sample names present in the quantitative
                 columns of the data.
         """
@@ -64,7 +64,7 @@ class Qtable:
         return samples.tolist()
 
     def get_experiment(self, sample: str) -> str:
-        """Looks up the expriment of the specified sample from the design table.
+        """Looks up the experiment of the specified sample from the design table.
 
         Args:
             sample: A sample name.
@@ -114,7 +114,7 @@ class Qtable:
     def make_sample_table(
         self, tag: str, samples_as_columns: bool = False
     ) -> pd.DataFrame:
-        """Returns a new DataFrame with sample columns containing the 'tag'.
+        """Returns a new dataframe with sample columns containing the 'tag'.
 
         Args:
             tag: Substring that must be present in selected columns.
@@ -122,11 +122,11 @@ class Qtable:
                 sample names. Requires that the experimental design is set.
 
         Returns:
-            A new DataFrame generated from self.data with sample columns that also
+            A new dataframe generated from self.data with sample columns that also
                 contained the specified 'tag'.
 
         Returns:
-            A copied DataFrame that contains only the specified columns from the
+            A copied dataframe that contains only the specified columns from the
             quantitative proteomics data.
         """
         samples = self.get_samples()
@@ -142,16 +142,16 @@ class Qtable:
         samples_as_columns: bool = False,
         features: Optional[list[str]] = None,
     ) -> pd.DataFrame:
-        """Returns a new DataFrame containing the expression columns.
+        """Returns a new dataframe containing the expression columns.
 
         Args:
             features: A list of additional columns that will be added from qtable.data
-                to the newly generated DataFrame.
+                to the newly generated datarame.
             samples_as_columns: If true, replaces expression column names with
                 sample names. Requires that the experimental design is set.
 
         Returns:
-            A copied DataFrame that contains only the specified columns from the
+            A copied dataframe that contains only the specified columns from the
             quantitative proteomics data.
         """
         columns = []
@@ -169,8 +169,8 @@ class Qtable:
         """Adds an experimental design table
 
         Args:
-            design: A DataFrame describing the experimental design that must at least
-                contain the columns 'Sample' and 'Experiment'. The 'Sample' entries
+            design: A dataframe describing the experimental design that must at least
+                contain the columns "Sample" and "Experiment". The "Sample" entries
                 should correspond to the Sample names present in the quantitative
                 columns of the table.
         """
@@ -204,8 +204,8 @@ class Qtable:
             tag: Identifies columns that contain this substring.
             zerotonan: If true, zeros in expression columns are replace by NaN
             log2: If true, expression column values are log2 transformed and zeros are
-                replaced by NaN. Evaluates wheter intensities are likely to be already
-                in logspace, which prevents another log2 transformation.
+                replaced by NaN. Evaluates whether intensities are likely to be already
+                in log-space, which prevents another log2 transformation.
         """
         columns = helper.find_columns(self.data, tag, must_be_substring=True)
         column_mapping = {}
@@ -235,8 +235,8 @@ class Qtable:
                 experimental design table.
             zerotonan: If true, zeros in expression columns are replace by NaN
             log2: If true, expression column values are log2 transformed and zeros are
-                replaced by NaN. Evaluates wheter intensities are likely to be already
-                in logspace, which prevents another log2 transformation.
+                replaced by NaN. Evaluates whether intensities are likely to be already
+                in log-space, which prevents another log2 transformation.
         """
         self._set_expression(columns_to_samples, zerotonan=zerotonan, log2=log2)
 
@@ -244,7 +244,7 @@ class Qtable:
         """Adds expression features as new columns to the proteomics data.
 
         Args:
-            expression_features: DataFrame or Series that will be added to qtable.data
+            expression_features: dataframe or Series that will be added to qtable.data
                 as new columns, column names are added to the list of expression
                 features. The number and order of rows in 'expression_features' must
                 correspond to qtable.data.
@@ -280,8 +280,8 @@ class Qtable:
                 self.design["Sample"].
             zerotonan: If true, zeros in expression columns are replace by NaN
             log2: If true, expression column values are log2 transformed and zeros are
-                replaced by NaN. Evaluates wheter intensities are likely to be already
-                in logspace, which prevents another log2 transformation.
+                replaced by NaN. Evaluates whether intensities are likely to be already
+                in log-space, which prevents another log2 transformation.
         """
         data_columns = self.data.columns.tolist()
         expression_columns = list(expr_sample_mapping.keys())

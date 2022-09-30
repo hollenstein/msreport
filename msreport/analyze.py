@@ -1,4 +1,4 @@
-""" The quanalysis module contains methods for analysing quantification results.
+""" The analyze module contains methods for analysing quantification results.
 
 
 Required test data
@@ -74,7 +74,7 @@ def validate_proteins(
 ) -> None:
     """Validates protein entries (rows).
 
-    Adds an additional column "Valid" to the qtable, containing boolean values.
+    Adds an additional column "Valid" to the qtable, containing Boolean values.
 
     Requires expression columns to be set. Depending on the arguments requires the
     columns "Total peptides", "Potential contaminant", and the experiment columns
@@ -129,7 +129,7 @@ def normalize_expression(
     """Normalizes expression values and returns a fitted Normalizer instance.
 
     If a column "Valid" is present, only valid entries are used for fitting the
-    normalizer. The expression values of all rows, including non valid ones, are
+    normalizer. The expression values of all rows, including non-valid ones, are
     corrected.
 
     Args:

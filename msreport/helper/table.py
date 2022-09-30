@@ -21,11 +21,11 @@ def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
     "Experiment_A_r1".
 
     Args:
-        table: DataFrame which columns are used for extracting sample names.
+        table: Dataframe which columns are used for extracting sample names.
         tag: Column names containing the 'tag' are selected for sample extraction.
 
     Returns:
-        A DataFrame containing the columns "Sample" and "Experiment"
+        A dataframe containing the columns "Sample" and "Experiment"
     """
     sample_entries = []
     for column in find_columns(table, tag, must_be_substring=True):
@@ -41,8 +41,8 @@ def intensities_in_logspace(data: Union[pd.DataFrame, np.ndarray, Iterable]) -> 
 
     Assumes that intensities are log transformed if all values are smaller or equal to
     64. Intensities values (and intensity peak areas) reported by tandem mass
-    spectrometery typically range from 10^3 to 10^12. To reach log2 transformed values
-    greather than 64, intensities would need to be higher than 10^19, which seems to be
+    spectrometry typically range from 10^3 to 10^12. To reach log2 transformed values
+    greater than 64, intensities would need to be higher than 10^19, which seems to be
     very unlikely to be ever encountered.
 
     Args:
@@ -89,7 +89,7 @@ def find_columns(
     """Returns a list column names containing the substring.
 
     Args:
-        df: Columns of this DataFrame are queried.
+        df: Columns of this datafram are queried.
         substring: String that must be part of column names.
         must_be_substring: If true than column names are not reported if they
             are exactly equal to the substring.
@@ -110,7 +110,7 @@ def find_sample_columns(
     """Returns column names that contain the substring and any entry of 'samples'.
 
     Args:
-        df: Columns of this DataFrame are queried.
+        df: Columns of this dataframe are queried.
         substring: String that must be part of column names.
         samples: List of strings from which at least one must be present in matched
             columns.

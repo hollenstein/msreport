@@ -46,7 +46,7 @@ def solve_ratio_matrix(matrix: np.ndarray) -> np.ndarray:
     """Solves a square matrix containing pair wise log ratios.
 
     Args:
-        matrix: A two dimensional array with equal length in both dimensions.
+        matrix: A two-dimensional array with equal length in both dimensions.
 
     Returns:
         An array containing the least-squares solution.
@@ -125,14 +125,14 @@ def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
 def make_coverage_mask(
     protein_length: int, peptide_positions: list[(int, int)]
 ) -> np.array:
-    """Returns a boolean array with True for positions present in 'peptide_positions'.
+    """Returns a Boolean array with True for positions present in 'peptide_positions'.
 
     Args:
         protein_length: The number of amino acids in the protein sequence.
         peptide_positions: List of peptide start and end positions.
 
     Returns:
-        A 1-dimensional boolean array with length equal to 'protein_length'.
+        A 1-dimensional Boolean array with length equal to 'protein_length'.
     """
     coverage_mask = np.zeros(protein_length, dtype="bool")
     for start, end in peptide_positions:

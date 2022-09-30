@@ -43,7 +43,7 @@ class ResultReader:
         self.filenames: dict[str, str] = {}
 
     def _read_file(self, which: str, sep: str = "\t") -> pd.DataFrame:
-        """Read a result table from the data_directory
+        """Read a result table.
 
         Args:
             which: Lookup the filename in self.filenames. If 'which' is not present in
@@ -61,14 +61,14 @@ class ResultReader:
         return df
 
     def _rename_columns(self, df: pd.DataFrame, prefix_tag: bool) -> pd.DataFrame:
-        """Returns a new DataFrame with renamed columns.
+        """Returns a new dataframe with renamed columns.
 
         First columns are renamed according to self.column_mapping. Next, tags in
         columns are renamed according to self.column_tag_mapping. Then, for columns
         containing sample names, sample names are and tags are rearranged. Columns from
         self.protected_column_positions are not modified.
 
-        Note that is is essential to rename column names before attempting to rename
+        Note that it is essential to rename column names before attempting to rename
         sample columns, as e.g. in FragPipe the "Intensity" substring is present in
         multiple columns.
         """
@@ -121,9 +121,9 @@ class MQReader(ResultReader):
 
     Methods:
         import_proteins: Reads a "proteinGroups.txt" file and returns a processed
-            DataFrame, conforming to the MsReport naming conventions.
+            dataframe, conforming to the MsReport naming conventions.
         import_peptides: Reads a "peptides.txt" file and returns a processed
-            DataFrame, conforming to the MsReport naming conventions.
+            dataframe, conforming to the MsReport naming conventions.
 
     Attributes:
         default_filenames: (class attribute) Look up of filenames for the result files
@@ -132,9 +132,9 @@ class MQReader(ResultReader):
             is present per sample.
         column_mapping: (class attribute) Used to rename original column names from
             MaxQuant according to the MsReport naming convention.
-        column_tag_mapping: (class attribute) Mapping of orignal sample column tags from
-            MaxQuant to column tags according to the MsReport naming convention, used to
-            replace column names containing the original column tag.
+        column_tag_mapping: (class attribute) Mapping of original sample column tags
+            from MaxQuant to column tags according to the MsReport naming convention,
+            used to replace column names containing the original column tag.
         protein_info_columns: (class attribute) List of columns that contain protein
             specific information. Used to allow removing all protein specific
             information prior to changing the representative protein.
@@ -211,7 +211,7 @@ class MQReader(ResultReader):
         drop_protein_info: bool = False,
         special_proteins: Optional[list] = None,
     ) -> pd.DataFrame:
-        """Reads a "proteinGroups.txt" file and returns a processed DataFrame.
+        """Reads a "proteinGroups.txt" file and returns a processed dataframe.
 
         Adds three new protein entry columns to comply with the MsReport conventions:
         "Protein reported by software", "Leading proteins", "Representative protein".
@@ -226,7 +226,7 @@ class MQReader(ResultReader):
         change, resulting in a different "Representative protein" entry. Several
         columns in the "proteinGroups.txt" file contain information specific for the
         first entry of the "Majority protein IDs" column. When using 'sort_proteins', it
-        is therefore recommanded to remove all columns containing protein specific
+        is therefore recommended to remove all columns containing protein specific
         information by enabling 'drop_protein_info'.
 
         Args:
@@ -257,7 +257,7 @@ class MQReader(ResultReader):
                 enabled.
 
         Returns:
-            A DataFrame containing the processed protein table.
+            A dataframe containing the processed protein table.
         """
         df = self._read_file("proteins" if filename is None else filename)
         df = self._add_protein_entries(df, sort_proteins, special_proteins)
@@ -281,7 +281,7 @@ class MQReader(ResultReader):
         prefix_column_tags: bool = True,
         drop_decoy: bool = True,
     ) -> pd.DataFrame:
-        """Reads a "peptides.txt" file and returns a processed DataFrame.
+        """Reads a "peptides.txt" file and returns a processed dataframe.
 
         Adds a new column to comply with the MsReport conventions:
         "Protein reported by software"
@@ -299,7 +299,7 @@ class MQReader(ResultReader):
                 dropped; default True.
 
         Returns:
-            A DataFrame containing the processed peptide table.
+            A dataframe containing the processed peptide table.
         """
         # TODO: not tested
         df = self._read_file("peptides" if filename is None else filename)
@@ -317,7 +317,7 @@ class MQReader(ResultReader):
     def import_ions(
         self, filename: Optional[str] = None, drop_decoy: bool = True
     ) -> pd.DataFrame:
-        """Reads an "evidence.txt" file and returns a processed DataFrame.
+        """Reads an "evidence.txt" file and returns a processed dataframe.
 
         Args:
             filename: allows specifying an alternative filename, otherwise the default
@@ -325,7 +325,7 @@ class MQReader(ResultReader):
             drop_decoy: If True, decoy entries are removed; default True.
 
         Returns:
-            A DataFrame containing the processed ion table.
+            A dataframe containing the processed ion table.
         """
         raise NotImplementedError("Needs to be reimplemented")
         df = self._read_file("ions")
@@ -347,10 +347,10 @@ class MQReader(ResultReader):
         that have the same and highest number of mapped peptides in the "Peptide counts
         (all)" column, multiple protein entries are separated by ";". "Representative
         protein" contains the first entry form "Leading proteins". "Potential
-        contaminant" contains boolean values.
+        contaminant" contains Boolean values.
 
         Args:
-            df: DataFrame containing a MaxQuant result table.
+            df: Dataframe containing a MaxQuant result table.
             sort_proteins: If True, protein entries in "Leading proteins" are sorted
                 alphabetically ascending, with the exception that decoy proteins are
                 always sorted to the back and special proteins are sorted to the front.
@@ -382,10 +382,10 @@ class MQReader(ResultReader):
         Can only be used for "proteinGroups.txt" tables.
 
         Args:
-            df: DataFrame containing a "proteinGroups.txt" table.
+            df: Dataframe containing a "proteinGroups.txt" table.
 
         Returns:
-            A list of the same length as the input DataFrame. Each position contains a
+            A list of the same length as the input dataframe. Each position contains a
             list of leading protein entries, which a minimum of one entry.
         """
         leading_protein_entries = []
@@ -402,14 +402,14 @@ class MQReader(ResultReader):
         return leading_protein_entries
 
     def _drop_decoy(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Returns a DataFrame not containing decoy entries.
+        """Returns a dataframe not containing decoy entries.
 
         Also removes the "Reverse" column.
         """
         return self._drop_columns(df.loc[df["Reverse"] != "+"], ["Reverse"])
 
     def _drop_idbysite(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Returns a DataFrame not containing entries only identified by site.
+        """Returns a dataframe not containing entries only identified by site.
 
         Also removes the "Only identified by site" column.
         """
@@ -423,13 +423,13 @@ class FPReader(ResultReader):
 
     Methods:
         import_proteins: Reads a "combined_protein.tsv" or "protein.tsv" file and
-            returns a processed DataFrame, conforming to the MsReport naming
+            returns a processed dataframe, conforming to the MsReport naming
             conventions.
         import_peptides: Reads a "combined_peptide.tsv" or "peptide.tsv" file and
-            returns a processed DataFrame, conforming to the MsReport naming
+            returns a processed dataframe, conforming to the MsReport naming
             conventions.
         import_ions: Reads a "combined_ion.tsv" or "ion.tsv" file and returns a
-            processed DataFrame, conforming to the MsReport naming conventions.
+            processed dataframe, conforming to the MsReport naming conventions.
 
     Attributes:
         default_filenames: (class attribute) Look up of default filenames of the result
@@ -442,9 +442,9 @@ class FPReader(ResultReader):
             column is present per sample, for example intensity columns.
         column_mapping: (class attribute) Used to rename original column names from
             FragPipe according to the MsReport naming convention.
-        column_tag_mapping: (class attribute) Mapping of orignal sample column tags from
-            FragPipe to column tags according to the MsReport naming convention, used to
-            replace column names containing the original column tag.
+        column_tag_mapping: (class attribute) Mapping of original sample column tags
+            from FragPipe to column tags according to the MsReport naming convention,
+            used to replace column names containing the original column tag.
         protein_info_columns: (class attribute) List of columns that contain information
             specific to the leading protein.
         protein_info_tags: (class attribute) List of substrings present in columns that
@@ -535,7 +535,7 @@ class FPReader(ResultReader):
         special_proteins: list[str] = [],
     ) -> pd.DataFrame:
         """Reads a "combined_protein.tsv" or "protein.tsv" file and returns a processed
-        DataFrame.
+        dataframe.
 
         Adds four protein entry columns to comply with the MsReport conventions:
         "Protein reported by software", "Leading proteins", "Representative protein",
@@ -551,7 +551,7 @@ class FPReader(ResultReader):
         change, resulting in a different "Representative protein" entry. Several
         columns in the "combined_protein.tsv" file contain information specific for the
         protein entry of the "Protein" column. When using 'sort_proteins', it is
-        therefore recommanded to remove all columns containing protein specific
+        therefore recommended to remove all columns containing protein specific
         information by enabling 'drop_protein_info'.
 
         Args:
@@ -577,7 +577,7 @@ class FPReader(ResultReader):
                 enabled.
 
         Returns:
-            A DataFrame containing the processed protein table.
+            A dataframe containing the processed protein table.
         """
         # TODO: not tested
         df = self._read_file("proteins" if filename is None else filename)
@@ -596,7 +596,7 @@ class FPReader(ResultReader):
         rename_columns: bool = True,
         prefix_column_tags: bool = True,
     ) -> pd.DataFrame:
-        """Reads a "combined_peptides.txt" file and returns a processed DataFrame.
+        """Reads a "combined_peptides.txt" file and returns a processed dataframe.
 
         Adds a new column to comply with the MsReport conventions:
         "Protein reported by software"
@@ -612,7 +612,7 @@ class FPReader(ResultReader):
                 True.
 
         Returns:
-            A DataFrame containing the processed peptide table.
+            A dataframe containing the processed peptide table.
         """
         # TODO: not tested
         df = self._read_file("peptides" if filename is None else filename)
@@ -630,7 +630,7 @@ class FPReader(ResultReader):
         prefix_column_tags: bool = True,
     ) -> pd.DataFrame:
         """Reads a "combined_ion.tsv" or "ion.tsv" file and returns a processed
-        DataFrame.
+        dataframe.
 
         Adds the columns "Representative protein" and "Protein reported by software".
         Note that the function is only partially implemented and should only be used to
@@ -677,10 +677,10 @@ class FPReader(ResultReader):
         proteins" contains the combined protein IDs extracted from the "Protein" and
         "Indistinguishable Proteins" columns, multiple entries are separated by ";".
         "Representative protein" contains the first entry form "Leading proteins".
-        "Potential contaminant" contains boolean values.
+        "Potential contaminant" contains Boolean values.
 
         Args:
-            df: DataFrame containing a FragPipe result table.
+            df: Dataframe containing a FragPipe result table.
             sort_proteins: If True, protein entries in "Leading proteins" are sorted
                 alphabetically ascending, with the exception that decoy proteins are
                 always sorted to the back and special proteins are sorted to the front.
@@ -691,7 +691,7 @@ class FPReader(ResultReader):
                 enabled.
 
         Returns:
-            A copy of the input DataFrame, containing the additional protein columns.
+            A copy of the input dataframe, containing the additional protein columns.
         """
         leading_protein_entries = self._collect_leading_protein_entries(df)
         protein_entry_table = _process_protein_entries(
@@ -713,10 +713,10 @@ class FPReader(ResultReader):
         Can only be used for "combined_protein.tsv" and "protein.tsv" tables.
 
         Args:
-            df: DataFrame containing a protein table.
+            df: Dataframe containing a protein table.
 
         Returns:
-            A list of the same length as the input DataFrame. Each position contains a
+            A list of the same length as the input dataframe. Each position contains a
             list of leading protein entries, which a minimum of one entry.
         """
         leading_protein_entries = []
@@ -736,7 +736,7 @@ def add_protein_annotations(
     fasta_path: Union[str, list[str]],
     id_column: str = "Representative protein",
 ) -> None:
-    """Reads a fasta file and adds protein annotation columns to the 'table'.
+    """Reads a FASTA file and adds protein annotation columns to the 'table'.
 
     The added columns always include "Fasta header", "Protein length", "iBAQ peptides",
     and if possible "Protein entry name" and "Gene name". The number of "iBAQ peptides"
@@ -744,10 +744,10 @@ def add_protein_annotations(
     acids.
 
     Args:
-        table: DataFrame to which the protein annotations are added.
-        fasta_path: Path of a fasta file, or a list of fasta file paths.
+        table: Dataframe to which the protein annotations are added.
+        fasta_path: Path of a FASTA file, or a list of FASTA file paths.
         id_column: Column in 'table' that contains protein IDs that are used to find
-            matching entries in the fasta files.
+            matching entries in the FASTA files.
     """
     # not tested #
     if isinstance(fasta_path, str):
@@ -805,8 +805,8 @@ def add_sequence_coverage(
     "Protein length" in the 'protein_table'.
 
     Args:
-        protein_table: DataFrame to which the "Sequence coverage" column is added.
-        peptide_table: DataFrame which contains peptide information required for
+        protein_table: Dataframe to which the "Sequence coverage" column is added.
+        peptide_table: Dataframe which contains peptide information required for
             calculation of the protein sequence coverage.
         id_column: Column used to match entries between the 'protein_table' and the
             'peptide_table', must be present in both tables. Default
@@ -838,12 +838,12 @@ def add_ibaq_intensities(
     intensity_tag: str = "Intensity",
     ibaq_tag: str = "iBAQ intensity",
 ) -> None:
-    """Adds iBAQ intensitiy columns to the 'table'.
+    """Adds iBAQ intensity columns to the 'table'.
 
     Requires a column containing the theoretical number of iBAQ peptides.
 
     Args:
-        table: DataFrame to which the iBAQ intensity columns are added.
+        table: Dataframe to which the iBAQ intensity columns are added.
         normalize: Scales iBAQ intensities per sample so that the sum of all iBAQ
             intensities is equal to the sum of all Intensities.
         ibaq_peptide_column: Column in 'table' containing the number of iBAQ peptides.
@@ -871,12 +871,12 @@ def add_peptide_positions(
     """Adds peptide "Start position" and "End position" positions to the table.
 
     Args:
-        table: DataFrame to which the protein annotations are added.
-        fasta_path: Path of a fasta file, or a list of fasta file paths.
+        table: Dataframe to which the protein annotations are added.
+        fasta_path: Path of a FASTA file, or a list of FASTA file paths.
         peptide_column: Column in 'table' that contains the peptide sequence. Peptide
             sequences must only contain amino acids and no other symbols.
         protein_column: Column in 'table' that contains protein IDs that are used to
-            find matching entries in the fasta files.
+            find matching entries in the FASTA files.
     """
     # not tested #
     if isinstance(fasta_path, str):
@@ -908,12 +908,12 @@ def propagate_representative_protein(
     """Propagates "Representative protein" column from the source to the target table.
 
     The column "Protein reported by software" is used to match entries between the two
-    tables. Then entries from "Representative protein" are propageted from the
+    tables. Then entries from "Representative protein" are propagated from the
     'source_table' to matching rows in the 'target_table'.
 
     Args:
-        target_table: DataFrame to which "Representative protein" entries will be added.
-        source_table: DataFrame from which "Representative protein" entries are
+        target_table: Dataframe to which "Representative protein" entries will be added.
+        source_table: Dataframe from which "Representative protein" entries are
             propagated.
     """
     # not tested #
@@ -938,7 +938,7 @@ def extract_sample_names(df: pd.DataFrame, tag: str) -> list[str]:
     white spaces from the resulting strings.
 
     Args:
-        df: Column names from this DataFrame are used for extracting sample names.
+        df: Column names from this dataframe are used for extracting sample names.
         tag: Column names containing the 'tag' are selected for extracting sample names.
 
     Returns:
@@ -953,9 +953,9 @@ def _rearrange_column_tag(df: pd.DataFrame, tag: str, prefix: bool) -> pd.DataFr
     """Moves the column 'tag' to the beginning or end of each column name.
 
     Args:
-        df: Rearrange columns in this DataFrame
+        df: Rearrange columns in this dataframe.
         tag: A substring that when found in column names should be moved to the
-            beginning or end of the column name
+            beginning or end of the column name.
         prefix: If true, the tag string is moved to the beginning of the new column
             names, else to the end.
     """
@@ -999,13 +999,13 @@ def _sort_leading_proteins(
     'Representative protein' column.
 
     Args:
-        df: DataFrame that contains protein entries for sorting.
+        df: Dataframe that contains protein entries for sorting.
         contaminant_tag: Optional, if specified protein entries containing the
             'contaminant_tag' are considered as contaminants.
         special_proteins: Optional, a list of special proteins.
 
     Returns:
-        A copy of the 'df' DataFrame, with entries in the "Leading proteins" column
+        A copy of the 'df' dataframe, with entries in the "Leading proteins" column
         being sorted and the first leading protein entry written into the
         "Representative protein" columns.
     """
@@ -1070,21 +1070,21 @@ def _sort_proteins_and_contaminants(
 def _sort_fasta_entries(
     fasta_entries: list[str], sorting_tag_levels: dict[str, int] = {}
 ) -> tuple[list[str], list[str], list[str]]:
-    """Return sorted fasta headers, protein ids, and entry names.
+    """Return sorted FASTA headers, protein ids, and entry names.
 
     Fasta headers are first sorted according to the sort level of each header in
     ascending order, and those with the same entries are sorted alphabetically
-    according to the UniqueID of the fasta header. By default each fasta entry has a
+    according to the unique ID of the FASTA header. By default, each FASTA entry has a
     sort level of 0.
 
     Args:
-        fasta_entries: A list of fasta headers, or fasta header like strings.
+        FASTA_entries: A list of FASTA headers, or FASTA header like strings.
         sorting_tag_levels: Mapping of tags to sort levels. If the tag string is present
-            in the UniqueID entry of the fasta headers, the sort level of this tag is
+            in the unique ID entry of the FASTA headers, the sort level of this tag is
             used.
 
     Returns:
-        Sorted lists of (fasta headers, protein ids, entry names)
+        Sorted lists of (FASTA headers, protein ids, entry names)
     """
     values = []
     for fasta in fasta_entries:
@@ -1111,11 +1111,11 @@ def _add_potential_contaminants(df: pd.DataFrame, contaminant_tag: str) -> pd.Da
     the 'contaminant_tag', and otherwise False.
 
     Args:
-        df: DataFrame to which the "Potential contaminant" column will be added.
+        df: Dataframe to which the "Potential contaminant" column will be added.
         contaminant_tag: String used to identify potential contaminants.
 
     Returns:
-        A copy of the input DataFrame, containing the "Potential contaminant" column.
+        A copy of the input dataframe, containing the "Potential contaminant" column.
     """
     # not tested #
     df = df.copy()
@@ -1131,10 +1131,10 @@ def _process_protein_entries(
     sort_proteins: bool,
     special_proteins: Optional[list] = None,
 ) -> pd.DataFrame:
-    """Returns a DataFrame containing standardized protein entry columns.
+    """Returns a dataframe containing standardized protein entry columns.
 
-    For each entry of 'leading_protein_entries', a list of of protein IDs is extracted.
-    The first entry of the protein IDs is added to the "Protein reported by software"
+    For each entry of 'leading_protein_entries', a list of protein IDs is extracted. The
+    first entry of the protein IDs is added to the "Protein reported by software"
     column. Multiple protein IDs are sorted if 'sort_proteins' is enabled. Multiple
     protein IDs are joined with ";" and added to the "Leading proteins" column. The
     first protein ID from the "Leading proteins" entry is added to the "Representative
@@ -1154,7 +1154,7 @@ def _process_protein_entries(
             used as "Representative protein" when 'sort_proteins' is enabled.
 
     Returns:
-        A DataFrame containing the columns "Protein reported by software",
+        A dataframe containing the columns "Protein reported by software",
         "Leading proteins", "Representative protein", and "Potential contaminant".
     """
     values_reported_id = []
@@ -1190,7 +1190,7 @@ def _process_protein_entries(
 def _extract_protein_ids(entries: list[str]) -> list[str]:
     """Returns a list of protein IDs, extracted from protein entries.
 
-    If a protein entry contains two "|" it is considered a fasta header and the string
+    If a protein entry contains two "|" it is considered a FASTA header and the string
     between the first two "|" is extracted as the protein ID. Otherwise the entry is
     directly used as a protein ID.
 
