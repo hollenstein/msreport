@@ -323,7 +323,6 @@ class MQReader(ResultReader):
         filename: Optional[str] = None,
         rename_columns: bool = True,
         rewrite_modifications: bool = True,
-        prefix_column_tags: bool = True,
         drop_decoy: bool = True,
     ) -> pd.DataFrame:
         """Reads an "evidence.txt" file and returns a processed dataframe.
@@ -350,10 +349,6 @@ class MQReader(ResultReader):
                 changed according to the MsReport convention, and a "Modifications" is
                 added to contains the amino acid position for all modifications.
                 Requires 'rename_columns' to be true. Default True.
-            prefix_column_tags: If True, column tags such as "Intensity" are added
-                in front of the sample names, e.g. "Intensity sample_name". If False,
-                column tags are added afterwards, e.g. "Sample_name Intensity"; default
-                True.
             drop_decoy: If True, decoy entries are removed and the "Reverse" column is
                 dropped; default True.
 
@@ -369,7 +364,9 @@ class MQReader(ResultReader):
         if drop_decoy:
             df = self._drop_decoy(df)
         if rename_columns:
-            df = self._rename_columns(df, prefix_column_tags)
+            df = self._rename_columns(
+                df, True
+            )  # Actually there are no column tags as the table is in long format
         if rewrite_modifications and rename_columns:
             df = self._add_peptide_modification_entries(df)
         return df
@@ -650,7 +647,6 @@ class FPReader(ResultReader):
         Returns:
             A dataframe containing the processed protein table.
         """
-        # TODO: not tested
         df = self._read_file("proteins" if filename is None else filename)
         df = self._add_protein_entries(df, sort_proteins, special_proteins)
         if drop_protein_info:

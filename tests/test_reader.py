@@ -9,7 +9,12 @@ import msreport.reader
 
 @pytest.fixture
 def example_fpreader():
-    return msreport.reader.FPReader("./tests/testdata/fragpipe")
+    return msreport.reader.FPReader("./tests/testdata/fragpipe_")
+
+
+@pytest.fixture
+def example_mqreader():
+    return msreport.reader.MQReader("./tests/testdata/maxquant_")
 
 
 def test_that_always_passes():
@@ -345,7 +350,7 @@ class TestMQReader:
     def _init_reader(self):
         self.reader = msreport.reader.MQReader(
             "./tests/testdata/maxquant",
-            contaminant_tag="contam_",
+            contaminant_tag="CON__",
         )
 
     def test_testdata_setup(self):
@@ -354,7 +359,8 @@ class TestMQReader:
     def test_drop_decoy(self):
         table = self.reader._read_file("proteins")
         table = self.reader._drop_decoy(table)
-        is_decoy = table["Majority protein IDs"].str.contains("REV__")
+        protein_entries = table["Majority protein IDs"].str.split(";", expand=True)[0]
+        is_decoy = protein_entries.str.contains("REV__")
         assert not is_decoy.any()
 
     def test_drop_idbysite(self):
@@ -385,18 +391,46 @@ class TestMQReader:
             drop_idbysite=True,
             sort_proteins=True,
             drop_protein_info=True,
-            special_proteins=[],  # Not tested
+            special_proteins=["Q13838"],
         )
+        assert table["Potential contaminant"].dtype == bool
+        assert "Total peptides" in table
+        assert "SampleA_1 Intensity" in table
         assert not table.columns.isin(["Reverse", "Only identified by site"]).any()
         assert not table["Representative protein"].str.contains("REV__").any()
-        assert "Total peptides" in table
-        assert "12500amol_1 Intensity" in table
+        assert "Sequence length" not in table.columns
         assert not table.columns.str.contains("iBAQ").any()
         assert not table.columns.str.contains("site positions").any()
-        assert "Protein names" not in table.columns
-        assert not table["Representative protein"].str.contains("contam_P00330").any()
-        assert table["Potential contaminant"].dtype == bool
-        assert table["Potential contaminant"].sum() == 1
+        assert not table["Representative protein"].str.contains("CON__P12763").any()
+        assert table["Representative protein"].str.contains("Q13838").any()
+
+    def test_integration_import_peptides(self):
+        table = self.reader.import_peptides(
+            rename_columns=True,
+            prefix_column_tags=False,
+            drop_decoy=True,
+        )
+        assert "Protein reported by software" in table
+        assert "Representative protein" in table
+        assert "Peptide sequence" in table
+        assert "SampleA_1 Intensity" in table
+        assert not table["Leading razor protein"].str.contains("REV__").any()
+
+    def test_integration_import_ions(self):
+        table = self.reader.import_ions(
+            rename_columns=True,
+            rewrite_modifications=True,
+            drop_decoy=True,
+        )
+        assert "Protein reported by software" in table
+        assert "Representative protein" in table
+        assert "Peptide sequence" in table
+        assert "Modified sequence" in table
+        assert "Modifications" in table
+        assert table["Peptide sequence"][4] == "AAGPISER"
+        assert table["Modified sequence"][4] == "[Acetyl (Protein N-term)]AAGPISER"
+        assert table["Modifications"][4] == "0:Acetyl (Protein N-term)"
+        assert not table["Leading razor protein"].str.contains("REV__").any()
 
 
 class TestFPReader:
@@ -444,3 +478,46 @@ class TestFPReader:
             table["Protein reported by software"].tolist()
             == protein_reported_by_software
         )
+
+    def test_integration_import_proteins(self):
+        table = self.reader.import_proteins(
+            rename_columns=True,
+            prefix_column_tags=True,
+            sort_proteins=True,
+            drop_protein_info=True,
+            special_proteins=["Q13838"],
+        )
+        assert "Representative protein" in table
+        assert table["Potential contaminant"].dtype == bool
+        assert "Total peptides" in table
+        assert "Intensity SampleA_1" in table
+        assert "Protein Length" not in table.columns
+        assert table["Representative protein"].str.contains("Q13838").any()
+
+    def test_integration_import_peptides(self):
+        table = self.reader.import_peptides(
+            rename_columns=True,
+            prefix_column_tags=True,
+        )
+        assert "Protein reported by software" in table
+        assert "Representative protein" in table
+        assert "Peptide sequence" in table
+        assert "Start position" in table
+        assert "Intensity SampleA_1" in table
+
+    def test_integration_import_ions(self):
+        table = self.reader.import_ions(
+            rename_columns=True,
+            rewrite_modifications=True,
+            prefix_column_tags=True,
+        )
+        assert "Protein reported by software" in table
+        assert "Representative protein" in table
+        assert "Start position" in table
+        assert "Peptide sequence" in table
+        assert "Modified sequence" in table
+        assert "Modifications" in table
+        assert table["Peptide sequence"][0] == "AACDLVR"
+        assert table["Modified sequence"][0] == "AAC[57.0214]DLVR"
+        assert table["Modifications"][0] == "3:57.0214"
+        assert "Intensity SampleA_1" in table
