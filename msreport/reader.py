@@ -332,8 +332,14 @@ class MQReader(ResultReader):
         and "Modifications columns". "Protein reported by software" and "Representative
         protein", both contain the first entry from "Leading razor protein".
 
-        Note that currently the format of the site localization probability is not
-        modified; and no protein site entries are added.
+        "Modified sequence" entries contain modifications within square brackets.
+        "Modification" entries are strings in the form of "position:modification_text",
+        multiple modifications are joined by ";". An example for a modified sequence and
+        a modification entry: "PEPT[Phospho]IDO[Oxidation]", "4:Phospho;7:Oxidation".
+
+        Note that currently the format of the modification itself, as well as the
+        site localization probability are not modified; and no protein site entries are
+        added.
 
         Args:
             filename: Allows specifying an alternative filename, otherwise the default
@@ -394,6 +400,9 @@ class MQReader(ResultReader):
                 will always be sorted to the beginning of the "Leading proteins" and
                 thus be used as "Representative protein" when 'sort_proteins' is
                 enabled.
+
+        Returns:
+            A copy of the input dataframe with updated columns.
         """
         # NOTE: not tested directly, only via integration #
         leading_protein_entries = self._collect_leading_protein_entries(df)
@@ -439,9 +448,20 @@ class MQReader(ResultReader):
     def _add_peptide_modification_entries(self, df: pd.DataFrame) -> pd.DataFrame:
         """Adds standardized "Modified sequence" and "Modifications columns".
 
-        Requires the columns "Peptide sequence" and "Modified sequence"
+        "Modified sequence" entries contain modifications within square brackets.
+        "Modification" entries are strings in the form of "position:modification_text",
+        multiple modifications are joined by ";". An example for a modified sequence and
+        a modification entry: "PEPT[Phospho]IDO[Oxidation]", "4:Phospho;7:Oxidation".
+
+        Requires the columns "Peptide sequence" and "Modified sequence" from the
+        software output.
+
+        Args:
+            df: Dataframe containing "Peptide sequence" and "Modified sequence" columns.
+
+        Returns:
+            A copy of the input dataframe with updated columns.
         """
-        # TODO: add complete docstring
         # TODO: not tested
         mod_sequences = df["Modified sequence"].str.split("_").str[1]
         mod_entries = _generate_modification_entries(
@@ -689,8 +709,14 @@ class FPReader(ResultReader):
         and "Modifications columns". "Protein reported by software" and "Representative
         protein", both contain the first entry from "Leading razor protein".
 
-        Note that currently the format of the site localization probability is not
-        modified; and no protein site entries are added.
+        "Modified sequence" entries contain modifications within square brackets.
+        "Modification" entries are strings in the form of "position:modification_text",
+        multiple modifications are joined by ";". An example for a modified sequence and
+        a modification entry: "PEPT[Phospho]IDO[Oxidation]", "4:Phospho;7:Oxidation".
+
+        Note that currently the format of the modification itself, as well as the
+        site localization probability are not modified; and no protein site entries are
+        added.
 
         Args:
             filename: Allows specifying an alternative filename, otherwise the default
@@ -749,7 +775,7 @@ class FPReader(ResultReader):
                 enabled.
 
         Returns:
-            A copy of the input dataframe, containing the additional protein columns.
+            A copy of the input dataframe with updated columns.
         """
         leading_protein_entries = self._collect_leading_protein_entries(df)
         protein_entry_table = _process_protein_entries(
@@ -791,8 +817,21 @@ class FPReader(ResultReader):
     def _add_peptide_modification_entries(self, df: pd.DataFrame) -> pd.DataFrame:
         """Adds standardized "Modified sequence" and "Modifications columns".
 
-        Requires the columns "Peptide sequence" and "Modified sequence"
+        "Modified sequence" entries contain modifications within square brackets.
+        "Modification" entries are strings in the form of "position:modification_text",
+        multiple modifications are joined by ";". An example for a modified sequence and
+        a modification entry: "PEPT[Phospho]IDO[Oxidation]", "4:Phospho;7:Oxidation".
+
+        Requires the columns "Peptide sequence" and "Modified sequence" from the
+        software output.
+
+        Args:
+            df: Dataframe containing "Peptide sequence" and "Modified sequence" columns.
+
+        Returns:
+            A copy of the input dataframe with updated columns.
         """
+        # TODO: not tested
         mod_sequences = (
             df["Modified sequence"]
             .str.replace("n[", "[", regex=False)
@@ -1268,9 +1307,32 @@ def _generate_modification_entries(
     modified_sequences: Iterable[str],
     tag_start: str,
     tag_close: str,
-) -> pd.DataFrame:
-    """Creates standardized "Modified sequence" and "Modifications" values."""
-    # TODO: add complete docstring
+) -> dict[str, list]:
+    """Creates standardized "Modified sequence" and "Modifications" values.
+
+    Uses 'tag_start' and 'tag_close' for extracting modifications and their positions
+    from 'modified_sequences' entries. The extracted modifications are then used
+    together with the 'sequences' entries to generate modified sequences according to
+    the MsReport convention, where each modification is surrounded by square brackets.
+
+    Requires that modifications in the 'modified_sequences' entries are surrounded by
+    symbols such as "()" or "[]".
+
+    Args:
+        sequences: A list of plain amino acid sequences.
+        modified_sequences: A list of modified amino acid sequences.
+        tag_start: String indicating the beginning of a modification in
+            'modified_sequences' entries.
+        tag_close: String indicating the ending of a modification in
+            'modified_sequences' entries.
+
+    Returns:
+        A dictionary containing a "Modified sequence" list and a "Modifications" list.
+        "Modified sequence" entries contain modifications within square brackets.
+        "Modification" entries are strings in the form of "position:modification_text",
+        multiple modifications are joined by ";". An example for a modified sequence and
+        a modification entry: "PEPT[Phospho]IDO[Oxidation]", "4:Phospho;7:Oxidation".
+    """
     # TODO: not tested
     modified_sequence_entries = []
     modification_entries = []
@@ -1279,7 +1341,7 @@ def _generate_modification_entries(
             modified_sequence, tag_start, tag_close
         )
         modified_sequence = helper.modify_peptide(sequence, modifications)
-        modification_entry = ";".join([f"{p}:{m}" for p, m in modifications])
+        modification_entry = ";".join([f"{pos}:{mod}" for pos, mod in modifications])
         modified_sequence_entries.append(modified_sequence)
         modification_entries.append(modification_entry)
     entries = {
