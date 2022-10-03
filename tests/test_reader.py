@@ -29,35 +29,28 @@ def test_extract_sample_names():
     assert set(sample_names) == set(["Column 1", "Column 2", "Column 3"])
 
 
-def test_rearrange_column_tag():
-    df = pd.DataFrame(
-        columns=["Tag1 Text1", "Tag1 Text2", "Tag1", "Text1 Tag2", "Text2 Tag2", "Tag2"]
+@pytest.mark.parametrize(
+    "tag, prefixed, columns, rearranged_columns",
+    [
+        (
+            "Tag1",
+            True,
+            ["Tag1 Text1", "Text2 Tag1", "Tag1"],
+            ["Tag1 Text1", "Tag1 Text2", "Tag1"],
+        ),
+        (
+            "Tag1",
+            False,
+            ["Tag1 Text1", "Tag2 Text2", "Tag1"],
+            ["Text1 Tag1", "Tag2 Text2", "Tag1"],
+        ),
+    ],
+)
+def test_rearrange_column_tag(tag, prefixed, columns, rearranged_columns):
+    df = msreport.reader._rearrange_column_tag(
+        pd.DataFrame(columns=columns), tag, prefixed
     )
-    tag = "Tag1"
-    prefixed = False
-    new_df = msreport.reader._rearrange_column_tag(df, tag, prefixed)
-    new_columns = new_df.columns.tolist()
-    assert new_columns == [
-        "Text1 Tag1",
-        "Text2 Tag1",
-        "Tag1",
-        "Text1 Tag2",
-        "Text2 Tag2",
-        "Tag2",
-    ]
-
-    tag = "Tag2"
-    prefixed = True
-    new_df = msreport.reader._rearrange_column_tag(df, tag, prefixed)
-    new_columns = new_df.columns.tolist()
-    assert new_columns == [
-        "Tag1 Text1",
-        "Tag1 Text2",
-        "Tag1",
-        "Tag2 Text1",
-        "Tag2 Text2",
-        "Tag2",
-    ]
+    assert df.columns.tolist() == rearranged_columns
 
 
 def test_find_remaining_substrings():
@@ -343,6 +336,46 @@ class TestResultReader:
         self.table = self.reader._drop_columns_by_tag(self.table, "A_tag")
         assert all(["A_tag" not in c for c in self.table.columns])
         assert self.table.shape[1] < self.table_ncolumns
+
+
+class TestResultReaderSpectronautStyleTags:
+    # Test file with dots instead of spaces in column names.
+    @pytest.fixture(autouse=True)
+    def _init_reader(self):
+        self.reader = msreport.reader.ResultReader()
+        self.reader._add_data_directory("./tests/testdata/spectronaut")
+        self.reader.filenames = {"table": "table_spectronaut_style_tag.txt"}
+        self.reader.protected_columns = []
+        self.reader.column_mapping = {}
+        self.reader.column_tag_mapping = {
+            ".A_tag": " A_tag",
+            "Another_tag.": "Another_tag ",
+        }
+        self.reader.sample_column_tags = [".A_tag", "Another_tag."]
+        self.table = self.reader._read_file("table")
+
+    def test_rename_columns_with_column_tag_mapping(self):
+        self.table = self.reader._rename_columns(self.table, prefix_tag=True)
+        rearranged_columns = [
+            "A_tag Column 1",
+            "A_tag Column 2",
+            "A_tag Column 3",
+            "Another_tag Column 1",
+            "Another_tag Column 2",
+        ]
+        for column in rearranged_columns:
+            assert column in self.table.columns.to_list()
+
+        self.table = self.reader._rename_columns(self.table, prefix_tag=False)
+        rearranged_columns = [
+            "Column 1 A_tag",
+            "Column 2 A_tag",
+            "Column 3 A_tag",
+            "Column 1 Another_tag",
+            "Column 2 Another_tag",
+        ]
+        for column in rearranged_columns:
+            assert column in self.table.columns.to_list()
 
 
 class TestMQReader:
