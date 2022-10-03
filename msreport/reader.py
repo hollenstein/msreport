@@ -285,8 +285,9 @@ class MQReader(ResultReader):
     ) -> pd.DataFrame:
         """Reads a "peptides.txt" file and returns a processed dataframe.
 
-        Adds a new column to comply with the MsReport conventions:
-        "Protein reported by software"
+        Adds new columns to comply with the MsReport conventions:
+        "Protein reported by software" and "Representative protein", both contain the
+        first entry from "Leading razor protein".
 
         Args:
             filename: allows specifying an alternative filename, otherwise the default
@@ -308,6 +309,7 @@ class MQReader(ResultReader):
         df["Protein reported by software"] = _extract_protein_ids(
             df["Leading razor protein"]
         )
+        df["Representative protein"] = df["Protein reported by software"]
         # Note that _add_protein_entries would need to be adapted for the peptide table.
         # df = self._add_protein_entries(df)
         if drop_decoy:
@@ -326,8 +328,15 @@ class MQReader(ResultReader):
     ) -> pd.DataFrame:
         """Reads an "evidence.txt" file and returns a processed dataframe.
 
+        Adds new columns to comply with the MsReport conventions. "Modified sequence"
+        and "Modifications columns". "Protein reported by software" and "Representative
+        protein", both contain the first entry from "Leading razor protein".
+
+        Note that currently the format of the site localization probability is not
+        modified; and no protein site entries are added.
+
         Args:
-            filename: allows specifying an alternative filename, otherwise the default
+            filename: Allows specifying an alternative filename, otherwise the default
                 filename is used.
             rename_columns: If True, columns are renamed according to the MsReport
                 conventions; default True.
@@ -345,6 +354,7 @@ class MQReader(ResultReader):
         Returns:
             A dataframe containing the processed ion table.
         """
+        # TODO: not tested
         df = self._read_file("ions")
         df["Protein reported by software"] = _extract_protein_ids(
             df["Leading razor protein"]
@@ -658,6 +668,7 @@ class FPReader(ResultReader):
         # TODO: not tested
         df = self._read_file("peptides" if filename is None else filename)
         df["Protein reported by software"] = _extract_protein_ids(df["Protein"])
+        df["Representative protein"] = df["Protein reported by software"]
         # Note that _add_protein_entries would need to be adapted for the peptide table.
         # df = self._add_protein_entries(df)
         if rename_columns:
@@ -674,9 +685,12 @@ class FPReader(ResultReader):
         """Reads a "combined_ion.tsv" or "ion.tsv" file and returns a processed
         dataframe.
 
-        Adds the columns "Representative protein" and "Protein reported by software".
-        Note that the function is only partially implemented and should only be used to
-        allow the calculation of protein sequence coverage.
+        Adds new columns to comply with the MsReport conventions. "Modified sequence"
+        and "Modifications columns". "Protein reported by software" and "Representative
+        protein", both contain the first entry from "Leading razor protein".
+
+        Note that currently the format of the site localization probability is not
+        modified; and no protein site entries are added.
 
         Args:
             filename: Allows specifying an alternative filename, otherwise the default
@@ -691,6 +705,9 @@ class FPReader(ResultReader):
                 in front of the sample names, e.g. "Intensity sample_name". If False,
                 column tags are added afterwards, e.g. "Sample_name Intensity"; default
                 True.
+
+        Returns:
+            A DataFrame containing the processed ion table.
         """
         # TODO: not tested #
         df = self._read_file("ions" if filename is None else filename)
