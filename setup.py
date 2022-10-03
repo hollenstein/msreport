@@ -5,6 +5,8 @@ VERSION = "0.0.2"
 
 packages = find_packages()
 packages.append("msreport.rinterface.rscripts")
+packages.append("msreport_scripts.benchmark")
+packages.append("msreport_scripts.excel_report")
 
 setup(
     name="msreport",
