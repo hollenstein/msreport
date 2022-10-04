@@ -1013,6 +1013,26 @@ def add_peptide_positions(
         table[key] = peptide_positions[key]
 
 
+def add_protein_modifications(table: pd.DataFrame):
+    """Adds a "Protein sites" column.
+
+    To generate the "Protein modifications" the positions from the "Modifications"
+    column are increase according to the peptide positions ("Start position"] column).
+
+    Args:
+        table: Dataframe to which the protein annotations are added.
+    """
+    protein_modification_entries = []
+    for mod_entry, start_pos in zip(table["Modifications"], table["Start position"]):
+        protein_mods = []
+        for peptide_site, mod in [m.split(":") for m in mod_entry.split(";")]:
+            protein_site = int(peptide_site) + start_pos - 1
+            protein_mods.append([str(protein_site), mod])
+        protein_mods = ";".join([f"{pos}:{mod}" for pos, mod in protein_mods])
+        protein_modification_entries.append(protein_mods)
+    table["Protein modifications"] = protein_modification_entries
+
+
 def propagate_representative_protein(
     target_table: pd.DataFrame, source_table: pd.DataFrame
 ) -> None:

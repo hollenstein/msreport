@@ -217,6 +217,18 @@ class TestProcessProteinEntries:
         assert table["Potential contaminant"].tolist() == is_contaminant
 
 
+def test_add_protein_modifications():
+    table = pd.DataFrame(
+        {
+            "Modifications": ["0:ac", "4:ph", "2:ph;7:ox"],
+            "Start position": [1, 10, 50],
+        }
+    )
+    expected_protein_sites = ["0:ac", "13:ph", "51:ph;56:ox"]
+    msreport.reader.add_protein_modifications(table)
+    assert table["Protein modifications"].to_list() == expected_protein_sites
+
+
 class TestAddIbaqIntensities:
     @pytest.fixture(autouse=True)
     def _init_qtable(self):
