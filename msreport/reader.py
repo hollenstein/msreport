@@ -1020,7 +1020,7 @@ def add_protein_modifications(table: pd.DataFrame):
     column are increase according to the peptide positions ("Start position"] column).
 
     Args:
-        table: Dataframe to which the protein annotations are added.
+        table: Dataframe to which the "Protein modifications" column is added.
     """
     protein_modification_entries = []
     for mod_entry, start_pos in zip(table["Modifications"], table["Start position"]):
