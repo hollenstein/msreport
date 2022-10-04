@@ -1024,11 +1024,14 @@ def add_protein_modifications(table: pd.DataFrame):
     """
     protein_modification_entries = []
     for mod_entry, start_pos in zip(table["Modifications"], table["Start position"]):
-        protein_mods = []
-        for peptide_site, mod in [m.split(":") for m in mod_entry.split(";")]:
-            protein_site = int(peptide_site) + start_pos - 1
-            protein_mods.append([str(protein_site), mod])
-        protein_mods = ";".join([f"{pos}:{mod}" for pos, mod in protein_mods])
+        if mod_entry:
+            protein_mods = []
+            for peptide_site, mod in [m.split(":") for m in mod_entry.split(";")]:
+                protein_site = int(peptide_site) + start_pos - 1
+                protein_mods.append([str(protein_site), mod])
+            protein_mods = ";".join([f"{pos}:{mod}" for pos, mod in protein_mods])
+        else:
+            protein_mods = ""
         protein_modification_entries.append(protein_mods)
     table["Protein modifications"] = protein_modification_entries
 
