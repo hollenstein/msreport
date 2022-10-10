@@ -1,4 +1,5 @@
 from typing import Optional
+import re
 
 import pyteomics.fasta
 
@@ -9,7 +10,8 @@ class ProteinDatabase:
 
     def add_fasta(self, fasta_path):
         for header, sequence in parse_fasta(fasta_path):
-            header_info = pyteomics.fasta.parse(header)
+            fasta_parsers = _get_updated_fasta_parsers()
+            header_info = pyteomics.fasta.parse(header, parsers=fasta_parsers)
             self.proteins[header_info["id"]] = Protein(sequence, header, header_info)
 
     def __getitem__(self, key):
@@ -24,6 +26,21 @@ class Protein:
 
     def length(self):
         return len(self.sequence)
+
+
+class SimpleUniProtLikeMixin(pyteomics.fasta.FlavoredMixin):
+    header_pattern = r"^(\w+)\|([-\w]+)\|([-\w]+)"
+    header_group = 2
+
+    def parser(self, header):
+        db, ID, entry = re.match(self.header_pattern, header).groups()
+        info = {"db": db, "id": ID, "entry": entry}
+        try:
+            gid, taxon = entry.split("_")
+            info.update({"gene_id": gid, "taxon": taxon})
+        except ValueError:
+            pass
+        return info
 
 
 def parse_fasta(fasta_path):
@@ -107,3 +124,14 @@ def modify_peptide(
         last_pos = pos
     modified_sequence += sequence[last_pos:]
     return modified_sequence
+
+
+def _get_updated_fasta_parsers() -> dict[str, pyteomics.fasta.FlavoredMixin]:
+    """Returns a dictionary of fasta header parsers.
+
+    Copies the _std_mixins fasta parser dictionary from pyteomcis and adds the
+    SimpleUniProtLikeMixin parser.
+    """
+    parsers = pyteomics.fasta._std_mixins.copy()
+    parsers["simple"] = SimpleUniProtLikeMixin
+    return parsers
