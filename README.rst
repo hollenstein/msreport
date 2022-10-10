@@ -48,3 +48,35 @@ inspection of potential contaminants.
 
 Additional scripts
 - Generate a formatted excel protein report (Uses the XlsxReport library)
+
+
+Install
+-------
+For Windows users without Python we recommend installing the free
+`Anaconda <https://www.continuum.io/downloads>`_ Python package provided by Continuum
+Analytics, which already contains a large number of popular Python packages for data
+science. Or get Python from the
+`Python homepage <https://www.python.org/downloads/windows/>`_.
+
+To install MsReport, activate the conda environment you want to use, navigate to the
+folder containing the MsReport files and enter the following (don't forget to write the
+dot after install):
+
+``pip install .``
+
+
+To uninstall the MsReport library type:
+
+``pip uninstall msreport``
+
+
+MsReport provides an interface to the R package LIMMA for differential, which requires a
+local installation of R (R version 3.4+) and to system environment variable "R_HOME" to
+be set to the R home directory. The R home directory can be obtained from within R by
+using the commmand below, and might look similar to "C:\Program Files\R\R-4.2.1" on
+windows.
+
+``normalizePath(R.home("home"))``
+
+
+In order to use the "msreport_scripts/excel_report" module the XlsxReport library is required. 
