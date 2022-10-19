@@ -73,9 +73,10 @@ To uninstall the MsReport library type:
 
 
 MsReport provides an interface to the R package LIMMA for differential expression
-analysis, which requires a local installation of R (R version 3.4+) and to system
-environment variable "R_HOME" to be set to the R home directory. The R home directory
-can be obtained from within R by using the commmand below, and might look similar to
+analysis, which requires a local installation of R (R version 3.4+) and the system
+environment variable "R_HOME" to be set to the R home directory. It might be necessary
+to restart the computer after adding the "R_HOME" variable. The R home directory can
+also be found from within R by using the commmand below, and might look similar to
 "C:\Program Files\R\R-4.2.1" on windows.
 
 ``normalizePath(R.home("home"))``
