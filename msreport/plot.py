@@ -632,7 +632,7 @@ def expression_comparison(
     qtable: Qtable,
     experiment_pair: list[str, str],
     comparison_tag: str = " vs ",
-    max_expression: bool = False,
+    plot_average_expression: bool = False,
 ) -> (plt.Figure, list[plt.Axes]):
     """Generates an expression comparison plot for two experiments.
 
@@ -645,13 +645,13 @@ def expression_comparison(
         experiment_pair: The names of the two experiments that will be compared,
             experiments must be present in qtable.design.
         comparison_tag:
-        max_expression: If True, plot max expression instead of average expression.
+        plot_average_expression: If True, plot average expression instead of maxium
+            expression. Default False.
 
     Returns:
         A matplotlib Figure objects and a list of three Axes objects containing the
         expression comparison plots.
     """
-
     exp_1, exp_2 = experiment_pair
     comparison_group = "".join([exp_1, comparison_tag, exp_2])
 
@@ -667,62 +667,35 @@ def expression_comparison(
     mask_both = np.invert(np.any([only_exp_1, only_exp_2], axis=0))
 
     # Test if plotting maximum intensity is better than average
-    if max_expression:
-        max_values = np.max(
-            [data[f"Expression {exp_2}"], data[f"Expression {exp_1}"]], axis=0
-        )
-        data[f"Average expression {comparison_group}"] = max_values
+    data[f"Maximum expression {comparison_group}"] = np.max(
+        [data[f"Expression {exp_2}"], data[f"Expression {exp_1}"]], axis=0
+    )
+    data[f"Average expression {comparison_group}"] = np.nanmean(
+        [data[f"Expression {exp_2}"], data[f"Expression {exp_1}"]], axis=0
+    )
 
-    def scattersize(df: pd.DataFrame) -> float:
-        return min(max(np.sqrt(scatter_area / df.shape[0]), 0.5), 4)
+    def scattersize(df: pd.DataFrame, total_area) -> float:
+        if len(values) > 0:
+            size = min(max(np.sqrt(total_area / df.shape[0]), 0.5), 4)
+        else:
+            size = 1
+        return size
 
-    scatter_area = 5000
+    total_scatter_area = 5000
 
     width_ratios = [1, 5, 1]
     fig, axes = plt.subplots(
         1, 3, figsize=[6, 4], sharey=True, gridspec_kw={"width_ratios": width_ratios}
     )
 
-    for ax, mask, exp in [(axes[2], only_exp_1, exp_1), (axes[0], only_exp_2, exp_2)]:
-        if mask.sum() > 0:
-            values = data[mask]
-            s = scattersize(values)
-            y_variable = f"Expression {exp}"
-            with warnings.catch_warnings():
-                warnings.simplefilter("error", category=UserWarning)
-                try:
-                    sns.swarmplot(
-                        y=values[y_variable],
-                        size=np.sqrt(s * 2),
-                        marker="o",
-                        alpha=0.75,
-                        color="#606060",
-                        edgecolor="none",
-                        ax=ax,
-                    )
-                except UserWarning:
-                    ax.cla()
-                    sns.stripplot(
-                        y=values[y_variable],
-                        jitter=True,
-                        size=np.sqrt(s * 2),
-                        marker="o",
-                        alpha=0.75,
-                        color="#606060",
-                        edgecolor="none",
-                        ax=ax,
-                    )
-                    ax.set_xlim(-0.2, 0.2)
-        ax.grid(axis="y", linestyle="dotted", linewidth=1)
-        ax.set_ylabel(f"Average expression {exp}")
-    axes[0].set_title(f"Absent in\n{exp_1}", fontsize=9)
-    axes[2].set_title(f"Absent in\n{exp_2}", fontsize=9)
-
+    # Plot values quantified in both experiments
     ax = axes[1]
     values = data[mask_both]
-    s = scattersize(values)
+    s = scattersize(values, total_scatter_area)
     x_variable = f"logFC"
-    y_variable = f"Average expression"
+    y_variable = (
+        f"Average expression" if plot_average_expression else f"Maximum expression"
+    )
     x_col = " ".join([x_variable, comparison_group])
     y_col = " ".join([y_variable, comparison_group])
     x_values = values[x_col]
@@ -731,8 +704,42 @@ def expression_comparison(
     ax.scatter(x_values, y_values, s=s, alpha=0.75, color="#606060", zorder=3)
     ax.set_xlabel(x_variable, fontsize=9)
     ax.set_title(comparison_group, fontsize=12)
-    if max_expression:
-        ax.set_ylabel("Maximum expression")
+    ax.set_ylabel(y_variable)
+
+    # Plot values quantified only in one experiment
+    for ax, mask, exp in [(axes[2], only_exp_1, exp_1), (axes[0], only_exp_2, exp_2)]:
+        y_variable = f"Expression {exp}"
+        values = data[mask]
+        s = scattersize(values, total_scatter_area)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", category=UserWarning)
+            try:
+                sns.swarmplot(
+                    y=values[y_variable],
+                    size=np.sqrt(s * 2),
+                    marker="o",
+                    alpha=0.75,
+                    color="#606060",
+                    edgecolor="none",
+                    ax=ax,
+                )
+            except UserWarning:
+                ax.cla()
+                sns.stripplot(
+                    y=values[y_variable],
+                    jitter=True,
+                    size=np.sqrt(s * 2),
+                    marker="o",
+                    alpha=0.75,
+                    color="#606060",
+                    edgecolor="none",
+                    ax=ax,
+                )
+                ax.set_xlim(-0.2, 0.2)
+        ax.grid(axis="y", linestyle="dotted", linewidth=1)
+        ax.set_ylabel(y_variable)
+    axes[0].set_title(f"Absent in\n{exp_1}", fontsize=9)
+    axes[2].set_title(f"Absent in\n{exp_2}", fontsize=9)
 
     fig.tight_layout()
     return fig, axes
