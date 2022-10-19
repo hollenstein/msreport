@@ -84,6 +84,10 @@ def to_amica(
 ) -> None:
     """Writes amica input and design tables from a qtable.
 
+    As amica requires the same number of columns for each intensity group (LFQIntensity,
+    ImputedIntensity, iBAQ), experiment intensity columns are removed and only sample
+    intensity columns are written to the output.
+
     Args:
         qtable: A Qtable instance.
         directory: Output path of the generated files.
@@ -92,16 +96,16 @@ def to_amica(
         design_name: Optional, filename of the amica design file. Default is
             "amica_design.tsv".
     """
-    amica_table = _amica_table_from(qtable.data)
+    amica_table = _amica_table_from(qtable)
     amica_table_path = os.path.join(directory, table_name)
     amica_table.to_csv(amica_table_path, sep="\t", index=False)
 
-    amica_design = _amica_design_from(qtable.design)
+    amica_design = _amica_design_from(qtable)
     amica_design_path = os.path.join(directory, design_name)
     amica_design.to_csv(amica_design_path, sep="\t", index=False)
 
 
-def _amica_table_from(table: pd.DataFrame) -> pd.DataFrame:
+def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
     """Returns a dataframe in the amica format.
 
     Args:
@@ -133,7 +137,17 @@ def _amica_table_from(table: pd.DataFrame) -> pd.DataFrame:
     ]
     amica_comparison_tag = (" vs ", "__vs__")
 
-    amica_table = table.copy()
+    amica_table = qtable.data.copy()
+
+    # Drop intensity columns that are not sample columns (e.g. experiment columns)
+    for tag in intensity_column_tags[2:3]:
+        columns = helper.find_columns(amica_table, tag)
+        sample_columns = helper.find_sample_columns(
+            amica_table, tag, qtable.get_samples()
+        )
+        non_sample_columns = set(columns).difference(set(sample_columns))
+        amica_table.drop(non_sample_columns, inplace=True, axis=1)
+
     # Log transform columns if necessary
     for tag in intensity_column_tags:
         for column in helper.find_columns(amica_table, tag):
@@ -153,21 +167,21 @@ def _amica_table_from(table: pd.DataFrame) -> pd.DataFrame:
         for old_column in helper.find_columns(amica_table, old_tag):
             new_column = old_column.replace(old_tag, new_tag)
             amica_column_mapping[old_column] = new_column
-            amica_table.rename(columns={old_column: new_column}, inplace=True)
-
     amica_table.rename(columns=amica_column_mapping, inplace=True)
+
     amica_columns = [
         col for col in amica_column_mapping.values() if col in amica_table.columns
     ]
     return amica_table[amica_columns]
 
 
-def _amica_design_from(design: pd.DataFrame) -> pd.DataFrame:
+def _amica_design_from(qtable: Qtable) -> pd.DataFrame:
     """Returns an experimental design table in the amica format.
 
     Args:
         design: A dataframe that must contain the columns "Sample" and "Experiment".
     """
+    design = qtable.get_design()
     amica_design_columns = {"Sample": "samples", "Experiment": "groups"}
-    amica_design = design.copy().rename(columns=amica_design_columns)
+    amica_design = design.rename(columns=amica_design_columns)
     return amica_design
