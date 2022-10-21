@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 import rpy2.robjects as robjects
-from rpy2.robjects import pandas2ri
+from rpy2.robjects import numpy2ri, pandas2ri
 from rpy2.robjects.conversion import localconverter
 
 from .rinstaller import _install_missing_r_packages
@@ -14,10 +14,68 @@ _install_missing_r_packages(["BiocManager"])
 _install_missing_bioconductor_packages(["limma"])
 
 
+def multi_group_limma(
+    table: pd.DataFrame,
+    design: pd.DataFrame,
+    comparison_groups: list[str],
+    batch: bool,
+    trend: bool,
+) -> dict[str, pd.DataFrame]:
+    """Use limma to calculate differential expression analysis of multiple groups.
+
+    Args:
+        table: Contains quantitative data for differential expression analysis.
+        design: Dataframe describing the experimental design of the 'table', where each
+            row must correspond to a column in 'table'. The 'Design' must at least
+            contain a column "Experiment". If batch correction should be applied,
+            batches must be described in the "Batch" column. Names must be valid R
+            names, for reference see the R function make.names.
+        comparison_groups: A list containing experiment pairs for which the results of
+            the differential expression analysis should be reported. Each experiment
+            pair must be written as one string with a dash between the experiment names,
+            for example "Experimen1-Experiment2".
+        batch: If true batch effects are considered for the differential expression
+            analysis. Batches must be specified in the design in a "Batch" column.
+        trend: If true an intensity-dependent trend is fitted to the prior variance
+            during calculation of the moderated t-statistics, refer to limma.eBayes for
+            details.
+
+    Returns:
+        A dictionary with keys being the comparison groups and values being a
+        dataframe that contains the respective results of the differential expression
+        analysis. Dataframes contain the following columns: Average expression",
+        "logFC", "P-value", and "Adjusted p-value".
+    """
+    rscript_path = _find_rscript_paths()["limma.R"]
+    robjects.r["source"](rscript_path)
+    R_multi_group_limma = robjects.globalenv[".multi_group_limma"]
+
+    column_mapping = {
+        "AveExpr": "Average expression",
+        "logFC": "logFC",
+        "P.Value": "P-value",
+        "adj.P.Val": "Adjusted p-value",
+    }
+    columns_to_keep = column_mapping.keys()
+
+    group_results = {}
+    with localconverter(
+        robjects.default_converter + numpy2ri.converter + pandas2ri.converter
+    ):
+        limma_results = R_multi_group_limma(
+            table, design, comparison_groups, batch, trend
+        )
+        for comparison_group, limma_table in limma_results.items():
+            group_results[comparison_group] = limma_table[columns_to_keep].rename(
+                columns=column_mapping
+            )
+    return group_results
+
+
 def two_group_limma(
     table: pd.DataFrame, column_groups: list[str], group1: str, group2: str, trend: bool
 ) -> pd.DataFrame:
-    """Use limma to calculate differential expression of two groups.
+    """Use limma to calculate differential expression analysis of two groups.
 
     Args:
         table: Contains quantitative data for differential expression analysis.
@@ -25,6 +83,9 @@ def two_group_limma(
             Group names must correspond either to 'group1' or 'group2'.
         group1: Experimental group 1
         group2: Experimental group 2, used as the coefficient
+        trend: If true an intensity-dependent trend is fitted to the prior variance
+            during calculation of the moderated t-statistics, refer to limma.eBayes for
+            details.
 
     Returns:
         A dataframe containing "Average expression", "logFC", "P-value", and
