@@ -264,6 +264,96 @@ def two_group_comparison(
     qtable.add_expression_features(comparison_table)
 
 
+def calculate_multi_group_limma(
+    qtable: Qtable,
+    comparison_groups: list[list[str, str]],
+    exclude_invalid: bool = True,
+    batch: bool = False,
+    limma_trend: bool = True,
+) -> None:
+    """Uses limma to perform a differential expression analysis of multiple experiments.
+
+    For each experiment pair specified in 'comparison_groups' the following new columns
+    are added to the qtable:
+    - "P-value Experiment_1 vs Experiment_2"
+    - "Adjusted p-value Experiment_1 vs Experiment_2"
+    - "Average expression Experiment_1 vs Experiment_2"
+    - "logFC Experiment_1 vs Experiment_2"
+
+    Requires that expression columns are set, and expression values are log2 transformed
+    All rows with missing values are ignored, impute missing values to allow
+    differential expression analysis of all rows. The qtable.data column
+    "Representative protein" is used as the index.
+
+    Args:
+        qtable: Qtable instance that contains expression values for differential
+            expression analysis.
+        comparison_groups: A list containing lists of experiment pairs for which the
+            results of the differential expression analysis should be reported. The
+            specified experiment pairs must correspond to entries from
+            qtable.design["Experiment"].
+        exclude_invalid: If true, the column "Valid" is used to determine which rows are
+            used for the differential expression analysis; default True.
+        batch: If true batch effects are considered for the differential expression
+            analysis. Batches must be specified in the design in a "Batch" column.
+        limma_trend: If true, an intensity-dependent trend is fitted to the prior
+            variance during calculation of the moderated t-statistics, refer to
+            limma.eBayes for details; default True.
+    """
+    # TODO: not tested #
+    if batch:
+        if "Batch" not in qtable.get_design():
+            raise Exception(
+                "calculate_multi_group_limma() 'batch' was set to True but the"
+                ' "Batch" column is absent from qtable.design'
+            )
+        if qtable.get_design()["Batch"].nunique() == 1:
+            raise Exception(
+                "calculate_multi_group_limma() 'batch' was set to True but all entries"
+                ' in qtable.design["Batch"] are identical.'
+            )
+
+    design = qtable.get_design()
+    table = qtable.make_expression_table(
+        samples_as_columns=True, features=["Representative protein"]
+    )
+    table = table.set_index("Representative protein")
+
+    if exclude_invalid:
+        valid = qtable.data["Valid"]
+    else:
+        valid = np.full(table.shape[0], True)
+    not_nan = table.isna().sum(axis=1) == 0
+    mask = np.all([valid, not_nan], axis=0)
+
+    # Exchange experiment names with names that are guaranteed to be valid in R
+    experiment_to_r = {}
+    for i, experiment in enumerate(design["Experiment"]):
+        experiment_to_r[experiment] = f".EXPERIMENT__{i:04d}"
+    r_to_experiment = {v: k for k, v in experiment_to_r.items()}
+
+    r_comparison_groups = []
+    for exp1, exp2 in comparison_groups:
+        r_comparison_groups.append(f"{experiment_to_r[exp1]}-{experiment_to_r[exp2]}")
+
+    design["Experiment"].replace(experiment_to_r, inplace=True)
+
+    # Run limma and join results for all comparison groups
+    limma_results = msreport.rinterface.multi_group_limma(
+        table[mask], design, r_comparison_groups, batch, limma_trend
+    )
+    for r_comparison_group, limma_result in limma_results.items():
+        exp1, exp2 = [r_to_experiment[s] for s in r_comparison_group.split("-")]
+        comparison_tag = f"{exp1} vs {exp2}"
+        mapping = {col: f"{col} {comparison_tag}" for col in limma_result.columns}
+        limma_result.rename(columns=mapping, inplace=True)
+
+    limma_table = pd.DataFrame(index=table.index)
+    limma_table = limma_table.join(limma_results.values())
+    limma_table.fillna(np.nan, inplace=True)
+    qtable.add_expression_features(limma_table)
+
+
 def calculate_two_group_limma(
     qtable: Qtable,
     experiment_pair: list[str, str],
@@ -283,7 +373,7 @@ def calculate_two_group_limma(
     column "Representative protein" is used as the index.
 
     Args:
-        qtable: Qtable instance that contains expresion values for differential
+        qtable: Qtable instance that contains expression values for differential
             expression analysis.
         experiment_pair: The names of the two experiments that will be compared,
             experiments must be present in qtable.design
