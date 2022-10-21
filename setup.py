@@ -20,7 +20,7 @@ setup(
         "numpy",
         "pandas",
         "pyteomics",
-        "rpy2",
+        "rpy2>=3.5.3",
         "scipy",
         "seaborn",
         "sklearn",
