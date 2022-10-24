@@ -353,6 +353,11 @@ def calculate_multi_group_limma(
     limma_table.fillna(np.nan, inplace=True)
     qtable.add_expression_features(limma_table)
 
+    # Average expression from limma is the whole row mean, overwrite with the average
+    # expression of the experiment group
+    for comparison_group in comparison_groups:
+        two_group_comparison(qtable, comparison_group, exclude_invalid=exclude_invalid)
+
 
 def calculate_two_group_limma(
     qtable: Qtable,

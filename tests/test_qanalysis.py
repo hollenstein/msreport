@@ -27,6 +27,8 @@ def example_data():
             "Intensity Sample_B2": [15, np.nan, 10.3],
             "Mean Experiment_A": [10, np.nan, 10.3],  # <- Adjust to Sample_A1/A2
             "Mean Experiment_B": [13, np.nan, 10.3],  # <- Adjust to Sample_A1/A2
+            "logFC": [-3, np.nan, 0],  # <- Experiment_A/Experiment_B
+            "Average expression": [11.5, np.nan, 10.3],  # <- Experiment_A/Experiment_B
         }
     )
     missing_values = pd.DataFrame(
@@ -84,7 +86,8 @@ def test_calculate_experiment_means(example_data, example_qtable):
     msreport.analyze.calculate_experiment_means(example_qtable)
 
     experiments = example_qtable.get_experiments()
-    assert all([f"Expression {e}" in example_qtable.data for e in experiments])
+    qtable_columns = example_qtable.data.columns.to_list()
+    assert all([f"Expression {e}" in qtable_columns for e in experiments])
     assert all(
         [f"Expression {e}" in example_qtable._expression_features for e in experiments]
     )
@@ -93,3 +96,18 @@ def test_calculate_experiment_means(example_data, example_qtable):
         example_data["data"]["Mean Experiment_B"],
         equal_nan=True,
     )
+
+
+def test_two_group_comparison(example_data, example_qtable):
+    experiment_pair = ["Experiment_A", "Experiment_B"]
+    exp1, exp2 = experiment_pair
+    msreport.analyze.two_group_comparison(example_qtable, experiment_pair)
+
+    qtable_columns = example_qtable.data.columns.to_list()
+    for column_tag in ["Average expression", "logFC"]:
+        assert f"{column_tag} {exp1} vs {exp2}" in qtable_columns
+        assert np.allclose(
+            example_qtable.data[f"{column_tag} {exp1} vs {exp2}"],
+            example_data["data"][column_tag],
+            equal_nan=True,
+        )
