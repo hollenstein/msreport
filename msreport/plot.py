@@ -580,6 +580,7 @@ def volcano_ma(
     qtable: Qtable,
     experiment_pair: list[str, str],
     comparison_tag: str = " vs ",
+    pvalue_tag: str = "P-value",
 ) -> (plt.Figure, list[plt.Axes]):
     """Generates a volcano and an MA plot for the comparison of two experiments.
 
@@ -600,11 +601,10 @@ def volcano_ma(
     if "Valid" in qtable.data:
         data = data[qtable.data["Valid"]]
 
-    for variable in ["P-value", "Adjusted p-value"]:
-        for column in msreport.helper.find_sample_columns(
-            data, variable, [comparison_group]
-        ):
-            data[column] = np.log10(data[column]) * -1
+    for column in msreport.helper.find_sample_columns(
+        data, pvalue_tag, [comparison_group]
+    ):
+        data[column] = np.log10(data[column]) * -1
 
     scatter_size = 2 / (max(min(data.shape[0], 10000), 1000) / 1000)
 
@@ -612,7 +612,7 @@ def volcano_ma(
     fig.suptitle(comparison_group)
 
     for ax, x_variable, y_variable in [
-        (axes[0], "logFC", "P-value"),
+        (axes[0], "logFC", pvalue_tag),
         (axes[1], "logFC", "Average expression"),
     ]:
         x_col = " ".join([x_variable, comparison_group])
