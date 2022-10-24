@@ -147,6 +147,7 @@ def test_guess_design():
         {
             "Sample": ["ExperimentA_R1", "ExperimentB_R1", "ExperimentB_R2"],
             "Experiment": ["ExperimentA", "ExperimentB", "ExperimentB"],
+            "Replicate": ["R1", "R1", "R2"],
         }
     )
 

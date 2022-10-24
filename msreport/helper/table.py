@@ -6,33 +6,34 @@ import pandas as pd
 
 
 def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
-    """Extracts sample names and experiments from specified sample columns.
+    """Extracts sample name, experiment, and replicate from specified sample columns.
 
     First a subset of columns containing a column tag are identified. Then sample names
-    are extracted by removing the column tag from each column name. And finally,
-    experiment names are extracted from sample names by splitting sample names at the
-    last underscore.
+    are extracted by removing the column tag from each column name. And finally, sample
+    names are split into experiment and replicate at the last underscore.
 
-    This requires that the sample naming follows a specific convention. It must start
-    with the experiment name, followed by an underscore and a unique identifier of the
-    sample, for example the replicate number. The experiment name can also contain
-    underscores, as it is split only by the last underscore. Example of valid samples
-    names are "ExperimentA_r1" or
-    "Experiment_A_r1".
+    This requires that the naming of samples follows a specific convention. Sample names
+    must begin with the experiment name, followed by an underscore and a unique
+    identifier of the sample, for example the replicate number. The experiment name can
+    also contain underscores, as it is split only by the last underscore.
+
+    For example "ExpA_r1" would be split into experiment "ExpA" and replicate "r1",
+    "Exp_A_1" would be experiment "Exp_A" and replicate "1".
 
     Args:
         table: Dataframe which columns are used for extracting sample names.
         tag: Column names containing the 'tag' are selected for sample extraction.
 
     Returns:
-        A dataframe containing the columns "Sample" and "Experiment"
+        A dataframe containing the columns "Sample", "Experiment", and "Replicate"
     """
     sample_entries = []
     for column in find_columns(table, tag, must_be_substring=True):
         sample = column.replace(tag, "").strip()
         experiment = "_".join(sample.split("_")[:-1])
-        sample_entries.append([sample, experiment])
-    design = pd.DataFrame(sample_entries, columns=["Sample", "Experiment"])
+        replicate = sample.split("_")[-1]
+        sample_entries.append([sample, experiment, replicate])
+    design = pd.DataFrame(sample_entries, columns=["Sample", "Experiment", "Replicate"])
     return design
 
 
