@@ -93,18 +93,15 @@ def missing_values_vertical(
 
     Args:
         qtable: A Qtable instance, which data is used for plotting.
-        exclude_invalid: If True and the column "Valid" is present, rows are filtered
-            according to the Boolean entries of "Valid"; default True.
+        exclude_invalid: Optional, if True rows are filtered according to the Boolean
+            entries of "Valid"; default True.
     Returns:
         A matplotlib Figure and a list of Axes objects containing the missing values
         plots.
     """
     experiments = qtable.get_experiments()
     num_experiments = len(experiments)
-
-    table = qtable.data.copy()
-    if exclude_invalid and "Valid" in qtable.data:
-        table = table[qtable.data["Valid"]]
+    qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
 
     barwidth = 0.8
     barcolors = ["#31A590", "#FAB74E", "#EB3952"]
@@ -117,8 +114,8 @@ def missing_values_vertical(
     for exp_num, exp in enumerate(experiments):
         ax = axes[exp_num]
 
-        exp_missing = table[f"Missing {exp}"]
-        exp_values = table[f"Events {exp}"]
+        exp_missing = qtable_data[f"Missing {exp}"]
+        exp_values = qtable_data[f"Events {exp}"]
         missing_none = (exp_missing == 0).sum()
         missing_some = ((exp_missing > 0) & (exp_values > 0)).sum()
         missing_all = (exp_values == 0).sum()
@@ -152,21 +149,18 @@ def missing_values_horizontal(
 
     Args:
         qtable: A Qtable instance, which data is used for plotting.
-        exclude_invalid: If True and the column "Valid" is present, rows are filtered
-            according to the Boolean entries of "Valid"; default True.
+        exclude_invalid: Optional, if True rows are filtered according to the Boolean
+            entries of "Valid"; default True.
     Returns:
         A matplotlib Figure and Axes object, containing the missing values plot.
     """
     experiments = qtable.get_experiments()
     num_experiments = len(experiments)
-
-    table = qtable.data.copy()
-    if exclude_invalid and "Valid" in qtable.data:
-        table = table[qtable.data["Valid"]]
+    qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
 
     data = {"exp": [], "max": [], "some": [], "min": []}
     for exp in experiments:
-        exp_missing = table[f"Missing {exp}"]
+        exp_missing = qtable_data[f"Missing {exp}"]
         total = len(exp_missing)
         num_replicates = len(qtable.get_samples(exp))
         missing_all = (exp_missing == num_replicates).sum()
@@ -269,15 +263,15 @@ def sample_intensities(
     Args:
         qtable: A Qtable instance, which data is used for plotting.
         tag: String used for matching the intensity columns.
-        exclude_invalid: If True and the column "Valid" is present, rows are filtered
-            according to the Boolean entries of "Valid"; default True.
+        exclude_invalid: Optional, if True rows are filtered according to the Boolean
+            entries of "Valid"; default True.
 
     Returns:
         A matplotlib Figure and a list of Axes objects, containing the intensity plots.
     """
-    table = qtable.make_sample_table(tag, samples_as_columns=True)
-    if exclude_invalid and "Valid" in qtable.data:
-        table = table[qtable.data["Valid"]]
+    table = qtable.make_sample_table(
+        tag, samples_as_columns=True, exclude_invalid=exclude_invalid
+    )
 
     table = table.replace({0: np.nan})
     if msreport.helper.intensities_in_logspace(table):
@@ -319,16 +313,15 @@ def replicate_ratios(
 
     Args:
         qtable: A Qtable instance, which data is used for plotting.
-        exclude_invalid: If True and the column "Valid" is present, rows are filtered
-            according to the Boolean entries of "Valid"; default True.
+        exclude_invalid: Optional, if True rows are filtered according to the Boolean
+            entries of "Valid"; default True.
         xlim: Optional, specifies the displayed log2 ratio range on the x-axis. Default
             is from -2 to 2.
     """
     tag: str = "Expression"
-
-    data = qtable.make_sample_table(tag, samples_as_columns=True)
-    if exclude_invalid and "Valid" in data:
-        data = data[qtable.data["Valid"]]
+    table = qtable.make_sample_table(
+        tag, samples_as_columns=True, exclude_invalid=exclude_invalid
+    )
 
     experiments = qtable.design["Experiment"].unique().tolist()
     num_experiments = len(experiments)
@@ -353,7 +346,7 @@ def replicate_ratios(
             s1_label = s1.replace(experiment, "").strip("_")
             s2_label = s2.replace(experiment, "").strip("_")
             ax = axes[x_pos, y_pos]
-            ratios = data[s1] - data[s2]
+            ratios = table[s1] - table[s2]
             ratios = ratios[np.isfinite(ratios)]
             ylabel = experiment if y_pos == 0 else ""
             title = f"{s1_label} vs {s2_label}"
@@ -400,12 +393,13 @@ def experiment_ratios(
 
     Args:
         qtable: A Qtable instance, which data is used for plotting.
-        exclude_invalid: If True and the column "Valid" is present, rows are filtered
-            according to the Boolean entries of "Valid"; default True.
+        exclude_invalid: Optional, if True rows are filtered according to the Boolean
+            entries of "Valid"; default True.
         ylim: Optional, specifies the displayed log2 ratio range on the y-axis. Default
             is from -2 to 2.
     """
     tag: str = "Expression"
+    qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
 
     data = qtable.data.copy()
     if exclude_invalid and "Valid" in data:
@@ -413,10 +407,12 @@ def experiment_ratios(
 
     experiments = qtable.design["Experiment"].unique().tolist()
     column_mapping = {f"{tag} {exp}": exp for exp in experiments}
-    exp_data = data[column_mapping.keys()]
+    exp_data = qtable_data[column_mapping.keys()]
     exp_data = exp_data.rename(columns=column_mapping)
 
-    quant_mask = np.all([(data[f"Events {exp}"] > 0) for exp in experiments], axis=0)
+    quant_mask = np.all(
+        [(qtable_data[f"Events {exp}"] > 0) for exp in experiments], axis=0
+    )
     exp_data = exp_data[quant_mask]
     pseudo_ref = np.nanmean(exp_data, axis=1)
     exp_ratios = exp_data.subtract(pseudo_ref, axis=0)
@@ -476,16 +472,15 @@ def sample_pca(
         pc_y: Principle component to plot on y-axis of the scatter plot, default "PC2".
             The number of calculated principal components is equal to the number of
             samples.
-        exclude_invalid: If True and the column "Valid" is present, rows are filtered
-            according to the Boolean entries of "Valid"; default True.
+        exclude_invalid: Optional, if True rows are filtered according to the Boolean
+            entries of "Valid"; default True.
 
     Returns:
         A matplotlib Figure and a list of Axes objects, containing the PCA plots.
     """
-
-    table = qtable.make_sample_table(tag, samples_as_columns=True)
-    if exclude_invalid and "Valid" in qtable.data:
-        table = table[qtable.data["Valid"]]
+    table = qtable.make_sample_table(
+        tag, samples_as_columns=True, exclude_invalid=exclude_invalid
+    )
 
     table = table.replace({0: np.nan})
     table = table[np.isfinite(table).sum(axis=1) > 0]
@@ -581,6 +576,7 @@ def volcano_ma(
     experiment_pair: list[str, str],
     comparison_tag: str = " vs ",
     pvalue_tag: str = "P-value",
+    exclude_invalid: bool = True,
 ) -> (plt.Figure, list[plt.Axes]):
     """Generates a volcano and an MA plot for the comparison of two experiments.
 
@@ -588,7 +584,9 @@ def volcano_ma(
         qtable: A Qtable instance, which data is used for plotting.
         experiment_pair: The names of the two experiments that will be compared,
             experiments must be present in qtable.design.
-        comparison_tag:
+        comparison_tag: TODO
+        exclude_invalid: Optional, if True rows are filtered according to the Boolean
+            entries of "Valid"; default True.
 
     Returns:
         A matplotlib Figure object and a list of two Axes objects containing the volcano
@@ -596,17 +594,14 @@ def volcano_ma(
     """
     exp_1, exp_2 = experiment_pair
     comparison_group = "".join([exp_1, comparison_tag, exp_2])
-
-    data = qtable.data.copy()
-    if "Valid" in qtable.data:
-        data = data[qtable.data["Valid"]]
+    qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
 
     for column in msreport.helper.find_sample_columns(
-        data, pvalue_tag, [comparison_group]
+        qtable_data, pvalue_tag, [comparison_group]
     ):
-        data[column] = np.log10(data[column]) * -1
+        qtable_data[column] = np.log10(qtable_data[column]) * -1
 
-    scatter_size = 2 / (max(min(data.shape[0], 10000), 1000) / 1000)
+    scatter_size = 2 / (max(min(qtable_data.shape[0], 10000), 1000) / 1000)
 
     fig, axes = plt.subplots(1, 2, figsize=[8, 4], sharex=True)
     fig.suptitle(comparison_group)
@@ -617,8 +612,8 @@ def volcano_ma(
     ]:
         x_col = " ".join([x_variable, comparison_group])
         y_col = " ".join([y_variable, comparison_group])
-        x_values = data[x_col]
-        y_values = data[y_col]
+        x_values = qtable_data[x_col]
+        y_values = qtable_data[y_col]
         ax.grid(axis="both", linestyle="dotted", linewidth=1)
         ax.scatter(x_values, y_values, s=scatter_size, color="#606060", zorder=3)
         ax.set_xlabel(x_variable)
@@ -633,6 +628,7 @@ def expression_comparison(
     experiment_pair: list[str, str],
     comparison_tag: str = " vs ",
     plot_average_expression: bool = False,
+    exclude_invalid: bool = True,
 ) -> (plt.Figure, list[plt.Axes]):
     """Generates an expression comparison plot for two experiments.
 
@@ -644,9 +640,11 @@ def expression_comparison(
         qtable: A Qtable instance, which data is used for the PCA analysis.
         experiment_pair: The names of the two experiments that will be compared,
             experiments must be present in qtable.design.
-        comparison_tag:
-        plot_average_expression: If True, plot average expression instead of maxium
-            expression. Default False.
+        comparison_tag: TODO
+        plot_average_expression: Optional, if True plot average expression instead of
+            maxium expression. Default False.
+        exclude_invalid: Optional, if True rows are filtered according to the Boolean
+            entries of "Valid"; default True.
 
     Returns:
         A matplotlib Figure objects and a list of three Axes objects containing the
@@ -654,24 +652,21 @@ def expression_comparison(
     """
     exp_1, exp_2 = experiment_pair
     comparison_group = "".join([exp_1, comparison_tag, exp_2])
+    qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
 
-    data = qtable.data.copy()
-    if "Valid" in qtable.data:
-        data = data[qtable.data["Valid"]]
+    mask = (qtable_data[f"Events {exp_1}"] + qtable_data[f"Events {exp_2}"]) > 0
+    qtable_data = qtable_data[mask]
 
-    mask = (data[f"Events {exp_1}"] + data[f"Events {exp_2}"]) > 0
-    data = data[mask]
-
-    only_exp_1 = data[f"Events {exp_2}"] == 0
-    only_exp_2 = data[f"Events {exp_1}"] == 0
+    only_exp_1 = qtable_data[f"Events {exp_2}"] == 0
+    only_exp_2 = qtable_data[f"Events {exp_1}"] == 0
     mask_both = np.invert(np.any([only_exp_1, only_exp_2], axis=0))
 
     # Test if plotting maximum intensity is better than average
-    data[f"Maximum expression {comparison_group}"] = np.max(
-        [data[f"Expression {exp_2}"], data[f"Expression {exp_1}"]], axis=0
+    qtable_data[f"Maximum expression {comparison_group}"] = np.max(
+        [qtable_data[f"Expression {exp_2}"], qtable_data[f"Expression {exp_1}"]], axis=0
     )
-    data[f"Average expression {comparison_group}"] = np.nanmean(
-        [data[f"Expression {exp_2}"], data[f"Expression {exp_1}"]], axis=0
+    qtable_data[f"Average expression {comparison_group}"] = np.nanmean(
+        [qtable_data[f"Expression {exp_2}"], qtable_data[f"Expression {exp_1}"]], axis=0
     )
 
     def scattersize(df: pd.DataFrame, total_area) -> float:
@@ -690,7 +685,7 @@ def expression_comparison(
 
     # Plot values quantified in both experiments
     ax = axes[1]
-    values = data[mask_both]
+    values = qtable_data[mask_both]
     s = scattersize(values, total_scatter_area)
     x_variable = f"logFC"
     y_variable = (
@@ -709,7 +704,7 @@ def expression_comparison(
     # Plot values quantified only in one experiment
     for ax, mask, exp in [(axes[2], only_exp_1, exp_1), (axes[0], only_exp_2, exp_2)]:
         y_variable = f"Expression {exp}"
-        values = data[mask]
+        values = qtable_data[mask]
         s = scattersize(values, total_scatter_area)
         with warnings.catch_warnings():
             warnings.simplefilter("error", category=UserWarning)
