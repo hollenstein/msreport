@@ -72,6 +72,18 @@ def example_qtable(example_data):
     return qtable
 
 
+class TestExcludeInvalid:
+    def test_default(self):
+        df = pd.DataFrame({"Value": ["valid", "excluded"], "Valid": [True, False]})
+        filtered_df = msreport.qtable._exclude_invalid(df)
+        assert filtered_df["Value"].tolist() == ["valid"]
+
+    def test_raise_key_error(self):
+        df = pd.DataFrame({"Value": ["valid", "excluded"]})
+        with pytest.raises(KeyError):
+            msreport.qtable._exclude_invalid(df)
+
+
 def test_str_to_substr_mapping():
     strings = ["Tag SampleB_1", "Tag SampleA_1", "Tag SampleA_2"]
     substrs = ["SampleA_1", "SampleB_1", "SampleA_2"]

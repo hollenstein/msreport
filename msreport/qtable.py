@@ -390,12 +390,9 @@ def _exclude_invalid(df: pd.DataFrame) -> pd.DataFrame:
         A copy of the dataframe that is filtered according to the boolean values in the
         column "Valid".
     """
-    # NOT TESTED
-    try:
-        df = df[df["Valid"]].copy()
-    except KeyError:
-        raise Exception("'Valid' column not present in dataframe.")
-    return df
+    if "Valid" not in df:
+        raise KeyError("'Valid' column not present in qtable")
+    return df[df["Valid"]].copy()
 
 
 def _str_to_substr_mapping(strings, substrings) -> dict[str, str]:
