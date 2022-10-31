@@ -43,6 +43,21 @@ class Qtable:
         """Writes table to the system clipboard, which can be pasted e.g. into Excel."""
         self.data.to_clipboard(sep="\t", index=index)
 
+    def get_data(self, exclude_invalid: bool = False) -> pd.DataFrame:
+        """Returns a copy of the data table.
+
+        Args:
+            exclude_invalid: Optional, if true the returned dataframe is filtered by
+                the "Valid" column. Default false.
+
+        Returns:
+            A copy of the qtable.data dataframe.
+        """
+        data = self.data.copy()
+        if exclude_invalid:
+            data = _exclude_invalid(data)
+        return data
+
     def get_design(self) -> pd.DataFrame:
         """Returns a copy of the design table."""
         return self.design.copy()
@@ -112,7 +127,10 @@ class Qtable:
         return expression_column
 
     def make_sample_table(
-        self, tag: str, samples_as_columns: bool = False
+        self,
+        tag: str,
+        samples_as_columns: bool = False,
+        exclude_invalid: bool = False,
     ) -> pd.DataFrame:
         """Returns a new dataframe with sample columns containing the 'tag'.
 
@@ -120,6 +138,8 @@ class Qtable:
             tag: Substring that must be present in selected columns.
             samples_as_columns: If true, replaces expression column names with
                 sample names. Requires that the experimental design is set.
+            exclude_invalid: Optional, if true the returned dataframe is filtered by
+                the "Valid" column. Default false.
 
         Returns:
             A new dataframe generated from self.data with sample columns that also
@@ -131,7 +151,7 @@ class Qtable:
         """
         samples = self.get_samples()
         columns = helper.find_sample_columns(self.data, tag, samples)
-        table = self.data[columns].copy()
+        table = self.get_data(exclude_invalid=exclude_invalid)[columns]
         if samples_as_columns:
             mapping = _str_to_substr_mapping(columns, samples)
             table.rename(columns=mapping, inplace=True)
@@ -141,6 +161,7 @@ class Qtable:
         self,
         samples_as_columns: bool = False,
         features: Optional[list[str]] = None,
+        exclude_invalid: bool = False,
     ) -> pd.DataFrame:
         """Returns a new dataframe containing the expression columns.
 
@@ -149,6 +170,8 @@ class Qtable:
                 to the newly generated datarame.
             samples_as_columns: If true, replaces expression column names with
                 sample names. Requires that the experimental design is set.
+            exclude_invalid: Optional, if true the returned dataframe is filtered by
+                the "Valid" column. Default false.
 
         Returns:
             A copied dataframe that contains only the specified columns from the
@@ -159,7 +182,7 @@ class Qtable:
         if features is not None:
             columns.extend(features)
 
-        table = self.data[columns].copy()
+        table = self.get_data(exclude_invalid=exclude_invalid)[columns]
         if samples_as_columns:
             table.rename(columns=self._expression_sample_mapping, inplace=True)
 
@@ -358,6 +381,21 @@ class Qtable:
                 attr_values = self.__getattribute__(attr).copy()
                 new_instance.__setattr__(attr, attr_values)
         return new_instance
+
+
+def _exclude_invalid(df: pd.DataFrame) -> pd.DataFrame:
+    """Returns a filterd dataframe only containing valid entries.
+
+    Returns:
+        A copy of the dataframe that is filtered according to the boolean values in the
+        column "Valid".
+    """
+    # NOT TESTED
+    try:
+        df = df[df["Valid"]].copy()
+    except KeyError:
+        raise Exception("'Valid' column not present in dataframe.")
+    return df
 
 
 def _str_to_substr_mapping(strings, substrings) -> dict[str, str]:

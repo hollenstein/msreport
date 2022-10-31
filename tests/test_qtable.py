@@ -21,6 +21,7 @@ def example_data():
             "id": ["1", "2", "3"],
             "Total peptides": [2, 1, 2],
             "Representative protein": ["A", "B", "C"],
+            "Valid": [True, True, False],
             # Note that one intensitiy must be above 64, otherwise it is assumed
             # that they are already log transformed and another log is prevented.
             "Intensity": [100, 0, np.nan],
@@ -101,6 +102,23 @@ def test_qtable_add_design(example_data):
 def test_qtable_setup_with_design(example_data):
     qtable = msreport.qtable.Qtable(pd.DataFrame(), design=example_data["design"])
     assert qtable.design.equals(example_data["design"])
+
+
+class TestQtableGetData:
+    @pytest.fixture(autouse=True)
+    def _init_qtable(self, example_data):
+        self.qtable = msreport.qtable.Qtable(
+            example_data["data"], design=example_data["design"]
+        )
+
+    def test_get_data(self, example_data):
+        assert self.qtable.get_data().equals(example_data["data"])
+
+    def test_filter_valid(self, example_data):
+        data = self.qtable.get_data(exclude_invalid=True)
+
+        valid_mask = example_data["data"]["Valid"]
+        assert data.equals(example_data["data"][valid_mask])
 
 
 def test_qtable_get_design(example_data):
