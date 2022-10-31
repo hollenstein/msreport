@@ -401,10 +401,6 @@ def experiment_ratios(
     tag: str = "Expression"
     qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
 
-    data = qtable.data.copy()
-    if exclude_invalid and "Valid" in data:
-        data = data[qtable.data["Valid"]]
-
     experiments = qtable.design["Experiment"].unique().tolist()
     column_mapping = {f"{tag} {exp}": exp for exp in experiments}
     exp_data = qtable_data[column_mapping.keys()]
