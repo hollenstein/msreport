@@ -272,18 +272,23 @@ class Qtable:
                 features. The number and order of rows in 'expression_features' must
                 correspond to qtable.data.
         """
-        # TODO: join all columns at once using pd.concat(axis=1) instead
         assert isinstance(expression_features, (pd.DataFrame, pd.Series))
         assert self.data.shape[0] == expression_features.shape[0]
 
         if isinstance(expression_features, pd.Series):
             expression_features = expression_features.to_frame()
 
-        for new_column in expression_features.columns:
-            # to_numpy() is required to remove the index
-            self.data[new_column] = expression_features[new_column].to_numpy()
-            if new_column not in self._expression_features:
-                self._expression_features.append(new_column)
+        old_columns = self.data.columns.difference(expression_features.columns)
+        old_columns = self.data.columns[self.data.columns.isin(old_columns)]
+        self.data = self.data[old_columns]
+
+        # Adopt index to assure row by row joining, assumes identical order of entries
+        expression_features.index = self.data.index
+        self.data = self.data.join(expression_features, how="left")
+
+        self._expression_features.extend(
+            expression_features.columns.difference(self._expression_features)
+        )
 
     def _set_expression(
         self,
