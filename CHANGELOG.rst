@@ -9,20 +9,20 @@ Changelog
   - Added function for converting peptide sites from the "Modifications" column
     to protein sites, and adding them to the "Protein modifications" column.
 
-- Helper
+- Helper module
   - guess_design() now also extracts the replicate from sample names and returns
     a dataframe with the columns "Sample", "Experiment", "Replicate". If no
     experiment was extracted the sample name is used as experiment.
 
-- Analysis
+- Analyze module
   - Added function that allows calculating multi group differential expression
     analysis with limma and taking batch effects into account.
 
-- Plot
+- Plot module
   - Specifying a different "pvalue_tag" in volcano_ma() now allows plotting of
     the "Adjusted p-value" instead of the "P-value".
 
-- Qtable:
+- Qtable module
   - Added get_data() function to qtable, which returns a copy of qtable.data and
     allows exclusion of invalid values.
 
