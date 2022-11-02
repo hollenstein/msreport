@@ -195,7 +195,6 @@ class TestQtableResetExpression:
         assert all_expression_columns_absent_in_data
 
     def test_reset_of_expression_features(self, example_data):
-        # TODO: do this via add_expression_features function, once implemented
         new_feature = example_data["data"]["id"]
         new_feature.name = "Feature"
 
