@@ -31,7 +31,9 @@ def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
     for column in find_columns(table, tag, must_be_substring=True):
         sample = column.replace(tag, "").strip()
         experiment = "_".join(sample.split("_")[:-1])
+        experiment = experiment if experiment else sample
         replicate = sample.split("_")[-1]
+        replicate = replicate if replicate is not sample else "-1"
         sample_entries.append([sample, experiment, replicate])
     design = pd.DataFrame(sample_entries, columns=["Sample", "Experiment", "Replicate"])
     return design
