@@ -2,6 +2,37 @@ Changelog
 =========
 
 
+0.0.3
+-----
+
+- Reader module
+  - Added function for converting peptide sites from the "Modifications" column
+    to protein sites, and adding them to the "Protein modifications" column.
+
+- Helper
+  - guess_design() now also extracts the replicate from sample names and returns
+    a dataframe with the columns "Sample", "Experiment", "Replicate". If no
+    experiment was extracted the sample name is used as experiment.
+
+- Analysis
+  - Added function that allows calculating multi group differential expression
+    analysis with limma and taking batch effects into account.
+
+- Plot
+  - Specifying a different "pvalue_tag" in volcano_ma() now allows plotting of
+    the "Adjusted p-value" instead of the "P-value".
+
+- Qtable:
+  - Added get_data() function to qtable, which returns a copy of qtable.data and
+    allows exclusion of invalid values.
+
+- Fixes
+  - Parsing of incomplete or non-standard FASTA headers should be possible now.
+  - Fixed inconsistent y-axis labelling of plots generated with
+    plot.expression_comparison().
+  - Fixed issue with exported amica tables being incompatible with amica.
+
+
 0.0.2
 -----
 
