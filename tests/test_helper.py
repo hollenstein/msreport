@@ -132,27 +132,48 @@ def test_modify_peptide(sequence, modifications, expected_mofified_sequence):
     assert modified_sequence == expected_mofified_sequence
 
 
-def test_guess_design():
-    table = pd.DataFrame(
-        columns=[
-            "Intensity ExperimentA_R1",
-            "Intensity ExperimentB_R1",
-            "Intensity ExperimentB_R2",
-            "Intensity",
-            "Other columns",
-        ]
-    )
-    tag = "Intensity"
-    expected_design = pd.DataFrame(
-        {
-            "Sample": ["ExperimentA_R1", "ExperimentB_R1", "ExperimentB_R2"],
-            "Experiment": ["ExperimentA", "ExperimentB", "ExperimentB"],
-            "Replicate": ["R1", "R1", "R2"],
-        }
-    )
+class TestGuessDesign:
+    def test_well_formated_sample_names(self):
+        table = pd.DataFrame(
+            columns=[
+                "Intensity ExperimentA_R1",
+                "Intensity ExperimentB_R1",
+                "Intensity ExperimentB_R2",
+                "Intensity",
+                "Other columns",
+            ]
+        )
+        tag = "Intensity"
+        expected_design = pd.DataFrame(
+            {
+                "Sample": ["ExperimentA_R1", "ExperimentB_R1", "ExperimentB_R2"],
+                "Experiment": ["ExperimentA", "ExperimentB", "ExperimentB"],
+                "Replicate": ["R1", "R1", "R2"],
+            }
+        )
 
-    design = msreport.helper.guess_design(table, tag)
-    assert expected_design.equals(design)
+        design = msreport.helper.guess_design(table, tag)
+        assert expected_design.equals(design)
+
+    def test_single_experiment(self):
+        table = pd.DataFrame(
+            columns=[
+                "Intensity ExperimentA",
+                "Intensity",
+                "Other columns",
+            ]
+        )
+        tag = "Intensity"
+        expected_design = pd.DataFrame(
+            {
+                "Sample": ["ExperimentA"],
+                "Experiment": ["ExperimentA"],
+                "Replicate": ["-1"],
+            }
+        )
+
+        design = msreport.helper.guess_design(table, tag)
+        assert expected_design.equals(design)
 
 
 @pytest.mark.parametrize(
