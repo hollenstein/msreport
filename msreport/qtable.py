@@ -315,16 +315,17 @@ class Qtable:
         expression_columns = list(expr_sample_mapping.keys())
         samples = list(expr_sample_mapping.values())
 
+        if not expression_columns:
+            raise KeyError(f"No expression columns matched in qtable")
         if not all([e in data_columns for e in expression_columns]):
             exception_message = (
-                "Not all expression columns from"
-                f" {expression_columns} are present as"
-                " columns in the data table!"
+                f"Not all specified columns {expression_columns} are present in the"
+                " qtable"
             )
             raise ValueError(exception_message)
         if not all([s in self.get_samples() for s in samples]):
             exception_message = (
-                f"Not all samples from {samples}" " are present in the qtable design!"
+                f"Not all specified samples {samples} are present in the qtable.design"
             )
             raise ValueError(exception_message)
 
