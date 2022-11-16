@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 
 import msreport.helper as helper
+from msreport.errors import ProteinsNotInFastaWarning
 
 
 class ResultReader:
@@ -877,6 +878,7 @@ def add_protein_annotations(
         "Protein length": [],
         "iBAQ peptides": [],
     }
+    proteins_not_in_db = []
     for protein_id in table[id_column]:
         if protein_id in protein_db.proteins:
             sequence = protein_db[protein_id].sequence
@@ -888,6 +890,7 @@ def add_protein_annotations(
             length = protein_db[protein_id].length()
             ibaq_peptides = helper.calculate_tryptic_ibaq_peptides(sequence)
         else:
+            proteins_not_in_db.append(protein_id)
             entry_name = ""
             gene_name = ""
             fasta_header = ""
@@ -902,6 +905,12 @@ def add_protein_annotations(
 
     for column in new_columns:
         table[column] = new_columns[column]
+
+    if proteins_not_in_db:
+        warnings.warn(
+            f"Some proteins could not be annotated: {repr(proteins_not_in_db)}",
+            ProteinsNotInFastaWarning,
+        )
 
 
 def add_sequence_coverage(
@@ -981,6 +990,10 @@ def add_peptide_positions(
 ) -> None:
     """Adds peptide "Start position" and "End position" positions to the table.
 
+    For entries where the protein is absent from the FASTA or the peptide sequence
+    could not be matched to the protein sequence, start and end positions of -1 are
+    added.
+
     Args:
         table: Dataframe to which the protein annotations are added.
         fasta_path: Path of a FASTA file, or a list of FASTA file paths.
@@ -1000,17 +1013,28 @@ def add_peptide_positions(
         protein_db = helper.importProteinDatabase(path, database=protein_db)
 
     peptide_positions = {"Start position": [], "End position": []}
+    proteins_not_in_db = []
     for peptide, protein_id in zip(table[peptide_column], table[protein_column]):
-        sequence = protein_db[protein_id].sequence
-        start = sequence.find(peptide) + 1
-        end = start + len(peptide) - 1
-        if start == 0:
+        if protein_id in protein_db.proteins:
+            sequence = protein_db[protein_id].sequence
+            start = sequence.find(peptide) + 1
+            end = start + len(peptide) - 1
+            if start == 0:
+                start, end = -1, -1
+        else:
+            proteins_not_in_db.append(protein_id)
             start, end = -1, -1
         peptide_positions["Start position"].append(start)
         peptide_positions["End position"].append(end)
 
     for key in peptide_positions:
         table[key] = peptide_positions[key]
+
+    if proteins_not_in_db:
+        warnings.warn(
+            f"Some peptides could not be annotated: {repr(proteins_not_in_db)}",
+            ProteinsNotInFastaWarning,
+        )
 
 
 def add_protein_modifications(table: pd.DataFrame):
