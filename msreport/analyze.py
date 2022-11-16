@@ -95,7 +95,7 @@ def validate_proteins(
 
     if min_peptides > 0:
         if "Total peptides" not in qtable.data:
-            raise Exception("'Total peptides' column not present in qtable")
+            raise KeyError("'Total peptides' column not present in qtable")
         valid_entries = np.all(
             [valid_entries, qtable.data["Total peptides"] >= min_peptides], axis=0
         )
@@ -108,7 +108,7 @@ def validate_proteins(
 
     if max_missing is not None:
         if "Missing total" not in qtable.data:
-            raise Exception("Missing values need to be analyzed before.")
+            raise KeyError("Missing values need to be analyzed before.")
         cols = [" ".join(["Missing", e]) for e in qtable.get_experiments()]
         max_missing_valid = np.any(qtable.data[cols] <= max_missing, axis=1)
         valid_entries = max_missing_valid & valid_entries
@@ -301,17 +301,16 @@ def calculate_multi_group_limma(
             limma.eBayes for details; default True.
     """
     # TODO: not tested #
-    if batch:
-        if "Batch" not in qtable.get_design():
-            raise Exception(
-                "calculate_multi_group_limma() 'batch' was set to True but the"
-                ' "Batch" column is absent from qtable.design'
-            )
-        if qtable.get_design()["Batch"].nunique() == 1:
-            raise Exception(
-                "calculate_multi_group_limma() 'batch' was set to True but all entries"
-                ' in qtable.design["Batch"] are identical.'
-            )
+    if batch and "Batch" not in qtable.get_design():
+        raise KeyError(
+            "calculate_multi_group_limma() 'batch' was set to True but the"
+            ' "Batch" column is absent from qtable.design'
+        )
+    if batch and qtable.get_design()["Batch"].nunique() == 1:
+        raise ValueError(
+            "calculate_multi_group_limma() 'batch' was set to True but all entries"
+            ' in qtable.design["Batch"] are identical.'
+        )
 
     design = qtable.get_design()
     table = qtable.make_expression_table(
