@@ -714,6 +714,7 @@ def expression_comparison(
                     edgecolor="none",
                     ax=ax,
                 )
+                fig.canvas.draw()
             except UserWarning:
                 ax.cla()
                 sns.stripplot(
