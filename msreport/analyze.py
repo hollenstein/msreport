@@ -177,25 +177,42 @@ def normalize_expression(
     return normalizer
 
 
-def impute_missing_values(qtable: Qtable) -> None:
+def impute_missing_values(
+    qtable: Qtable,
+    median_downshift: float = 1.8,
+    std_width: float = 0.3,
+    column_wise: bool = True,
+    seed: Optional[float] = None,
+) -> None:
     """Imputes missing expression values.
 
-    Imputes missing values (nan) present in the expression columns and thus requires
-    that expression columns are set.
+    Missing values are imputed by drawing random values from a gaussian distribution.
+    The parameters of the normal distribution are calculated from the observed values.
+    Mu is the observed median downshifted by the standard deviations times
+    'median_downshift'. Sigma is the observed standard deviation multiplied by
+    'std_width'.
 
-    Missing values are imputed independently for each column by drawing random values
-    from a normal distribution. The parameters of the normal distribution are
-    calculated from the observed values. Mu is the observed median, downshifted by 1.8
-    standard deviations. Sigma is the observed standard deviation multiplied by 0.3.
+    Imputes missing values (nan) present in the expression columns, requires that
+    expression columns are defined.
 
     Args:
         qtable: A Qtable instance, which missing expression values will be imputed.
+        median_downshift: Times of standard deviations the observed median is
+            downshifted for calculating mu of the normal distribution.
+        std_width: Factor for adjusting the standard deviation of the observed values
+            to obtain sigma of the normal distribution.
+        column_wise: Specifies whether imputation is performed for each column
+            separately or on the whole table together. Also affects if mu and sigma are
+            calculated for each column separately or for the whole table.
+        seed: Optional, allows specifying a number for initializing the random number
+            generator. Using the same seed for the same input qtable will generate the
+            same set of imputed values each time. Default is None, which results in
+            different imputed values being generated each time.
     """
-    median_downshift = 1.8
-    std_width = 0.3
-
     table = qtable.make_expression_table()
-    imputed = helper.gaussian_imputation(table, median_downshift, std_width)
+    imputed = helper.gaussian_imputation(
+        table, median_downshift, std_width, column_wise, seed
+    )
     qtable.data[table.columns] = imputed[table.columns]
 
 

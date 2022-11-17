@@ -217,7 +217,7 @@ class TestGaussianImputation:
         median_downshift = 1
         std_width = 1
         imputed = msreport.helper.gaussian_imputation(
-            self.table, median_downshift, std_width
+            self.table, median_downshift, std_width, column_wise=True
         )
 
         number_missing_values = imputed.isnull().to_numpy().sum()
@@ -227,16 +227,16 @@ class TestGaussianImputation:
         median_downshift = 1
         std_width = 1
         table_rand_1 = msreport.helper.gaussian_imputation(
-            self.table, median_downshift, std_width
+            self.table, median_downshift, std_width, column_wise=True
         )
         table_rand_2 = msreport.helper.gaussian_imputation(
-            self.table, median_downshift, std_width
+            self.table, median_downshift, std_width, column_wise=True
         )
         table_seed_1 = msreport.helper.gaussian_imputation(
-            self.table, median_downshift, std_width, seed=1
+            self.table, median_downshift, std_width, column_wise=True, seed=1
         )
         table_seed_2 = msreport.helper.gaussian_imputation(
-            self.table, median_downshift, std_width, seed=2
+            self.table, median_downshift, std_width, column_wise=True, seed=2
         )
 
         imputed_position = self.imputed_positions[0]
@@ -249,10 +249,10 @@ class TestGaussianImputation:
         std_width = 1
         seed = 1
         imputed_fixed_seed_1 = msreport.helper.gaussian_imputation(
-            self.table, median_downshift, std_width, seed=seed
+            self.table, median_downshift, std_width, column_wise=True, seed=seed
         )
         imputed_fixed_seed_2 = msreport.helper.gaussian_imputation(
-            self.table, median_downshift, std_width, seed=seed
+            self.table, median_downshift, std_width, column_wise=True, seed=seed
         )
         assert imputed_fixed_seed_1.equals(imputed_fixed_seed_2)
 

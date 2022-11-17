@@ -13,7 +13,7 @@ def gaussian_imputation(
     table: pd.DataFrame,
     median_downshift: float,
     std_width: float,
-    column_wise: bool = True,
+    column_wise: bool,
     seed: Optional[float] = None,
 ) -> pd.DataFrame:
     """Imputes missing values in a table by drawing values from a normal distribution.
@@ -28,10 +28,10 @@ def gaussian_imputation(
             downshifted for calulating mu of the normal distribution.
         std_width: Factor for adjusting the standard deviation of the observed values
             to obtain sigma of the normal distribution.
-        column_wise: Default True. Specifies whether imputation is performed for each
-            column separately or on the whole table together. Also affects if mu and
-            sigma are calculated for each column separately or for the whole table.
-        seed: Optional, allows specifying a number for initialize the random number
+        column_wise: Specifies whether imputation is performed for each column
+            separately or on the whole table together. Also affects if mu and sigma are
+            calculated for each column separately or for the whole table.
+        seed: Optional, allows specifying a number for initializing the random number
             generator. Using the same seed for the same input table will generate the
             same set of imputed values each time. Default is None, which results in
             different imputed values being generated each time.
