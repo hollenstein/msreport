@@ -133,6 +133,11 @@ class TestQtableGetData:
         assert data.equals(example_data["data"][valid_mask])
 
 
+@pytest.mark.parametrize("key", ["Representative protein", ["Valid", "Total peptides"]])
+def test_qtable_getitem(example_qtable, key):
+    assert example_qtable[key].equals(example_qtable.data[key])
+
+
 def test_qtable_get_design(example_data):
     qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])
     assert qtable.get_design().equals(example_data["design"])

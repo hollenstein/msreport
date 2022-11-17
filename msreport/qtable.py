@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Any, Optional
 import warnings
 
 import numpy as np
@@ -34,6 +34,10 @@ class Qtable:
         self._expression_columns: list[str] = []
         self._expression_features: list[str] = []
         self._expression_sample_mapping: dict[str, str] = {}
+
+    def __getitem__(self, key: Any) -> pd.DataFrame:
+        """Evaluation of self.data[key]."""
+        return self.data[key]
 
     def to_tsv(self, path: str, index: bool = False):
         """Writes table to a .tsv (tab-separated values) file."""
