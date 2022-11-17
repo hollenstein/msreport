@@ -202,23 +202,62 @@ def test_mode():
     assert mode < 1 and mode > -1
 
 
-def test_gaussian_imputation():
-    table = pd.DataFrame(
-        {
-            "A": [90000, 100000, 110000, np.nan],
-            "B": [1, 1, 1, np.nan],
-        }
-    )
-    median_downshift = 1
-    std_width = 1
-    imputed = msreport.helper.gaussian_imputation(table, median_downshift, std_width)
+class TestGaussianImputation:
+    @pytest.fixture(autouse=True)
+    def _init_table(self):
+        self.table = pd.DataFrame(
+            {
+                "A": [90000, 100000, 110000, np.nan],
+                "B": [1, 1, 1, np.nan],
+            }
+        )
 
-    number_missing_values = imputed.isna().sum().sum()
-    assert number_missing_values == 0
+    def test_defaults(self):
+        median_downshift = 1
+        std_width = 1
+        imputed = msreport.helper.gaussian_imputation(
+            self.table, median_downshift, std_width
+        )
 
-    imputed_column_A = imputed["A"][3]
-    imputed_column_B = imputed["B"][3]
-    assert imputed_column_A >= imputed_column_B
+        number_missing_values = imputed.isnull().to_numpy().sum()
+        assert number_missing_values == 0
+
+    def test_seed_random_vs_fixed(self):
+        median_downshift = 1
+        std_width = 1
+        table_rand_1 = msreport.helper.gaussian_imputation(
+            self.table, median_downshift, std_width
+        )
+        table_rand_2 = msreport.helper.gaussian_imputation(
+            self.table, median_downshift, std_width
+        )
+        table_seed_1 = msreport.helper.gaussian_imputation(
+            self.table, median_downshift, std_width, seed=1
+        )
+        table_seed_2 = msreport.helper.gaussian_imputation(
+            self.table, median_downshift, std_width, seed=2
+        )
+        imputed_tables = [table_rand_1, table_rand_2, table_seed_1, table_seed_2]
+        unique_imputed_values = set([table["A"][3] for table in imputed_tables])
+        assert len(unique_imputed_values) == len(imputed_tables)
+
+    def test_fixed_seed(self):
+        median_downshift = 1
+        std_width = 1
+        seed = 1
+        imputed_fixed_seed_1 = msreport.helper.gaussian_imputation(
+            self.table, median_downshift, std_width, seed=seed
+        )
+        imputed_fixed_seed_2 = msreport.helper.gaussian_imputation(
+            self.table, median_downshift, std_width, seed=seed
+        )
+        assert imputed_fixed_seed_1.equals(imputed_fixed_seed_2)
+
+        # TEST for column wise or total imputation, with std == 0 expected to get equal
+        #    values
+        # imputed_column_A = imputed["A"][3]
+        # imputed_column_B = imputed["B"][3]
+        # assert imputed_column_A >= imputed_column_B
 
 
 def test_calculate_tryptic_ibaq_peptides():

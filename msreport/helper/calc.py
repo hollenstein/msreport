@@ -1,5 +1,5 @@
 import itertools
-from typing import Iterable
+from typing import Iterable, Optional
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,10 @@ import maspy.peptidemethods
 
 
 def gaussian_imputation(
-    table: pd.DataFrame, median_downshift: float, std_width: float
+    table: pd.DataFrame,
+    median_downshift: float,
+    std_width: float,
+    seed: Optional[float] = None,
 ) -> pd.DataFrame:
     """Impute missing values by drawing values from a normal distribution.
 
@@ -23,10 +26,15 @@ def gaussian_imputation(
             measured values is downshifted for the normal distribution
         std_width: width of the normal distribution relative to the
             standard deviation of the measured values
+        seed: Optional, allows specifying a number for initialize the random number
+            generator. Using the same seed for the same input table will generate the
+            same set of imputed values each time. Default is None, which results in
+            different imputed values being generated each time.
 
     Returns:
         A new DataFrame containing imputed values.
     """
+    np.random.seed(seed)
     imputed_table = table.copy()
     for column in imputed_table:
         median = np.nanmedian(imputed_table[column])
