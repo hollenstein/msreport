@@ -847,19 +847,23 @@ def add_protein_annotations(
     table: pd.DataFrame,
     fasta_path: Union[str, list[str]],
     id_column: str = "Representative protein",
+    protein_length: bool = True,
+    ibaq_peptides: bool = True,
 ) -> None:
     """Reads a FASTA file and adds protein annotation columns to the 'table'.
 
-    The added columns always include "Fasta header", "Protein length", "iBAQ peptides",
-    and if possible "Protein entry name" and "Gene name". The number of "iBAQ peptides"
-    is calculated as the number of tryptic peptides with a length between 7 and 30 amino
-    acids.
+    The added columns always include "Fasta header" and if possible "Protein entry name"
+    and "Gene name". By default, also "Protein length" and "iBAQ peptides" are added.
+    The number of "iBAQ peptides" is calculated as the number of tryptic peptides with a
+    length between 7 and 30 amino acids.
 
     Args:
         table: Dataframe to which the protein annotations are added.
         fasta_path: Path of a FASTA file, or a list of FASTA file paths.
         id_column: Column in 'table' that contains protein IDs that are used to find
             matching entries in the FASTA files.
+        protein_length: If True, adds a "Protein length" column to the 'table'.
+        ibaq_peptides: If True, adds a "iBAQ peptides" column to the 'table'.
     """
     # not tested #
     if isinstance(fasta_path, str):
@@ -888,21 +892,25 @@ def add_protein_annotations(
             gene_name = header_info["GN"] if "GN" in header_info else ""
             fasta_header = protein_db[protein_id].fastaHeader
             length = protein_db[protein_id].length()
-            ibaq_peptides = helper.calculate_tryptic_ibaq_peptides(sequence)
+            num_ibaq_peptides = helper.calculate_tryptic_ibaq_peptides(sequence)
         else:
             proteins_not_in_db.append(protein_id)
             entry_name = ""
             gene_name = ""
             fasta_header = ""
             length = np.nan
-            ibaq_peptides = np.nan
+            num_ibaq_peptides = np.nan
 
         new_columns["Protein entry name"].append(entry_name)
         new_columns["Gene name"].append(gene_name)
         new_columns["Fasta header"].append(fasta_header)
         new_columns["Protein length"].append(length)
-        new_columns["iBAQ peptides"].append(ibaq_peptides)
+        new_columns["iBAQ peptides"].append(num_ibaq_peptides)
 
+    if not protein_length:
+        new_columns.pop("Protein length")
+    if not ibaq_peptides:
+        new_columns.pop("iBAQ peptides")
     for column in new_columns:
         table[column] = new_columns[column]
 
