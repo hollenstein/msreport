@@ -211,6 +211,7 @@ class TestGaussianImputation:
                 "B": [1, 1, 1, np.nan],
             }
         )
+        self.imputed_positions = [(3, "A"), (3, "B")]
 
     def test_defaults(self):
         median_downshift = 1
@@ -237,8 +238,10 @@ class TestGaussianImputation:
         table_seed_2 = msreport.helper.gaussian_imputation(
             self.table, median_downshift, std_width, seed=2
         )
+
+        imputed_position = self.imputed_positions[0]
         imputed_tables = [table_rand_1, table_rand_2, table_seed_1, table_seed_2]
-        unique_imputed_values = set([table["A"][3] for table in imputed_tables])
+        unique_imputed_values = set([t.loc[imputed_position] for t in imputed_tables])
         assert len(unique_imputed_values) == len(imputed_tables)
 
     def test_fixed_seed(self):
@@ -253,11 +256,23 @@ class TestGaussianImputation:
         )
         assert imputed_fixed_seed_1.equals(imputed_fixed_seed_2)
 
-        # TEST for column wise or total imputation, with std == 0 expected to get equal
-        #    values
-        # imputed_column_A = imputed["A"][3]
-        # imputed_column_B = imputed["B"][3]
-        # assert imputed_column_A >= imputed_column_B
+    def test_column_wise_vs_total(self):
+        median_downshift = 1
+        std_width = 0
+        imputed_column_wise = msreport.helper.gaussian_imputation(
+            self.table, median_downshift, std_width, column_wise=True
+        )
+        imputed_in_total = msreport.helper.gaussian_imputation(
+            self.table, median_downshift, std_width, column_wise=False
+        )
+
+        imp_pos1, imp_pos2 = self.imputed_positions[:2]
+        assert imputed_column_wise.loc[imp_pos1] != imputed_column_wise.loc[imp_pos2]
+        assert imputed_column_wise.loc[imp_pos1] != imputed_in_total.loc[imp_pos1]
+        # Using std_width = 0 results in sigma = 0, which means all imputed values are
+        # equal if they are drawn using the same mu. So when all columns are imputed
+        # together, all imputed values must be equal
+        assert imputed_in_total.loc[imp_pos1] == imputed_in_total.loc[imp_pos2]
 
 
 def test_calculate_tryptic_ibaq_peptides():

@@ -13,32 +13,41 @@ def gaussian_imputation(
     table: pd.DataFrame,
     median_downshift: float,
     std_width: float,
+    column_wise: bool = True,
     seed: Optional[float] = None,
 ) -> pd.DataFrame:
-    """Impute missing values by drawing values from a normal distribution.
+    """Imputes missing values in a table by drawing values from a normal distribution.
 
-    Imputation is performed column wise, and the parameters for the normal
-    distribution are calculated independently for each column.
+    Missing values are imputed by drawing random numbers for a gaussian distribution.
+    Sigma and mu of this distribution are calculated by adjusting the standard deviation
+    and median of the observed values.
 
     Args:
-        table: table containing missing values that will be replaced
-        median_downshift: number of standard deviations the median of the
-            measured values is downshifted for the normal distribution
-        std_width: width of the normal distribution relative to the
-            standard deviation of the measured values
+        table: Table containing missing values that will be imputed.
+        median_downshift: Times of standard deviations the observed median is
+            downshifted for calulating mu of the normal distribution.
+        std_width: Factor for adjusting the standard deviation of the observed values
+            to obtain sigma of the normal distribution.
+        column_wise: Default True. Specifies whether imputation is performed for each
+            column separately or on the whole table together. Also affects if mu and
+            sigma are calculated for each column separately or for the whole table.
         seed: Optional, allows specifying a number for initialize the random number
             generator. Using the same seed for the same input table will generate the
             same set of imputed values each time. Default is None, which results in
             different imputed values being generated each time.
 
     Returns:
-        A new DataFrame containing imputed values.
+        Copy of the table containing imputed values.
     """
     np.random.seed(seed)
     imputed_table = table.copy()
+    if not column_wise:
+        median = np.nanmedian(imputed_table)
+        std = np.nanstd(imputed_table)
     for column in imputed_table:
-        median = np.nanmedian(imputed_table[column])
-        std = np.nanstd(imputed_table[column])
+        if column_wise:
+            median = np.nanmedian(imputed_table[column])
+            std = np.nanstd(imputed_table[column])
 
         mu = median - (std * median_downshift)
         sigma = std * std_width
