@@ -15,19 +15,23 @@ class BaseSampleNormalizer(abc.ABC):
 
     @abc.abstractmethod
     def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer:
-        pass
+        ...
 
     @abc.abstractmethod
     def is_fitted(self) -> bool:
-        pass
+        ...
+
+    @abc.abstractmethod
+    def get_fits(self) -> dict[...]:
+        ...
 
     @abc.abstractmethod
     def transform(self, sample: str, values: Iterable) -> Iterable:
-        pass
+        ...
 
     @abc.abstractmethod
     def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
-        pass
+        ...
 
 
 class FixedValueNormalizer(BaseSampleNormalizer):
@@ -79,6 +83,10 @@ class FixedValueNormalizer(BaseSampleNormalizer):
     def is_fitted(self) -> bool:
         """Returns True if the FixedValueNormalizer has been fitted."""
         return self._sample_fits is not None
+
+    def get_fits(self) -> dict[str, float]:
+        """Returns a dictionary containing the fitted center values per sample."""
+        return self._sample_fits.copy()
 
     def transform(self, sample: str, values: Iterable) -> np.ndarray:
         """Applies a fixed value normalization to the 'values'.
@@ -191,6 +199,15 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
     def is_fitted(self) -> bool:
         """Returns True if the ValueDependentNormalizer has been fitted."""
         return self._sample_fits is not None
+
+    def get_fits(self) -> dict[str, Iterable[float, float]]:
+        """Returns a dictionary containing lists of fitting data per sample.
+
+        returns:
+            A dictionary mapping sample names to fitting data. Fitting data is sequence
+            of [itensity, deviation at this intensity] pairs.
+        """
+        return self._sample_fits.copy()
 
     def transform(self, sample: str, values: Iterable) -> np.ndarray:
         """Applies a value dependent normalization to the 'values'.
