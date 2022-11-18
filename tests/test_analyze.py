@@ -62,7 +62,7 @@ class TestValidateProteins:
         self.qtable = example_qtable
 
     def test_validate_proteins(self):
-        msreport.analyze.validate_proteins(self.qtable)
+        msreport.analyze.validate_proteins(self.qtable, remove_contaminants=False)
         data_columns = self.qtable.data.columns.to_list()
         assert "Valid" in data_columns
 
@@ -70,7 +70,9 @@ class TestValidateProteins:
         "min_peptides, expected_valid", [(0, 3), (1, 3), (2, 2), (3, 0)]
     )
     def test_with_min_peptides(self, min_peptides, expected_valid):
-        msreport.analyze.validate_proteins(self.qtable, min_peptides=min_peptides)
+        msreport.analyze.validate_proteins(
+            self.qtable, remove_contaminants=False, min_peptides=min_peptides
+        )
         assert expected_valid == self.qtable.data["Valid"].sum()
 
 
