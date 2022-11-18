@@ -1,4 +1,4 @@
-""" The analyze module contains methods for analysing quantification results.
+"""The analyze module contains methods for analysing quantification results.
 
 
 Required test data
@@ -16,9 +16,10 @@ Required test data
     - ???
 
 """
+
 import itertools
-from typing import Optional
 import warnings
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -26,8 +27,8 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 import msreport.helper as helper
 import msreport.normalize
-from msreport.qtable import Qtable
 import msreport.rinterface
+from msreport.qtable import Qtable
 
 
 def analyze_missingness(qtable: Qtable) -> None:
@@ -94,21 +95,21 @@ def validate_proteins(
     valid_entries = np.ones(qtable.data.shape[0], dtype=bool)
 
     if min_peptides > 0:
-        if "Total peptides" not in qtable.data:
-            raise KeyError("'Total peptides' column not present in qtable")
+        if "Total peptides" not in qtable:
+            raise Exception("'Total peptides' column not present in qtable")
         valid_entries = np.all(
             [valid_entries, qtable["Total peptides"] >= min_peptides], axis=0
         )
 
     # TODO: not tested from here #
-    if remove_contaminants and "Potential contaminant" in qtable.data:
+    if remove_contaminants and "Potential contaminant" in qtable:
         valid_entries = np.all(
             [valid_entries, np.invert(qtable["Potential contaminant"])], axis=0
         )
 
     if max_missing is not None:
-        if "Missing total" not in qtable.data:
-            raise KeyError("Missing values need to be analyzed before.")
+        if "Missing total" not in qtable:
+            raise Exception("Missing values need to be analyzed before.")
         cols = [" ".join(["Missing", e]) for e in qtable.get_experiments()]
         max_missing_valid = np.any(qtable[cols] <= max_missing, axis=1)
         valid_entries = max_missing_valid & valid_entries
@@ -149,7 +150,7 @@ def normalize_expression(
     }
 
     if method is None and normalizer is None:
-        raise ValueError(f"Either 'method' or 'normalizer' must be specified.")
+        raise ValueError("Either 'method' or 'normalizer' must be specified.")
     elif normalizer is not None:
         if not normalizer.is_fitted():
             raise Exception("'normalizer' must be fitted by calling normalizer.fit()")
@@ -157,13 +158,13 @@ def normalize_expression(
         if method not in default_normalizers:
             raise ValueError(
                 f"'method' = '{method}'' not allowed, "
-                f"must be one of {*default_normalizers,}."
+                f"must be one of {(*default_normalizers,)}."
             )
 
     expression_table = qtable.make_expression_table(samples_as_columns=True)
 
     if normalizer is None:
-        if "Valid" in qtable.data:
+        if "Valid" in qtable:
             fitting_mask = qtable["Valid"].to_numpy()
         else:
             fitting_mask = np.ones(expression_table.shape[0], dtype=bool)
@@ -488,7 +489,7 @@ def median_normalize_samples(qtable: Qtable) -> None:
     samples = qtable.get_samples()
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
-    if "Valid" in qtable.data:
+    if "Valid" in qtable:
         expr_table = expr_table[qtable["Valid"]]
 
     # calculate ratio matrix
@@ -521,7 +522,7 @@ def mode_normalize_samples(qtable: Qtable) -> None:
     samples = qtable.get_samples()
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
-    if "Valid" in qtable.data:
+    if "Valid" in qtable:
         expr_table = expr_table[qtable["Valid"]]
 
     # calculate ratio matrix
@@ -558,7 +559,7 @@ def lowess_normalize_samples(qtable: Qtable) -> None:
     expr_table = qtable.make_expression_table(samples_as_columns=True)
 
     ref_mask = expr_table[samples].isna().sum(axis=1) == 0
-    if "Valid" in qtable.data:
+    if "Valid" in qtable:
         ref_mask = np.all([ref_mask, qtable["Valid"]], axis=0)
     ref_intensities = expr_table.loc[ref_mask, samples].mean(axis=1)
 
