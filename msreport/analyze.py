@@ -97,25 +97,25 @@ def validate_proteins(
         if "Total peptides" not in qtable.data:
             raise KeyError("'Total peptides' column not present in qtable")
         valid_entries = np.all(
-            [valid_entries, qtable.data["Total peptides"] >= min_peptides], axis=0
+            [valid_entries, qtable["Total peptides"] >= min_peptides], axis=0
         )
 
     # TODO: not tested from here #
     if remove_contaminants and "Potential contaminant" in qtable.data:
         valid_entries = np.all(
-            [valid_entries, np.invert(qtable.data["Potential contaminant"])], axis=0
+            [valid_entries, np.invert(qtable["Potential contaminant"])], axis=0
         )
 
     if max_missing is not None:
         if "Missing total" not in qtable.data:
             raise KeyError("Missing values need to be analyzed before.")
         cols = [" ".join(["Missing", e]) for e in qtable.get_experiments()]
-        max_missing_valid = np.any(qtable.data[cols] <= max_missing, axis=1)
+        max_missing_valid = np.any(qtable[cols] <= max_missing, axis=1)
         valid_entries = max_missing_valid & valid_entries
 
     if min_events is not None:
         cols = [" ".join(["Events", e]) for e in qtable.get_experiments()]
-        min_events_valid = np.any(qtable.data[cols] >= min_events, axis=1)
+        min_events_valid = np.any(qtable[cols] >= min_events, axis=1)
         valid_entries = min_events_valid & valid_entries
 
     qtable.data["Valid"] = valid_entries
@@ -164,7 +164,7 @@ def normalize_expression(
 
     if normalizer is None:
         if "Valid" in qtable.data:
-            fitting_mask = qtable.data["Valid"].to_numpy()
+            fitting_mask = qtable["Valid"].to_numpy()
         else:
             fitting_mask = np.ones(expression_table.shape[0], dtype=bool)
 
@@ -232,7 +232,7 @@ def calculate_experiment_means(qtable: Qtable) -> None:
         columns = [qtable.get_expression_column(s) for s in samples]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
-            row_means = np.nanmean(qtable.data[columns], axis=1)
+            row_means = np.nanmean(qtable[columns], axis=1)
         experiment_means[f"Expression {experiment}"] = row_means
     qtable.add_expression_features(pd.DataFrame(experiment_means))
 
@@ -258,7 +258,7 @@ def two_group_comparison(
     comparison_tag = f"{experiment_pair[0]} vs {experiment_pair[1]}"
 
     if exclude_invalid:
-        invalid = np.invert(qtable.data["Valid"].to_numpy())
+        invalid = np.invert(qtable["Valid"].to_numpy())
     else:
         invalid = np.zeros(table.shape[0], dtype=bool)
 
@@ -336,7 +336,7 @@ def calculate_multi_group_limma(
     table = table.set_index("Representative protein")
 
     if exclude_invalid:
-        valid = qtable.data["Valid"]
+        valid = qtable["Valid"]
     else:
         valid = np.full(table.shape[0], True)
     not_nan = table.isna().sum(axis=1) == 0
@@ -414,7 +414,7 @@ def calculate_two_group_limma(
     )
 
     if exclude_invalid:
-        valid = qtable.data["Valid"]
+        valid = qtable["Valid"]
     else:
         valid = np.full(expression_table.shape[0], True)
 
@@ -489,7 +489,7 @@ def median_normalize_samples(qtable: Qtable) -> None:
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
     if "Valid" in qtable.data:
-        expr_table = expr_table[qtable.data["Valid"]]
+        expr_table = expr_table[qtable["Valid"]]
 
     # calculate ratio matrix
     sample_combinations = list(itertools.combinations(range(num_samples), 2))
@@ -522,7 +522,7 @@ def mode_normalize_samples(qtable: Qtable) -> None:
     num_samples = len(samples)
     expr_table = qtable.make_expression_table(samples_as_columns=True)
     if "Valid" in qtable.data:
-        expr_table = expr_table[qtable.data["Valid"]]
+        expr_table = expr_table[qtable["Valid"]]
 
     # calculate ratio matrix
     sample_combinations = list(itertools.combinations(range(num_samples), 2))
@@ -559,7 +559,7 @@ def lowess_normalize_samples(qtable: Qtable) -> None:
 
     ref_mask = expr_table[samples].isna().sum(axis=1) == 0
     if "Valid" in qtable.data:
-        ref_mask = np.all([ref_mask, qtable.data["Valid"]], axis=0)
+        ref_mask = np.all([ref_mask, qtable["Valid"]], axis=0)
     ref_intensities = expr_table.loc[ref_mask, samples].mean(axis=1)
 
     delta_span_percentage = 0.05

@@ -50,7 +50,7 @@ def contaminants_to_clipboard(qtable: Qtable) -> None:
     column_tags = ["iBAQ rank", "riBAQ", "iBAQ intensity", "Intensity", "Expression"]
 
     samples = qtable.get_samples()
-    data = qtable.data.copy()
+    data = qtable.get_data()
 
     data["iBAQ intensity total"] = np.nansum(
         data[[f"iBAQ intensity {s}" for s in samples]], axis=1
@@ -69,7 +69,7 @@ def contaminants_to_clipboard(qtable: Qtable) -> None:
         columns.extend(helper.find_sample_columns(data, column_tag, samples))
     columns = np.array(columns)[[c in data.columns for c in columns]]
 
-    contaminants = qtable.data["Potential contaminant"]
+    contaminants = qtable["Potential contaminant"]
     data = data.loc[contaminants, columns]
 
     data.sort_values("iBAQ intensity total", ascending=False, inplace=True)
@@ -137,7 +137,7 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
     ]
     amica_comparison_tag = (" vs ", "__vs__")
 
-    amica_table = qtable.data.copy()
+    amica_table = qtable.get_data()
 
     # Drop intensity columns that are not sample columns (e.g. experiment columns)
     for tag in intensity_column_tags[2:3]:

@@ -213,7 +213,7 @@ def contaminants(
     """
     data = qtable.make_sample_table(ibaq_tag, samples_as_columns=True)
     ribaq = data / data.sum() * 100
-    contaminants = qtable.data["Potential contaminant"]
+    contaminants = qtable["Potential contaminant"]
     samples = data.columns.to_list()
     num_samples = len(samples)
 
