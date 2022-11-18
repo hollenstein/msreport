@@ -210,9 +210,7 @@ class MQReader(ResultReader):
         prefix_column_tags: bool = True,
         drop_decoy: bool = True,
         drop_idbysite: bool = True,
-        sort_proteins: bool = False,
         drop_protein_info: bool = False,
-        special_proteins: Optional[list] = None,
     ) -> pd.DataFrame:
         """Reads a "proteinGroups.txt" file and returns a processed dataframe.
 
@@ -225,12 +223,10 @@ class MQReader(ResultReader):
         the "Peptide counts (all)" column, multiple protein entries are separated by
         ";". "Representative protein" contains the first entry form "Leading proteins".
 
-        If 'sort_proteins' is enabled, the order of "Leading proteins" entries may
-        change, resulting in a different "Representative protein" entry. Several
-        columns in the "proteinGroups.txt" file contain information specific for the
-        first entry of the "Majority protein IDs" column. When using 'sort_proteins', it
-        is therefore recommended to remove all columns containing protein specific
-        information by enabling 'drop_protein_info'.
+        Several columns in the "combined_protein.tsv" file contain information specific
+        for the protein entry of the "Protein" column. When leading proteins will be
+        re-sorted later, it is therefore recommended to remove all columns containing
+        protein specific information by enabling 'drop_protein_info'.
 
         Args:
             filename: allows specifying an alternative filename, otherwise the default
@@ -246,24 +242,16 @@ class MQReader(ResultReader):
             drop_idbysite: If True, protein groups that were only identified by site are
                 removed and the "Only identified by site" columns is dropped; default
                 True.
-            sort_proteins: If True, protein entries in "Leading proteins" are sorted
-                alphabetically ascending, with the exception that decoy proteins are
-                always sorted to the back and special proteins are sorted to the front.
-                Default False.
             drop_protein_info: If True, columns containing protein specific information,
                 such as "Gene names", "Sequence coverage [%]" or "iBAQ peptides". See
                 MQReader.protein_info_columns and MQReader.protein_info_tags for the
                 full list of columns that will be removed. Default False.
-            special_proteins: Optional, allows specifying a list of protein IDs that
-                will always be sorted to the beginning of the "Leading proteins" and
-                thus be used as "Representative protein" when 'sort_proteins' is
-                enabled.
 
         Returns:
             A dataframe containing the processed protein table.
         """
         df = self._read_file("proteins" if filename is None else filename)
-        df = self._add_protein_entries(df, sort_proteins, special_proteins)
+        df = self._add_protein_entries(df)
 
         if drop_decoy:
             df = self._drop_decoy(df)
@@ -372,12 +360,7 @@ class MQReader(ResultReader):
             df = self._add_peptide_modification_entries(df)
         return df
 
-    def _add_protein_entries(
-        self,
-        df: pd.DataFrame,
-        sort_proteins: bool = False,
-        special_proteins: Optional[list] = None,
-    ) -> pd.DataFrame:
+    def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
         """Adds standardized protein entry columns to the data frame.
 
         Adds new columns to comply with the MsReport conventions. "Protein reported by
@@ -390,14 +373,6 @@ class MQReader(ResultReader):
 
         Args:
             df: Dataframe containing a MaxQuant result table.
-            sort_proteins: If True, protein entries in "Leading proteins" are sorted
-                alphabetically ascending, with the exception that decoy proteins are
-                always sorted to the back and special proteins are sorted to the front.
-                Default False.
-            special_proteins: Optional, allows specifying a list of protein IDs that
-                will always be sorted to the beginning of the "Leading proteins" and
-                thus be used as "Representative protein" when 'sort_proteins' is
-                enabled.
 
         Returns:
             A copy of the input dataframe with updated columns.
@@ -405,10 +380,7 @@ class MQReader(ResultReader):
         # NOTE: not tested directly, only via integration #
         leading_protein_entries = self._collect_leading_protein_entries(df)
         protein_entry_table = _process_protein_entries(
-            leading_protein_entries,
-            self._contaminant_tag,
-            sort_proteins,
-            special_proteins,
+            leading_protein_entries, self._contaminant_tag
         )
         for key in protein_entry_table:
             df[key] = protein_entry_table[key]
@@ -599,9 +571,7 @@ class FPReader(ResultReader):
         filename: Optional[str] = None,
         rename_columns: bool = True,
         prefix_column_tags: bool = True,
-        sort_proteins: bool = False,
         drop_protein_info: bool = False,
-        special_proteins: list[str] = [],
     ) -> pd.DataFrame:
         """Reads a "combined_protein.tsv" or "protein.tsv" file and returns a processed
         dataframe.
@@ -616,12 +586,10 @@ class FPReader(ResultReader):
         are separated by ";". "Representative protein" contains the first entry form
         "Leading proteins".
 
-        If 'sort_proteins' is enabled, the order of "Leading proteins" entries may
-        change, resulting in a different "Representative protein" entry. Several
-        columns in the "combined_protein.tsv" file contain information specific for the
-        protein entry of the "Protein" column. When using 'sort_proteins', it is
-        therefore recommended to remove all columns containing protein specific
-        information by enabling 'drop_protein_info'.
+        Several columns in the "combined_protein.tsv" file contain information specific
+        for the protein entry of the "Protein" column. When leading proteins will be
+        re-sorted later, it is therefore recommended to remove all columns containing
+        protein specific information by enabling 'drop_protein_info'.
 
         Args:
             filename: Allows specifying an alternative filename, otherwise the default
@@ -632,24 +600,16 @@ class FPReader(ResultReader):
                 in front of the sample names, e.g. "Intensity sample_name". If False,
                 column tags are added afterwards, e.g. "Sample_name Intensity"; default
                 True.
-            sort_proteins: If True, protein entries in "Leading proteins" are sorted
-                alphabetically ascending, with the exception that decoy proteins are
-                always sorted to the back and special proteins are sorted to the front.
-                Default False.
             drop_protein_info: If True, columns containing protein specific information,
                 such as "Gene" or "Protein Length". See FPReader.protein_info_columns
                 and FPReader.protein_info_tags for the full list of columns that will be
                 removed. Default False.
-            special_proteins: Optional, allows specifying a list of protein IDs that
-                will always be sorted to the beginning of the "Leading proteins" and
-                thus be used as "Representative protein" when 'sort_proteins' is
-                enabled.
 
         Returns:
             A dataframe containing the processed protein table.
         """
         df = self._read_file("proteins" if filename is None else filename)
-        df = self._add_protein_entries(df, sort_proteins, special_proteins)
+        df = self._add_protein_entries(df)
         if drop_protein_info:
             df = self._drop_columns(df, self.protein_info_columns)
             for tag in self.protein_info_tags:
@@ -745,12 +705,7 @@ class FPReader(ResultReader):
             df = self._add_peptide_modification_entries(df)
         return df
 
-    def _add_protein_entries(
-        self,
-        df: pd.DataFrame,
-        sort_proteins: bool,
-        special_proteins: Optional[list] = None,
-    ) -> pd.DataFrame:
+    def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
         """Adds standardized protein entry columns to the data frame.
 
         Adds new columns to comply with the MsReport conventions. "Protein reported by
@@ -762,24 +717,13 @@ class FPReader(ResultReader):
 
         Args:
             df: Dataframe containing a FragPipe result table.
-            sort_proteins: If True, protein entries in "Leading proteins" are sorted
-                alphabetically ascending, with the exception that decoy proteins are
-                always sorted to the back and special proteins are sorted to the front.
-                Default False.
-            special_proteins: Optional, allows specifying a list of protein IDs that
-                will always be sorted to the beginning of the "Leading proteins" and
-                thus be used as "Representative protein" when 'sort_proteins' is
-                enabled.
 
         Returns:
             A copy of the input dataframe with updated columns.
         """
         leading_protein_entries = self._collect_leading_protein_entries(df)
         protein_entry_table = _process_protein_entries(
-            leading_protein_entries,
-            self._contaminant_tag,
-            sort_proteins,
-            special_proteins,
+            leading_protein_entries, self._contaminant_tag
         )
         for key in protein_entry_table:
             df[key] = protein_entry_table[key]
@@ -1175,6 +1119,9 @@ def _sort_leading_proteins(
         being sorted and the first leading protein entry written into the
         "Representative protein" columns.
     """
+    if not special_proteins:
+        warnings.warn("SPECIAL PROTEINS NOT TESTED")
+
     sorting_tag_levels = {}
     if contaminant_tag is not None:
         sorting_tag_levels[contaminant_tag] = 1
@@ -1216,6 +1163,9 @@ def _sort_proteins_and_contaminants(
         Sorted copies of the 'proteins' and 'contaminants' lists. If 'contaminants' was
         not specified, all entries in the returned 'contaminants' will be None.
     """
+    if not special_proteins:
+        warnings.warn("SPECIAL PROTEINS NOT TESTED")
+
     if contaminants is not None:
         sorting = [int(is_contaminant) for is_contaminant in contaminants]
     else:
@@ -1294,8 +1244,6 @@ def _add_potential_contaminants(df: pd.DataFrame, contaminant_tag: str) -> pd.Da
 def _process_protein_entries(
     leading_protein_entries: list[list[str]],
     contaminant_tag: str,
-    sort_proteins: bool,
-    special_proteins: Optional[list] = None,
 ) -> pd.DataFrame:
     """Returns a dataframe containing standardized protein entry columns.
 
@@ -1311,13 +1259,6 @@ def _process_protein_entries(
     Args:
         leading_protein_entries: A list containing lists of leading protein entries.
         contaminant_tag: String used to identify potential contaminants.
-        sort_proteins: If True, protein entries in "Leading proteins" are sorted
-            alphabetically ascending, with the exception that decoy proteins are always
-            sorted to the back and special proteins are sorted to the front. If False,
-            no sorting is applied.
-        special_proteins: Optional, allows specifying a list of protein IDs that will
-            always be used sorted to the beginning of the "Leading proteins" and thus be
-            used as "Representative protein" when 'sort_proteins' is enabled.
 
     Returns:
         A dataframe containing the columns "Protein reported by software",
@@ -1331,10 +1272,6 @@ def _process_protein_entries(
         protein_ids = _extract_protein_ids(entries)
         id_reported_by_software = protein_ids[0]
         is_contaminant = _mark_contaminants(entries, contaminant_tag)
-        if sort_proteins:
-            protein_ids, is_contaminant = _sort_proteins_and_contaminants(
-                protein_ids, is_contaminant, special_proteins
-            )
 
         # Collect all entries
         values_reported_id.append(id_reported_by_software)

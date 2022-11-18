@@ -143,21 +143,6 @@ class TestSortLeadingProteins:
         assert df["Leading proteins"].tolist() == leading_proteins
         assert df["Representative protein"].tolist() == representative_protein
 
-    def test_with_special_proteins(self):
-        df = pd.DataFrame(
-            {
-                "Leading proteins": ["B;A", "D", "E;F", "G;I;H"],
-            }
-        )
-        leading_proteins = ["A;B", "D", "F;E", "H;I;G"]
-        representative_protein = ["A", "D", "F", "H"]
-
-        df = msreport.reader._sort_leading_proteins(
-            df, special_proteins=["F", "I", "H"]
-        )
-        assert df["Leading proteins"].tolist() == leading_proteins
-        assert df["Representative protein"].tolist() == representative_protein
-
 
 class TestProcessProteinEntries:
     @pytest.fixture(autouse=True)
@@ -171,42 +156,17 @@ class TestProcessProteinEntries:
             ["CON__x|K|x"],
         ]
 
-    def test_without_sorting(self):
+    def test(self):
         contaminant_tag = "CON__"
-        sort_proteins = False
         table = msreport.reader._process_protein_entries(
             self.leading_protein_entries,
             contaminant_tag,
-            sort_proteins,
         )
 
         leading_proteins = ["B;A", "D", "E", "G;H;I", "J;J", "K"]
         representative_protein = ["B", "D", "E", "G", "J", "K"]
         protein_reported_by_software = representative_protein
         is_contaminant = [False, False, False, False, True, True]
-
-        assert table["Leading proteins"].tolist() == leading_proteins
-        assert table["Representative protein"].tolist() == representative_protein
-        assert (
-            table["Protein reported by software"].tolist()
-            == protein_reported_by_software
-        )
-        assert table["Potential contaminant"].tolist() == is_contaminant
-
-    def test_with_sorting(self):
-        contaminant_tag = "CON__"
-        sort_proteins = True
-        special_proteins = ["H"]
-        table = msreport.reader._process_protein_entries(
-            self.leading_protein_entries,
-            contaminant_tag,
-            sort_proteins,
-            special_proteins,
-        )
-        leading_proteins = ["A;B", "D", "E", "H;G;I", "J;J", "K"]
-        representative_protein = ["A", "D", "E", "H", "J", "K"]
-        protein_reported_by_software = ["B", "D", "E", "G", "J", "K"]
-        is_contaminant = [False, False, False, False, False, True]
 
         assert table["Leading proteins"].tolist() == leading_proteins
         assert table["Representative protein"].tolist() == representative_protein
@@ -434,9 +394,7 @@ class TestMQReader:
             prefix_column_tags=False,
             drop_decoy=True,
             drop_idbysite=True,
-            sort_proteins=True,
             drop_protein_info=True,
-            special_proteins=["Q13838"],
         )
         assert table["Potential contaminant"].dtype == bool
         assert "Total peptides" in table
@@ -446,8 +404,6 @@ class TestMQReader:
         assert "Sequence length" not in table.columns
         assert not table.columns.str.contains("iBAQ").any()
         assert not table.columns.str.contains("site positions").any()
-        assert not table["Representative protein"].str.contains("CON__P12763").any()
-        assert table["Representative protein"].str.contains("Q13838").any()
 
     def test_integration_import_peptides(self):
         table = self.reader.import_peptides(
@@ -505,7 +461,7 @@ class TestFPReader:
         leading_proteins = self.reader._collect_leading_protein_entries(table)
         assert leading_proteins == expected
 
-    def test_add_protein_entries_without_sorting(self):
+    def test_add_protein_entries(self):
         table = pd.DataFrame(
             {
                 "Protein": ["x|B|b", "x|D|d", "x|E|e", "x|G|g"],
@@ -516,7 +472,7 @@ class TestFPReader:
         representative_protein = ["B", "D", "E", "G"]
         protein_reported_by_software = representative_protein
 
-        table = self.reader._add_protein_entries(table, False)
+        table = self.reader._add_protein_entries(table)
         assert table["Leading proteins"].tolist() == leading_proteins
         assert table["Representative protein"].tolist() == representative_protein
         assert (
@@ -528,16 +484,13 @@ class TestFPReader:
         table = self.reader.import_proteins(
             rename_columns=True,
             prefix_column_tags=True,
-            sort_proteins=True,
             drop_protein_info=True,
-            special_proteins=["Q13838"],
         )
         assert "Representative protein" in table
         assert table["Potential contaminant"].dtype == bool
         assert "Total peptides" in table
         assert "Intensity SampleA_1" in table
         assert "Protein Length" not in table.columns
-        assert table["Representative protein"].str.contains("Q13838").any()
 
     def test_integration_import_peptides(self):
         table = self.reader.import_peptides(
