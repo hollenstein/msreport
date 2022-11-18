@@ -96,26 +96,36 @@ def validate_proteins(
 
     if min_peptides > 0:
         if "Total peptides" not in qtable:
-            raise Exception("'Total peptides' column not present in qtable")
+            raise KeyError("'Total peptides' column not present in qtable.data")
         valid_entries = np.all(
             [valid_entries, qtable["Total peptides"] >= min_peptides], axis=0
         )
 
     # TODO: not tested from here #
-    if remove_contaminants and "Potential contaminant" in qtable:
+    if remove_contaminants:
+        if "Potential contaminant" not in qtable:
+            raise KeyError("'Potential contaminant' column not present in qtable.data")
         valid_entries = np.all(
             [valid_entries, np.invert(qtable["Potential contaminant"])], axis=0
         )
 
     if max_missing is not None:
-        if "Missing total" not in qtable:
-            raise Exception("Missing values need to be analyzed before.")
         cols = [" ".join(["Missing", e]) for e in qtable.get_experiments()]
+        if not pd.Series(cols).isin(qtable.data.columns).all():
+            raise Exception(
+                f"Not all columns from {cols} are present in qtable.data,"
+                " analyze missingness before calling validate_proteins()."
+            )
         max_missing_valid = np.any(qtable[cols] <= max_missing, axis=1)
         valid_entries = max_missing_valid & valid_entries
 
     if min_events is not None:
         cols = [" ".join(["Events", e]) for e in qtable.get_experiments()]
+        if not pd.Series(cols).isin(qtable.data.columns).all():
+            raise Exception(
+                f"Not all columns from {cols} are present in qtable.data,"
+                " analyze missingness before calling validate_proteins()."
+            )
         min_events_valid = np.any(qtable[cols] >= min_events, axis=1)
         valid_entries = min_events_valid & valid_entries
 
@@ -150,16 +160,12 @@ def normalize_expression(
     }
 
     if method is None and normalizer is None:
-        raise ValueError("Either 'method' or 'normalizer' must be specified.")
-    elif normalizer is not None:
-        if not normalizer.is_fitted():
-            raise Exception("'normalizer' must be fitted by calling normalizer.fit()")
-    else:
-        if method not in default_normalizers:
-            raise ValueError(
-                f"'method' = '{method}'' not allowed, "
-                f"must be one of {(*default_normalizers,)}."
-            )
+        raise ValueError("Either the argument 'method' or 'normalizer' must be set.")
+    elif method is not None and method not in default_normalizers:
+        raise ValueError(
+            f"'method' = '{method}' is not allowed, "
+            f"it must be one of {(*default_normalizers,)}."
+        )
 
     expression_table = qtable.make_expression_table(samples_as_columns=True)
 
@@ -321,13 +327,13 @@ def calculate_multi_group_limma(
     # TODO: not tested #
     if batch and "Batch" not in qtable.get_design():
         raise KeyError(
-            "calculate_multi_group_limma() 'batch' was set to True but the"
-            ' "Batch" column is absent from qtable.design'
+            "When using calculate_multi_group_limma(batch=True) a"
+            ' "Batch" column must be present in qtable.design'
         )
     if batch and qtable.get_design()["Batch"].nunique() == 1:
         raise ValueError(
-            "calculate_multi_group_limma() 'batch' was set to True but all entries"
-            ' in qtable.design["Batch"] are identical.'
+            "When using calculate_multi_group_limma(batch=True), not all values from"
+            ' qtable.design["Batch"] are allowed to be identical.'
         )
 
     design = qtable.get_design()
