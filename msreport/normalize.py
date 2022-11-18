@@ -1,13 +1,14 @@
 from __future__ import annotations
 import abc
 import itertools
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Optional
 
 import numpy as np
 import pandas as pd
 import statsmodels.nonparametric.smoothers_lowess
 
 import msreport.helper
+from msreport.errors import NotFittedError
 
 
 class BaseSampleNormalizer(abc.ABC):
@@ -100,6 +101,8 @@ class FixedValueNormalizer(BaseSampleNormalizer):
         Returns:
             Transformed array.
         """
+        confirm_is_fitted(self)
+
         data = np.array(values, dtype=float)
         mask = np.isfinite(data)
         data[mask] = data[mask] - self._sample_fits[sample]
@@ -221,6 +224,8 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
         Returns:
             Transformed array.
         """
+        confirm_is_fitted(self)
+
         data = np.array(values, dtype=float)
         mask = np.isfinite(data)
 
@@ -311,6 +316,33 @@ class LowessNormalizer(ValueDependentNormalizer):
     def __init__(self):
         """Initializes the LowessNormalizer."""
         super(LowessNormalizer, self).__init__(fit_function=_value_dependent_fit_lowess)
+
+
+def confirm_is_fitted(normalizer: BaseSampleNormalizer, msg: Optional[str] = None):
+    """Perform is_fitted validation for normalizer instances.
+
+    Checks if the normalizer is fitted by verifying the presence of fitted attributes
+    and otherwise raises a NotFittedError with the given message.
+
+    Args:
+        msg : str, default=None
+            The default error message is, "This %(name) instance is not fitted
+            yet. Call 'fit' with appropriate arguments before using this
+            normalizer."
+    """
+    if msg is None:
+        msg = (
+            "This %(name)s instance is not fitted yet. Call 'fit' with "
+            "appropriate arguments before using this normalizer."
+        )
+
+    if not hasattr(normalizer, "is_fitted"):
+        raise TypeError(f"{normalizer} is not an normalizer instance.")
+    else:
+        fitted = normalizer.is_fitted()
+
+    if not fitted:
+        raise NotFittedError(msg % {"name": type(normalizer).__name__})
 
 
 def _value_dependent_fit_lowess(
