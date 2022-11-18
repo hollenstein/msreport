@@ -169,7 +169,7 @@ def ratio_dist_per_category(
     fig.suptitle(f"{exp1} vs. {exp2}")
     for method_num, method in enumerate(methods):
         qtable = qtables[method]
-        table = qtable.data[qtable.data["Valid"]]
+        table = qtable[qtable["Valid"]]
         for exp in [exp1, exp2]:
             column = " ".join(["Missing", exp])
             table = table[table[column] <= max_missing]
@@ -255,7 +255,7 @@ def cumulative_pvalues(
 
     for method in methods:
         qtable = qtables[method]
-        table = qtable.data[qtable.data["Valid"]]
+        table = qtable[qtable["Valid"]]
         for exp in [exp1, exp2]:
             column = " ".join(["Missing", exp])
             table = table[table[column] <= max_missing]
@@ -335,7 +335,7 @@ def precision_tp(
 
     for method_num, method in enumerate(methods):
         qtable = qtables[method]
-        table = qtable.data[qtable.data["Valid"]]
+        table = qtable[qtable["Valid"]]
         for exp in [exp1, exp2]:
             column = " ".join(["Missing", exp])
             table = table[table[column] <= max_missing]

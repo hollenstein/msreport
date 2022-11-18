@@ -118,7 +118,7 @@ def validate_proteins(
         min_events_valid = np.any(qtable[cols] >= min_events, axis=1)
         valid_entries = min_events_valid & valid_entries
 
-    qtable.data["Valid"] = valid_entries
+    qtable["Valid"] = valid_entries
 
 
 def normalize_expression(
@@ -173,7 +173,7 @@ def normalize_expression(
 
     samples = expression_table.columns.tolist()
     columns = [qtable.get_expression_column(s) for s in samples]
-    qtable.data[columns] = normalizer.transform_table(expression_table)
+    qtable[columns] = normalizer.transform_table(expression_table)
     return normalizer
 
 
@@ -213,7 +213,7 @@ def impute_missing_values(
     imputed = helper.gaussian_imputation(
         table, median_downshift, std_width, column_wise, seed
     )
-    qtable.data[table.columns] = imputed[table.columns]
+    qtable[table.columns] = imputed[table.columns]
 
 
 def calculate_experiment_means(qtable: Qtable) -> None:
@@ -504,7 +504,7 @@ def median_normalize_samples(qtable: Qtable) -> None:
     profile = helper.solve_ratio_matrix(matrix)
     for i, sample in enumerate(samples):
         col = qtable.get_expression_column(sample)
-        qtable.data[col] -= profile[i]
+        qtable[col] -= profile[i]
 
 
 def mode_normalize_samples(qtable: Qtable) -> None:
@@ -539,8 +539,8 @@ def mode_normalize_samples(qtable: Qtable) -> None:
     # Write normalized intensities to qtable
     for i, sample in enumerate(samples):
         sample_column = qtable.get_expression_column(sample)
-        corrected_values = qtable.data[sample_column] - profile[i]
-        qtable.data[sample_column] = corrected_values
+        corrected_values = qtable[sample_column] - profile[i]
+        qtable[sample_column] = corrected_values
 
 
 def lowess_normalize_samples(qtable: Qtable) -> None:
@@ -591,4 +591,4 @@ def lowess_normalize_samples(qtable: Qtable) -> None:
     for sample in samples:
         sample_column = qtable.get_expression_column(sample)
         corrected_values = expr_table[sample]
-        qtable.data[sample_column] = corrected_values
+        qtable[sample_column] = corrected_values
