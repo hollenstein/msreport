@@ -9,7 +9,13 @@ import msreport.helper as helper
 
 
 class Qtable:
-    """Stores and provides access to quantitative proteomics data.
+    """Stores and provides access to quantitative proteomics data in a tabular form.
+
+    Qtable contains proteomics data in a tabular form, which is stored as 'qtable.data',
+    and an experimental design table, stored in 'qtable.design'. Columns from
+    'qtable.data' can directly be accessed by indexing with [], column values can be set
+    with [], and the 'in' operator can be used to check whether a column is present in
+    'qtable.data', e.g. 'qtable[key]', 'qtable[key] = value', 'key in qtable'.
 
     Attributes:
         data: A pandas.DataFrame containing quantitative proteomics data.
@@ -47,13 +53,29 @@ class Qtable:
         """True if key is in the info axis of self.data"""
         return key in self.data
 
-    def to_tsv(self, path: str, index: bool = False):
-        """Writes table to a .tsv (tab-separated values) file."""
-        self.data.to_csv(path, sep="\t", index=index)
+    def add_design(self, design: pd.DataFrame) -> None:
+        """Adds an experimental design table.
 
-    def to_clipboard(self, index: bool = False):
-        """Writes table to the system clipboard, which can be pasted e.g. into Excel."""
-        self.data.to_clipboard(sep="\t", index=index)
+        Args:
+            design: A dataframe describing the experimental design that must at least
+                contain the columns "Sample" and "Experiment". The "Sample" entries
+                should correspond to the Sample names present in the quantitative
+                columns of the table.
+        """
+        columns = design.columns.tolist()
+        required_columns = ["Experiment", "Sample"]
+        if not all([c in columns for c in required_columns]):
+            exception_message = "".join(
+                [
+                    "The design table must at least contain the columns: ",
+                    ", ".join(f'"{c}"' for c in required_columns),
+                    ". " "It only contains the columns: ",
+                    ", ".join(f'"{c}"' for c in columns),
+                    ".",
+                ]
+            )
+            raise ValueError(exception_message)
+        self.design = design
 
     def get_data(self, exclude_invalid: bool = False) -> pd.DataFrame:
         """Returns a copy of the data table.
@@ -74,7 +96,7 @@ class Qtable:
         """Returns a copy of the design table."""
         return self.design.copy()
 
-    def get_samples(self, experiment: str = None) -> list[str]:
+    def get_samples(self, experiment: Optional[str] = None) -> list[str]:
         """Returns a list of samples present in the design table.
 
         Args:
@@ -103,7 +125,7 @@ class Qtable:
         experiment = design[design["Sample"] == sample]["Experiment"].values[0]
         return experiment
 
-    def get_experiments(self, samples: list[str] = None) -> list[str]:
+    def get_experiments(self, samples: Optional[list[str]] = None) -> list[str]:
         """Returns a list of experiments present in the design table.
 
         Args:
@@ -200,30 +222,6 @@ class Qtable:
 
         return table
 
-    def add_design(self, design: pd.DataFrame) -> None:
-        """Adds an experimental design table
-
-        Args:
-            design: A dataframe describing the experimental design that must at least
-                contain the columns "Sample" and "Experiment". The "Sample" entries
-                should correspond to the Sample names present in the quantitative
-                columns of the table.
-        """
-        columns = design.columns.tolist()
-        required_columns = ["Experiment", "Sample"]
-        if not all([c in columns for c in required_columns]):
-            exception_message = "".join(
-                [
-                    "The design table must at least contain the columns: ",
-                    ", ".join(f'"{c}"' for c in required_columns),
-                    ". " "It only contains the columns: ",
-                    ", ".join(f'"{c}"' for c in columns),
-                    ".",
-                ]
-            )
-            raise ValueError(exception_message)
-        self.design = design
-
     def set_expression_by_tag(
         self, tag: str, zerotonan: bool = False, log2: bool = False
     ) -> None:
@@ -301,6 +299,19 @@ class Qtable:
         self._expression_features.extend(
             expression_features.columns.difference(self._expression_features)
         )
+
+    def to_tsv(self, path: str, index: bool = False):
+        """Writes the data table to a .tsv (tab-separated values) file."""
+        self.data.to_csv(path, sep="\t", index=index)
+
+    def to_clipboard(self, index: bool = False):
+        """Writes the data table to the system clipboard."""
+        self.data.to_clipboard(sep="\t", index=index)
+
+    def copy(self) -> Qtable:
+        """Returns a copy of this Qtable instance."""
+        # not tested #
+        return self.__copy__()
 
     def _set_expression(
         self,
@@ -381,11 +392,6 @@ class Qtable:
         self._expression_features = []
         self._expression_sample_mapping = {}
 
-    def copy(self) -> Qtable:
-        """Returns a copy of this Qtable instance."""
-        # not tested #
-        return self.__copy__()
-
     def __copy__(self) -> Qtable:
         # not tested #
         new_instance = Qtable(self.data, self.design)
@@ -414,10 +420,11 @@ def _exclude_invalid(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _str_to_substr_mapping(strings, substrings) -> dict[str, str]:
-    """DEPRECATED: Mapping of strings to substrings.
+    """Mapping of strings to substrings.
 
-    Strings point to a matching substring. If multiple substrings
-    are found in a string, only one is reported."""
+    Strings point to a matching substring. If multiple substrings are found in a string,
+    only one is reported.
+    """
     mapping = dict()
     for sub in substrings:
         mapping.update({s: sub for s in strings if sub in s})
