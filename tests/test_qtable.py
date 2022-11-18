@@ -147,6 +147,14 @@ def test_qtable_setitem(example_qtable, key, value):
     assert np.all(example_qtable.data[key] == value)
 
 
+@pytest.mark.parametrize(
+    "key, is_present",
+    [["Representative protein", True], ["An absent column", False]],
+)
+def test_qtable_contains(example_qtable, key, is_present):
+    assert (key in example_qtable) == is_present
+
+
 def test_qtable_get_design(example_data):
     qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])
     assert qtable.get_design().equals(example_data["design"])

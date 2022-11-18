@@ -36,12 +36,16 @@ class Qtable:
         self._expression_sample_mapping: dict[str, str] = {}
 
     def __getitem__(self, key: Any) -> pd.DataFrame:
-        """Evaluation of self.data[key]."""
+        """Evaluation of self.data[key]"""
         return self.data[key]
 
     def __setitem__(self, key: Any, value: Any):
-        """Item assignment of self.data[key]."""
+        """Item assignment of self.data[key]"""
         self.data[key] = value
+
+    def __contains__(self, key: Any) -> bool:
+        """True if key is in the info axis of self.data"""
+        return key in self.data
 
     def to_tsv(self, path: str, index: bool = False):
         """Writes table to a .tsv (tab-separated values) file."""
