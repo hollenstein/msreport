@@ -39,6 +39,10 @@ class Qtable:
         """Evaluation of self.data[key]."""
         return self.data[key]
 
+    def __setitem__(self, key: Any, value: Any):
+        """Item assignment of self.data[key]."""
+        self.data[key] = value
+
     def to_tsv(self, path: str, index: bool = False):
         """Writes table to a .tsv (tab-separated values) file."""
         self.data.to_csv(path, sep="\t", index=index)

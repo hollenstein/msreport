@@ -138,6 +138,15 @@ def test_qtable_getitem(example_qtable, key):
     assert example_qtable[key].equals(example_qtable.data[key])
 
 
+@pytest.mark.parametrize(
+    "key, value",
+    [["A", "1"], [["A", "B"], [1, 2]]],
+)
+def test_qtable_setitem(example_qtable, key, value):
+    example_qtable[key] = value
+    assert np.all(example_qtable.data[key] == value)
+
+
 def test_qtable_get_design(example_data):
     qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])
     assert qtable.get_design().equals(example_data["design"])
