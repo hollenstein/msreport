@@ -2,6 +2,33 @@ Changelog
 =========
 
 
+0.0.4
+-----
+
+- Analyze module
+  - Added several additional arguments to impute_missing_values(), which allow
+    specifying a seed for the random number generator, performing imputation
+    column wise or in total, specifying the median downshift and std width
+    for calculation of the normal distribution parameters.
+
+- Errors and warnings
+  - Added errors module, containing msreport specific errors and warning
+  - Added warning to reader.add_protein_annotations() and
+    reader.add_peptide_positions() when proteins are absent from fasta files.
+  - Added specific errors to the analyze and normalize modules.
+
+- Normalize module
+  - Normalizer classes got a get_fits() function to retrieve sample fits.
+
+- Qtable module
+  - Added indexing to the Qtable, which allows directly accessing and setting columns
+    for qtable.data with [] by calling qtable[column_name].
+
+- Reader module
+  - Added arguments to add_protein_annotations() for specifying whether "Protein length"
+    and "iBAQ peptides" should be added or not.
+
+
 0.0.3
 -----
 
