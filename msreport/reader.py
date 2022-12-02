@@ -25,6 +25,7 @@ from typing import Iterable, Optional, Union
 
 import numpy as np
 import pandas as pd
+import pathlib
 
 import msreport.helper as helper
 from msreport.errors import ProteinsNotInFastaWarning
@@ -792,13 +793,20 @@ def sort_leading_proteins(
     alphanumeric: bool = True,
     penalize_contaminants: bool = True,
     special_proteins: Optional[list[str]] = None,
+    database_order: Optional[list[str]] = None,
+    fasta_path: Optional[str] = None,
 ) -> pd.DataFrame:
+    new_table = table.copy()
     new_entries = {
         "Representative protein": [],
         "Potential contaminant": [],
         "Leading proteins": [],
         "Leading potential contaminants": [],
     }
+    if database_order is not None:
+        raise NotImplementedError()
+        # Add database to leading proteins
+
     for idx, row in table.iterrows():
         protein_ids = row["Leading proteins"].split(";")
         potential_contaminants = [
@@ -807,12 +815,14 @@ def sort_leading_proteins(
 
         sorting_info = [([], i, j) for i, j in zip(protein_ids, potential_contaminants)]
 
-        if special_proteins:
+        if special_proteins is not None:
             for i, _id in enumerate(protein_ids):
                 sorting_info[i][0].append(_id not in special_proteins)
         if penalize_contaminants:
             for i, is_contaminant in enumerate(potential_contaminants):
                 sorting_info[i][0].append(is_contaminant)
+        if database_order:
+            raise NotImplementedError()
         if alphanumeric:
             for i, _id in enumerate(protein_ids):
                 sorting_info[i][0].append(_id)
@@ -826,7 +836,6 @@ def sort_leading_proteins(
         new_entries["Leading potential contaminants"].append(
             ";".join(map(str, potential_contaminants))
         )
-    new_table = table.copy()
     for key in new_entries:
         new_table[key] = new_entries[key]
     return new_table
@@ -834,7 +843,7 @@ def sort_leading_proteins(
 
 def add_protein_annotations(
     table: pd.DataFrame,
-    fasta_path: Union[str, list[str]],
+    fasta_path: Union[str, pathlib.Path, Iterable[Union[str, pathlib.Path]]],
     id_column: str = "Representative protein",
     protein_length: bool = True,
     ibaq_peptides: bool = True,
@@ -855,14 +864,7 @@ def add_protein_annotations(
         ibaq_peptides: If True, adds a "iBAQ peptides" column to the 'table'.
     """
     # not tested #
-    if isinstance(fasta_path, str):
-        fasta_paths = [fasta_path]
-    else:
-        fasta_paths = fasta_path
-
-    protein_db = None
-    for path in fasta_paths:
-        protein_db = helper.importProteinDatabase(path, database=protein_db)
+    protein_db = helper.importProteinDatabase(fasta_path)
 
     new_columns = {
         "Protein entry name": [],
@@ -981,7 +983,7 @@ def add_ibaq_intensities(
 
 def add_peptide_positions(
     table: pd.DataFrame,
-    fasta_path: Union[str, list[str]],
+    fasta_path: Union[str, pathlib.Path, Iterable[Union[str, pathlib.Path]]],
     peptide_column: str = "Peptide sequence",
     protein_column: str = "Representative protein",
 ) -> None:
@@ -1000,14 +1002,7 @@ def add_peptide_positions(
             find matching entries in the FASTA files.
     """
     # not tested #
-    if isinstance(fasta_path, str):
-        fasta_paths = [fasta_path]
-    else:
-        fasta_paths = fasta_path
-
-    protein_db = None
-    for path in fasta_paths:
-        protein_db = helper.importProteinDatabase(path, database=protein_db)
+    protein_db = helper.importProteinDatabase(fasta_path)
 
     peptide_positions = {"Start position": [], "End position": []}
     proteins_not_in_db = []

@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Iterable, Optional, Union
 import re
 
+import pathlib
 import pyteomics.fasta
 
 
@@ -57,12 +58,13 @@ def parse_fasta(fasta_path):
 
 
 def importProteinDatabase(
-    fasta_path: str,
-    database: Optional[ProteinDatabase] = None,
+    fasta_path: Union[str, pathlib.Path, Iterable[Union[str, pathlib.Path]]],
 ) -> ProteinDatabase:
-    if database is None:
-        database = ProteinDatabase()
-    database.add_fasta(fasta_path)
+    """Generates a protein database from one or a list of fasta files."""
+    database = ProteinDatabase()
+    paths = [fasta_path] if isinstance(fasta_path, (str, pathlib.Path)) else fasta_path
+    for path in paths:
+        database.add_fasta(path)
     return database
 
 
