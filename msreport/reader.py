@@ -787,6 +787,51 @@ class FPReader(ResultReader):
         return new_df
 
 
+def sort_leading_proteins(
+    table: pd.DataFrame,
+    alphanumeric: bool = True,
+    penalize_contaminants: bool = True,
+    special_proteins: Optional[list[str]] = None,
+) -> pd.DataFrame:
+    new_entries = {
+        "Representative protein": [],
+        "Potential contaminant": [],
+        "Leading proteins": [],
+        "Leading potential contaminants": [],
+    }
+    for idx, row in table.iterrows():
+        protein_ids = row["Leading proteins"].split(";")
+        potential_contaminants = [
+            i == "True" for i in row["Leading potential contaminants"].split(";")
+        ]
+
+        sorting_info = [([], i, j) for i, j in zip(protein_ids, potential_contaminants)]
+
+        if special_proteins:
+            for i, _id in enumerate(protein_ids):
+                sorting_info[i][0].append(_id not in special_proteins)
+        if penalize_contaminants:
+            for i, is_contaminant in enumerate(potential_contaminants):
+                sorting_info[i][0].append(is_contaminant)
+        if alphanumeric:
+            for i, _id in enumerate(protein_ids):
+                sorting_info[i][0].append(_id)
+
+        sorting_info.sort(key=lambda x: x[0])
+        _, protein_ids, potential_contaminants = zip(*sorting_info)
+
+        new_entries["Representative protein"].append(protein_ids[0])
+        new_entries["Potential contaminant"].append(potential_contaminants[0])
+        new_entries["Leading proteins"].append(";".join(protein_ids))
+        new_entries["Leading potential contaminants"].append(
+            ";".join(map(str, potential_contaminants))
+        )
+    new_table = table.copy()
+    for key in new_entries:
+        new_table[key] = new_entries[key]
+    return new_table
+
+
 def add_protein_annotations(
     table: pd.DataFrame,
     fasta_path: Union[str, list[str]],
@@ -1093,133 +1138,6 @@ def _find_remaining_substrings(strings: list[str], split_with: str) -> list[str]
     return substrings
 
 
-def _sort_leading_proteins(
-    df: pd.DataFrame,
-    contaminant_tag: Optional[str] = None,
-    special_proteins: list[str] = [],
-) -> pd.DataFrame:
-    """Sorts protein entries from the 'Leading proteins' column.
-
-    Multiple entries in the 'Leading proteins' column must be separated by ';'. After
-    sorting, special proteins are listed first and proteins containing the
-    contamination tag are listed last. The other proteins are sorted alphabetically
-    ascending.
-
-    The first entry from the sorted 'Leading proteins' is written into the
-    'Representative protein' column.
-
-    Args:
-        df: Dataframe that contains protein entries for sorting.
-        contaminant_tag: Optional, if specified protein entries containing the
-            'contaminant_tag' are considered as contaminants.
-        special_proteins: Optional, a list of special proteins.
-
-    Returns:
-        A copy of the 'df' dataframe, with entries in the "Leading proteins" column
-        being sorted and the first leading protein entry written into the
-        "Representative protein" columns.
-    """
-    if not special_proteins:
-        warnings.warn("SPECIAL PROTEINS NOT TESTED")
-
-    sorting_tag_levels = {}
-    if contaminant_tag is not None:
-        sorting_tag_levels[contaminant_tag] = 1
-    sorting_tag_levels.update({p: -1 for p in special_proteins})
-
-    leading_entries = []
-    representative_entries = []
-    for leading_proteins in df["Leading proteins"]:
-        proteins = leading_proteins.split(";")
-        fastas, sorted_proteins, names = _sort_fasta_entries(
-            proteins, sorting_tag_levels
-        )
-        representative_entries.append(sorted_proteins[0])
-        leading_entries.append(";".join(sorted_proteins))
-
-    df = df.copy()
-    df["Representative protein"] = representative_entries
-    df["Leading proteins"] = leading_entries
-    return df
-
-
-def _sort_proteins_and_contaminants(
-    proteins: list[str],
-    contaminants: Optional[list[bool]] = None,
-    special_proteins: Optional[list[str]] = None,
-) -> tuple[list[str], list[bool]]:
-    """Sorts protein and contaminant entries.
-
-    Proteins that are in the list of special proteins are listed first, then normal
-    proteins and finally contaminants. Then each group is sorted alphabetically.
-
-    Args:
-        proteins: List of protein names to be sorted.
-        contaminants: Optional, a list of booleans that indicate whether a protein is a
-            contaminant or not.
-        special_proteins: Optional, a list of special proteins.
-
-    Returns:
-        Sorted copies of the 'proteins' and 'contaminants' lists. If 'contaminants' was
-        not specified, all entries in the returned 'contaminants' will be None.
-    """
-    if not special_proteins:
-        warnings.warn("SPECIAL PROTEINS NOT TESTED")
-
-    if contaminants is not None:
-        sorting = [int(is_contaminant) for is_contaminant in contaminants]
-    else:
-        contaminants = [None for p in proteins]
-        sorting = [0 for p in proteins]
-
-    if special_proteins is not None:
-        _sorting = []
-        for p, sort_level in zip(proteins, sorting):
-            _sorting.append(sort_level + (-2 if p in special_proteins else 0))
-        sorting = _sorting
-
-    sorted_values = sorted(zip(sorting, proteins, contaminants))
-    _, proteins, contaminants = [list(v) for v in zip(*(sorted_values))]
-    return proteins, contaminants
-
-
-def _sort_fasta_entries(
-    fasta_entries: list[str], sorting_tag_levels: dict[str, int] = {}
-) -> tuple[list[str], list[str], list[str]]:
-    """Return sorted FASTA headers, protein ids, and entry names.
-
-    Fasta headers are first sorted according to the sort level of each header in
-    ascending order, and those with the same entries are sorted alphabetically
-    according to the unique ID of the FASTA header. By default, each FASTA entry has a
-    sort level of 0.
-
-    Args:
-        FASTA_entries: A list of FASTA headers, or FASTA header like strings.
-        sorting_tag_levels: Mapping of tags to sort levels. If the tag string is present
-            in the unique ID entry of the FASTA headers, the sort level of this tag is
-            used.
-
-    Returns:
-        Sorted lists of (FASTA headers, protein ids, entry names)
-    """
-    values = []
-    for fasta in fasta_entries:
-        if fasta.count("|") >= 2:
-            protein = fasta.split("|")[1]
-            name = fasta.split("|")[2].split(" ")[0]
-        else:
-            protein = fasta
-            name = fasta
-        sort_level = 0
-        for tag, level in sorting_tag_levels.items():
-            if tag in protein:
-                sort_level = level
-        values.append((sort_level, protein, fasta, name))
-    values.sort()
-    sort_levels, proteins, fastas, names = [list(v) for v in zip(*(values))]
-    return fastas, proteins, names
-
-
 def _add_potential_contaminants(df: pd.DataFrame, contaminant_tag: str) -> pd.DataFrame:
     """Adds a "Potential contaminant" column to the data frame.
 
@@ -1264,29 +1182,27 @@ def _process_protein_entries(
         A dataframe containing the columns "Protein reported by software",
         "Leading proteins", "Representative protein", and "Potential contaminant".
     """
-    values_reported_id = []
-    values_leading_ids = []
-    values_representative_id = []
-    values_contaminant = []
-    for entries in leading_protein_entries:
-        protein_ids = _extract_protein_ids(entries)
-        id_reported_by_software = protein_ids[0]
-        is_contaminant = _mark_contaminants(entries, contaminant_tag)
+    new_entries = {
+        "Protein reported by software": [],
+        "Representative protein": [],
+        "Potential contaminant": [],
+        "Leading proteins": [],
+        "Leading potential contaminants": [],
+    }
 
-        # Collect all entries
-        values_reported_id.append(id_reported_by_software)
-        values_leading_ids.append(";".join(protein_ids))
-        values_representative_id.append(protein_ids[0])
-        values_contaminant.append(is_contaminant[0])
+    for leading_proteins in leading_protein_entries:
+        protein_ids = _extract_protein_ids(leading_proteins)
+        potential_contaminants = _mark_contaminants(leading_proteins, contaminant_tag)
 
-    table = pd.DataFrame(
-        {
-            "Protein reported by software": values_reported_id,
-            "Leading proteins": values_leading_ids,
-            "Representative protein": values_representative_id,
-            "Potential contaminant": values_contaminant,
-        }
-    )
+        new_entries["Protein reported by software"].append(protein_ids[0])
+        new_entries["Representative protein"].append(protein_ids[0])
+        new_entries["Potential contaminant"].append(potential_contaminants[0])
+        new_entries["Leading proteins"].append(";".join(protein_ids))
+        new_entries["Leading potential contaminants"].append(
+            ";".join(map(str, potential_contaminants))
+        )
+
+    table = pd.DataFrame(new_entries)
     return table
 
 

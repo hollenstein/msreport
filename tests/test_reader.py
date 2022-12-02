@@ -65,116 +65,118 @@ def test_find_remaining_substrings():
         assert substrings == ["Sub1", "Sub2", "Sub3"]
 
 
-@pytest.mark.parametrize(
-    "input, expected_fastas, expected_proteins, expected_names",
-    [
-        (["x|A|a"], ["x|A|a"], ["A"], ["a"]),
-        (["x|A|a something else"], ["x|A|a something else"], ["A"], ["a"]),
-        (["x|A|a", "x|B|b"], ["x|A|a", "x|B|b"], ["A", "B"], ["a", "b"]),
-        (["x|B|b", "x|A|a"], ["x|A|a", "x|B|b"], ["A", "B"], ["a", "b"]),
-    ],
-)
-def test_sort_fasta_entries_(input, expected_fastas, expected_proteins, expected_names):
-    fastas, proteins, names = msreport.reader._sort_fasta_entries(input)
-    assert fastas == expected_fastas
-    assert proteins == expected_proteins
-    assert names == expected_names
-
-
-def test_sort_fasta_entries_with_sorting_by_tag():
-    fasta_headers = ["x|B|b", "x|Apost|a_post", "x|preA|pre_a"]
-    sorting_tags = {"pre": -1, "post": 1}
-    fastas, proteins, names = msreport.reader._sort_fasta_entries(
-        fasta_headers, sorting_tags
-    )
-    assert fastas == ["x|preA|pre_a", "x|B|b", "x|Apost|a_post"]
-    assert proteins == ["preA", "B", "Apost"]
-    assert names == ["pre_a", "b", "a_post"]
-
-
-# fmt: off
-@pytest.mark.parametrize(
-    "proteins, contaminants, special_proteins, expected_proteins, expected_contaminants",
-    [
-        (["C", "B", "A"], None, None, ["A", "B", "C"], [None, None, None]),
-        (["C", "B", "A"], None, "C", ["C", "A", "B"], [None, None, None]),
-        (["C", "B", "A"], [False, False, True], None, ["B", "C", "A"], [False, False, True]),
-        (["C", "B", "A"], [False, False, True], ["C"], ["C", "B", "A"], [False, False, True]),
-        (["C", "B", "A"], [False, True, False], ["B"], ["B", "A", "C"], [True, False, False]),
-    ],
-)
-def test_sort_order_proteins(
-    proteins, contaminants, special_proteins, expected_proteins, expected_contaminants
-):
-    proteins = ["C", "B", "A"]
-    sorted_proteins, sorted_contaminants = msreport.reader._sort_proteins_and_contaminants(
-        proteins, special_proteins=special_proteins, contaminants=contaminants
-    )
-    # sorted_proteins = [proteins[i] for i in sort_order]
-    assert sorted_contaminants == expected_contaminants
-    assert sorted_proteins == expected_proteins
-# fmt: on
-
-
 class TestSortLeadingProteins:
-    def test_without_args(self):
-        df = pd.DataFrame(
-            {
-                "Leading proteins": ["B;A", "D", "E;F", "G;I;H"],
-            }
-        )
-        leading_proteins = ["A;B", "D", "E;F", "G;H;I"]
-        representative_protein = ["A", "D", "E", "G"]
-
-        df = msreport.reader._sort_leading_proteins(df)
-        assert df["Leading proteins"].tolist() == leading_proteins
-        assert df["Representative protein"].tolist() == representative_protein
-
-    def test_with_contamination_tag(self):
-        df = pd.DataFrame(
-            {
-                "Leading proteins": ["B;A", "D", "E;F", "Gtag;I;H"],
-            }
-        )
-        leading_proteins = ["A;B", "D", "E;F", "H;I;Gtag"]
-        representative_protein = ["A", "D", "E", "H"]
-
-        df = msreport.reader._sort_leading_proteins(df, contaminant_tag="tag")
-        assert df["Leading proteins"].tolist() == leading_proteins
-        assert df["Representative protein"].tolist() == representative_protein
-
-
-class TestProcessProteinEntries:
     @pytest.fixture(autouse=True)
-    def _init_dataframe(self):
-        self.leading_protein_entries = [
-            ["B", "A"],
-            ["D"],
-            ["E"],
-            ["G", "H", "I"],
-            ["CON__x|J|x", "J"],
-            ["CON__x|K|x"],
+    def _init_input_table(self):
+        self.table_columns = [
+            "Leading proteins",
+            "Leading potential contaminants",
+            "Representative protein",
+            "Potential contaminant",
         ]
-
-    def test(self):
-        contaminant_tag = "CON__"
-        table = msreport.reader._process_protein_entries(
-            self.leading_protein_entries,
-            contaminant_tag,
+        self.input_table = pd.DataFrame(
+            data=[
+                ["C;A_cont;B", "False;True;False", "C", False],
+                ["A;C;B", "False;False;False", "A", False],
+            ],
+            columns=self.table_columns,
         )
 
-        leading_proteins = ["B;A", "D", "E", "G;H;I", "J;J", "K"]
-        representative_protein = ["B", "D", "E", "G", "J", "K"]
-        protein_reported_by_software = representative_protein
-        is_contaminant = [False, False, False, False, True, True]
-
-        assert table["Leading proteins"].tolist() == leading_proteins
-        assert table["Representative protein"].tolist() == representative_protein
-        assert (
-            table["Protein reported by software"].tolist()
-            == protein_reported_by_software
+    def test_alhpanumeric_sorting(self):
+        expected = pd.DataFrame(
+            data=[
+                ["A_cont;B;C", "True;False;False", "A_cont", True],
+                ["A;B;C", "False;False;False", "A", False],
+            ],
+            columns=self.table_columns,
         )
-        assert table["Potential contaminant"].tolist() == is_contaminant
+
+        sorted_table = msreport.reader.sort_leading_proteins(
+            self.input_table, alphanumeric=True, penalize_contaminants=False
+        )
+        for column in expected.columns:
+            assert sorted_table[column].tolist() == expected[column].tolist()
+
+    def test_penalize_contaminant_sorting(self):
+        expected = pd.DataFrame(
+            data=[
+                ["C;B;A_cont", "False;False;True", "C", False],
+                ["A;C;B", "False;False;False", "A", False],
+            ],
+            columns=self.table_columns,
+        )
+
+        sorted_table = msreport.reader.sort_leading_proteins(
+            self.input_table, alphanumeric=False, penalize_contaminants=True
+        )
+        for column in expected.columns:
+            assert sorted_table[column].tolist() == expected[column].tolist()
+
+    def test_special_protein_sorting(self):
+        special_proteins = ["B"]
+        expected = pd.DataFrame(
+            data=[
+                ["B;C;A_cont", "False;False;True", "B", False],
+                ["B;A;C", "False;False;False", "B", False],
+            ],
+            columns=self.table_columns,
+        )
+
+        sorted_table = msreport.reader.sort_leading_proteins(
+            self.input_table,
+            alphanumeric=False,
+            penalize_contaminants=True,
+            special_proteins=special_proteins,
+        )
+        for column in expected.columns:
+            assert sorted_table[column].tolist() == expected[column].tolist()
+
+    def test_all_sorting_options(self):
+        special_proteins = ["C"]
+        expected = pd.DataFrame(
+            data=[
+                ["C;B;A_cont", "False;False;True", "C", False],
+                ["C;A;B", "False;False;False", "C", False],
+            ],
+            columns=self.table_columns,
+        )
+
+        sorted_table = msreport.reader.sort_leading_proteins(
+            self.input_table,
+            alphanumeric=False,
+            penalize_contaminants=True,
+            special_proteins=special_proteins,
+        )
+        for column in expected.columns:
+            assert sorted_table[column].tolist() == expected[column].tolist()
+
+
+def test_process_protein_entries():
+    contaminant_tag = "CON__"
+    leading_protein_entries = [
+        ["A"],
+        ["B", "C"],
+        ["CON__x|D|x", "E"],
+        ["x|F|x", "x|CON__G|x"],
+    ]
+    expected = {
+        "Representative protein": ["A", "B", "D", "F"],
+        "Protein reported by software": ["A", "B", "D", "F"],
+        "Potential contaminant": [False, False, True, False],
+        "Leading proteins": ["A", "B;C", "D;E", "F;CON__G"],
+        "Leading potential contaminants": [
+            "False",
+            "False;False",
+            "True;False",
+            "False;True",
+        ],
+    }
+
+    table = msreport.reader._process_protein_entries(
+        leading_protein_entries, contaminant_tag
+    )
+    for column, expected_values in expected.items():
+        assert table[column].tolist() == expected_values
 
 
 def test_add_protein_modifications():
