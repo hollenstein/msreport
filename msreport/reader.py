@@ -794,10 +794,30 @@ def sort_leading_proteins(
     penalize_contaminants: bool = True,
     special_proteins: Optional[list[str]] = None,
     database_order: Optional[list[str]] = None,
-    fasta_path: Optional[str] = None,
-) -> pd.DataFrame:
-    new_table = table.copy()
-    new_entries = {
+) -> None:
+    """Sorts leading proteins and reassigns representative protein and contaminants.
+
+    Leading proteins are sorted according to the selected options and entries from the
+    column "Leading potential contaminants" are updated accordingly. The first entry of
+    leading proteins is selected as the "Representative protein", and the column
+    "Potential contaminant" is updated accordingly.
+
+    Protein annotation columns, refering to a representative protein that has been
+    changed, will no longer be valid. It is therefore recommended to remove all columns
+    containing protein specific information by enabling 'drop_protein_info' during the
+    import of protein tables or to update protein annotation columns if possible.
+
+    Args:
+        table: Dataframe in which "Leading proteins" will be sorted.
+        alphanumeric: If True, protein entries are sorted alpha numerical.
+        penalize_contaminants: If True, protein contaminants are sorted to the back.
+        special_proteins: Optional, allows specifying a list of protein IDs that
+            will always be sorted to the beginning.
+        database_order: Optional, allows specifying an order of protein databases that
+            will be considered for sorting. The protein database of a fasta entry is
+            written in the very beginning of the fasta header, e.g. "sp" or "tr".
+    """
+    sorted_entries = {
         "Representative protein": [],
         "Potential contaminant": [],
         "Leading proteins": [],
@@ -830,15 +850,15 @@ def sort_leading_proteins(
         sorting_info.sort(key=lambda x: x[0])
         _, protein_ids, potential_contaminants = zip(*sorting_info)
 
-        new_entries["Representative protein"].append(protein_ids[0])
-        new_entries["Potential contaminant"].append(potential_contaminants[0])
-        new_entries["Leading proteins"].append(";".join(protein_ids))
-        new_entries["Leading potential contaminants"].append(
+        sorted_entries["Representative protein"].append(protein_ids[0])
+        sorted_entries["Potential contaminant"].append(potential_contaminants[0])
+        sorted_entries["Leading proteins"].append(";".join(protein_ids))
+        sorted_entries["Leading potential contaminants"].append(
             ";".join(map(str, potential_contaminants))
         )
-    for key in new_entries:
-        new_table[key] = new_entries[key]
-    return new_table
+    for key in sorted_entries:
+        table[key] = sorted_entries[key]
+    return table
 
 
 def add_protein_annotations(
