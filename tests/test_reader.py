@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 import msreport.reader
+from msreport.helper.temp import ProteinDatabase, Protein
 
 
 @pytest.fixture
@@ -521,3 +522,86 @@ class TestFPReader:
         assert table["Modified sequence"][0] == "AAC[57.0214]DLVR"
         assert table["Modifications"][0] == "3:57.0214"
         assert "Intensity SampleA_1" in table
+
+
+class TestGetAnnotationFunctions:
+    @pytest.fixture(autouse=True)
+    def _init_protein_db(self):
+        self.protein_id = "P60709"
+        self.sequence = "MDDDIAALVVDNGSGMCKAGFAGDDAPRAVFPSIVGRPRHQGVMVGMGQK"
+        self.tryptic_ibaq_peptides = 4
+        self.sequence_length = len(self.sequence)
+        self.fasta_header = "sp|P60709|ACTB_HUMAN Actin, cytoplasmic 1 OS=Homo sapiens OX=9606 GN=ACTB PE=1 SV=1"
+        self.gene_name = "ACTB"
+        self.entry_name = "ACTB_HUMAN"
+        self.db_origin = "sp"
+        self.default_value = "Default"
+
+        self.protein_db = msreport.helper.ProteinDatabase()
+        self.protein_db.proteins[self.protein_id] = Protein(
+            sequence=self.sequence,
+            header=self.fasta_header,
+            info={
+                "db": self.db_origin,
+                "entry": self.entry_name,
+                "gene_id": self.gene_name,
+                "id": self.protein_id,
+                "name": "Actin, cytoplasmic 1",
+                "taxon": "HUMAN",
+                "OS": "Homo sapiens",
+                "OX": "9606",
+                "GN": "ACTB",
+                "PE": 1,
+                "SV": 1,
+            },
+        )
+
+    # fmt: off
+    def test_get_annotation_sequence_length(self):
+        assert self.sequence_length == msreport.reader._get_annotation_sequence_length(
+            self.protein_id, self.protein_db, default_value=None
+        )
+        assert self.default_value == msreport.reader._get_annotation_sequence_length(
+            "Absent database entry", self.protein_db, default_value=self.default_value
+        )
+
+    def test_get_annotation_fasta_header(self):
+        assert self.fasta_header == msreport.reader._get_annotation_fasta_header(
+            self.protein_id, self.protein_db, default_value=None
+        )
+        assert self.default_value == msreport.reader._get_annotation_fasta_header(
+            "Absent database entry", self.protein_db, default_value=self.default_value
+        )
+
+    def test_get_annotation_gene_name(self):
+        assert self.gene_name == msreport.reader._get_annotation_gene_name(
+            self.protein_id, self.protein_db, default_value=None
+        )
+        assert self.default_value == msreport.reader._get_annotation_gene_name(
+            "Absent database entry", self.protein_db, default_value=self.default_value
+        )
+
+    def test_get_annotation_protein_entry_name(self):
+        assert self.entry_name == msreport.reader._get_annotation_protein_entry_name(
+            self.protein_id, self.protein_db, default_value=None
+        )
+        assert self.default_value == msreport.reader._get_annotation_protein_entry_name(
+            "Absent database entry", self.protein_db, default_value=self.default_value
+        )
+
+    def test_get_annotation_db_origin(self):
+        assert self.db_origin == msreport.reader._get_annotation_db_origin(
+            self.protein_id, self.protein_db, default_value=None
+        )
+        assert self.default_value == msreport.reader._get_annotation_db_origin(
+            "Absent database entry", self.protein_db, default_value=self.default_value
+        )
+
+    def test_get_annotation_ibaq_peptides(self):
+        assert self.tryptic_ibaq_peptides == msreport.reader._get_annotation_ibaq_peptides(
+            self.protein_id, self.protein_db, default_value=None
+        )
+        assert self.default_value == msreport.reader._get_annotation_ibaq_peptides(
+            "Absent database entry", self.protein_db, default_value=self.default_value
+        )
+    # fmt: on

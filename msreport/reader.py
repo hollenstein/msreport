@@ -1306,3 +1306,57 @@ def _mark_contaminants(entries: list[str], tag: str) -> list[bool]:
     """
     # TODO: not tested #
     return [True if tag in entry else False for entry in entries]
+
+
+def _get_annotation_sequence_length(
+    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
+) -> any:
+    if protein_id not in protein_db.proteins:
+        return default_value
+    else:
+        return protein_db[protein_id].length()
+
+
+def _get_annotation_fasta_header(
+    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
+) -> any:
+    if protein_id not in protein_db.proteins:
+        return default_value
+    else:
+        return protein_db[protein_id].fastaHeader
+
+
+def _get_annotation_gene_name(
+    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
+) -> any:
+    if protein_id not in protein_db.proteins:
+        return default_value
+    else:
+        return protein_db[protein_id].headerInfo.get("GN", default_value)
+
+
+def _get_annotation_protein_entry_name(
+    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
+) -> any:
+    if protein_id not in protein_db.proteins:
+        return default_value
+    else:
+        return protein_db[protein_id].headerInfo.get("entry", default_value)
+
+
+def _get_annotation_db_origin(
+    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
+) -> any:
+    if protein_id not in protein_db.proteins:
+        return default_value
+    else:
+        return protein_db[protein_id].headerInfo.get("db", default_value)
+
+
+def _get_annotation_ibaq_peptides(
+    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
+) -> any:
+    if protein_id not in protein_db.proteins:
+        return default_value
+    else:
+        return helper.calculate_tryptic_ibaq_peptides(protein_db[protein_id].sequence)
