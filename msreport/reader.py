@@ -861,75 +861,80 @@ def sort_leading_proteins(
     return table
 
 
-def add_protein_annotations(
+def add_protein_annotation(
     table: pd.DataFrame,
-    fasta_path: Union[str, pathlib.Path, Iterable[Union[str, pathlib.Path]]],
+    protein_db: helper.ProteinDatabase,
     id_column: str = "Representative protein",
-    protein_length: bool = True,
-    ibaq_peptides: bool = True,
+    gene_name: bool = False,
+    protein_entry: bool = False,
+    protein_length: bool = False,
+    fasta_header: bool = False,
+    ibaq_peptides: bool = False,
+    database_origin: bool = False,
 ) -> None:
-    """Reads a FASTA file and adds protein annotation columns to the 'table'.
-
-    The added columns always include "Fasta header" and if possible "Protein entry name"
-    and "Gene name". By default, also "Protein length" and "iBAQ peptides" are added.
-    The number of "iBAQ peptides" is calculated as the number of tryptic peptides with a
-    length between 7 and 30 amino acids.
+    """Uses a FASTA protein database to add protein annotation columns to the 'table'.
 
     Args:
         table: Dataframe to which the protein annotations are added.
-        fasta_path: Path of a FASTA file, or a list of FASTA file paths.
-        id_column: Column in 'table' that contains protein IDs that are used to find
-            matching entries in the FASTA files.
-        protein_length: If True, adds a "Protein length" column to the 'table'.
-        ibaq_peptides: If True, adds a "iBAQ peptides" column to the 'table'.
+        protein_db: A protein database generated from one or several FASTA files.
+        id_column: Column in 'table' that contains protein uniprot IDs that are used to
+            look up entries in the 'protein_db'.
+        gene_name: If True, adds a "Gene name" column.
+        protein_entry: If True, adds "Protein entry name" column.
+        protein_length: If True, adds a "Protein length" column.
+        fasta_header: If True, adds a "Fasta header" column.
+        ibaq_peptides: If True, adds a "iBAQ peptides" columns. The number of iBAQ
+            peptides is calculated as the theoretical number of tryptic peptides with
+            a length between 7 and 30.
+        database_origin: If True, adds a "Database origin" column.
     """
-    # not tested #
-    protein_db = helper.importProteinDatabase(fasta_path)
+    proteins = table[id_column].to_list()
 
-    new_columns = {
-        "Protein entry name": [],
-        "Gene name": [],
-        "Fasta header": [],
-        "Protein length": [],
-        "iBAQ peptides": [],
-    }
     proteins_not_in_db = []
-    for protein_id in table[id_column]:
-        if protein_id in protein_db.proteins:
-            sequence = protein_db[protein_id].sequence
-            header_info = protein_db[protein_id].headerInfo
-
-            entry_name = header_info["entry"] if "entry" in header_info else ""
-            gene_name = header_info["GN"] if "GN" in header_info else ""
-            fasta_header = protein_db[protein_id].fastaHeader
-            length = protein_db[protein_id].length()
-            num_ibaq_peptides = helper.calculate_tryptic_ibaq_peptides(sequence)
-        else:
+    for protein_id in proteins:
+        if protein_id not in protein_db.proteins:
             proteins_not_in_db.append(protein_id)
-            entry_name = ""
-            gene_name = ""
-            fasta_header = ""
-            length = np.nan
-            num_ibaq_peptides = np.nan
-
-        new_columns["Protein entry name"].append(entry_name)
-        new_columns["Gene name"].append(gene_name)
-        new_columns["Fasta header"].append(fasta_header)
-        new_columns["Protein length"].append(length)
-        new_columns["iBAQ peptides"].append(num_ibaq_peptides)
-
-    if not protein_length:
-        new_columns.pop("Protein length")
-    if not ibaq_peptides:
-        new_columns.pop("iBAQ peptides")
-    for column in new_columns:
-        table[column] = new_columns[column]
-
     if proteins_not_in_db:
         warnings.warn(
             f"Some proteins could not be annotated: {repr(proteins_not_in_db)}",
             ProteinsNotInFastaWarning,
         )
+
+    annotation = {}
+    if gene_name:
+        annotation["Gene name"] = [
+            _get_annotation_gene_name(protein_id, protein_db, default_value="")
+            for protein_id in proteins
+        ]
+    if protein_entry:
+        annotation["Protein entry name"] = [
+            _get_annotation_protein_entry_name(protein_id, protein_db, default_value="")
+            for protein_id in proteins
+        ]
+    if protein_length:
+        annotation["Protein length"] = [
+            _get_annotation_sequence_length(
+                protein_id, protein_db, default_value=np.nan
+            )
+            for protein_id in proteins
+        ]
+    if fasta_header:
+        annotation["Fasta header"] = [
+            _get_annotation_fasta_header(protein_id, protein_db, default_value="")
+            for protein_id in proteins
+        ]
+    if database_origin:
+        annotation["Database origin"] = [
+            _get_annotation_db_origin(protein_id, protein_db, default_value="")
+            for protein_id in proteins
+        ]
+    if ibaq_peptides:
+        annotation["iBAQ peptides"] = [
+            _get_annotation_ibaq_peptides(protein_id, protein_db, default_value=np.nan)
+            for protein_id in proteins
+        ]
+    for column in annotation.keys():
+        table[column] = annotation[column]
 
 
 def add_sequence_coverage(
