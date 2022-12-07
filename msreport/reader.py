@@ -1008,7 +1008,7 @@ def add_ibaq_intensities(
 
 def add_peptide_positions(
     table: pd.DataFrame,
-    fasta_path: Union[str, pathlib.Path, Iterable[Union[str, pathlib.Path]]],
+    protein_db: helper.ProteinDatabase,
     peptide_column: str = "Peptide sequence",
     protein_column: str = "Representative protein",
 ) -> None:
@@ -1020,15 +1020,13 @@ def add_peptide_positions(
 
     Args:
         table: Dataframe to which the protein annotations are added.
-        fasta_path: Path of a FASTA file, or a list of FASTA file paths.
+        protein_db: A protein database generated from one or several FASTA files.
         peptide_column: Column in 'table' that contains the peptide sequence. Peptide
             sequences must only contain amino acids and no other symbols.
         protein_column: Column in 'table' that contains protein IDs that are used to
             find matching entries in the FASTA files.
     """
     # not tested #
-    protein_db = helper.importProteinDatabase(fasta_path)
-
     peptide_positions = {"Start position": [], "End position": []}
     proteins_not_in_db = []
     for peptide, protein_id in zip(table[peptide_column], table[protein_column]):
