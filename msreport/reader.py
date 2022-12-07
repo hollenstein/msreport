@@ -794,7 +794,10 @@ def sort_leading_proteins(
     special_proteins: Optional[list[str]] = None,
     database_order: Optional[list[str]] = None,
 ) -> None:
-    """Sorts leading proteins and reassigns representative protein and contaminants.
+    """Returns a copy of 'table' with sorted leading proteins.
+
+    Sorts "Leading proteins" and "Leading potential contaminants", then reassigns values
+    for "Representative protein" and "Potential contaminant".
 
     Leading proteins are sorted according to the selected options and entries from the
     column "Leading potential contaminants" are updated accordingly. The first entry of
@@ -818,6 +821,7 @@ def sort_leading_proteins(
             entry is written in the very beginning of the fasta header, e.g. "sp" from
             the fasta header ">sp|P60709|ACTB_HUMAN Actin".
     """
+    sorted_table = table.copy()
     sorted_entries = {
         "Representative protein": [],
         "Potential contaminant": [],
@@ -829,7 +833,7 @@ def sort_leading_proteins(
         database_encoding.update({db: i for i, db in enumerate(database_order)})
         # raise NotImplementedError()
 
-    for idx, row in table.iterrows():
+    for idx, row in sorted_table.iterrows():
         protein_ids = row["Leading proteins"].split(";")
         potential_contaminants = [
             i == "True" for i in row["Leading potential contaminants"].split(";")
@@ -843,7 +847,7 @@ def sort_leading_proteins(
         if penalize_contaminants:
             for i, is_contaminant in enumerate(potential_contaminants):
                 sorting_info[i][0].append(is_contaminant)
-        if database_order:
+        if database_order is not None:
             db_origins = row["Leading proteins database origin"].split(";")
             for i, db_origin in enumerate(db_origins):
                 sorting_info[i][0].append(database_encoding[db_origin])
@@ -862,7 +866,8 @@ def sort_leading_proteins(
             ";".join(map(str, potential_contaminants))
         )
     for key in sorted_entries:
-        table[key] = sorted_entries[key]
+        sorted_table[key] = sorted_entries[key]
+    return sorted_table
 
 
 def add_protein_annotation(
