@@ -21,11 +21,11 @@ Unified column names:
 
 import os
 from collections import OrderedDict
-from typing import Iterable, Optional, Union
+from typing import Callable, Iterable, Optional
+import warnings
 
 import numpy as np
 import pandas as pd
-import pathlib
 
 import msreport.helper as helper
 from msreport.errors import ProteinsNotInFastaWarning
@@ -872,13 +872,13 @@ def add_protein_annotation(
     ibaq_peptides: bool = False,
     database_origin: bool = False,
 ) -> None:
-    """Uses a FASTA protein database to add protein annotation columns to the 'table'.
+    """Uses a FASTA protein database to add protein annotation columns.
 
     Args:
         table: Dataframe to which the protein annotations are added.
         protein_db: A protein database generated from one or several FASTA files.
-        id_column: Column in 'table' that contains protein uniprot IDs that are used to
-            look up entries in the 'protein_db'.
+        id_column: Column in 'table' that contains protein uniprot IDs, which will be
+            used to look up entries in the 'protein_db'.
         gene_name: If True, adds a "Gene name" column.
         protein_entry: If True, adds "Protein entry name" column.
         protein_length: If True, adds a "Protein length" column.
@@ -888,6 +888,7 @@ def add_protein_annotation(
             a length between 7 and 30.
         database_origin: If True, adds a "Database origin" column.
     """
+    # not tested #
     proteins = table[id_column].to_list()
 
     proteins_not_in_db = []
@@ -933,6 +934,76 @@ def add_protein_annotation(
             _get_annotation_ibaq_peptides(protein_id, protein_db, default_value=np.nan)
             for protein_id in proteins
         ]
+    for column in annotation.keys():
+        table[column] = annotation[column]
+
+
+def add_leading_proteins_annotation(
+    table: pd.DataFrame,
+    protein_db: helper.ProteinDatabase,
+    id_column: str = "Leading proteins",
+    gene_name: bool = False,
+    protein_entry: bool = False,
+    protein_length: bool = False,
+    fasta_header: bool = False,
+    ibaq_peptides: bool = False,
+    database_origin: bool = False,
+) -> None:
+    """Uses a FASTA protein database to add leading protein annotation columns.
+
+    Args:
+        table: Dataframe to which the protein annotations are added.
+        protein_db: A protein database generated from one or several FASTA files.
+        id_column: Column in 'table' that contains leading protein uniprot IDs, which
+            will be used to look up entries in the 'protein_db'.
+        gene_name: If True, adds a "Leading proteins gene name" column.
+        protein_entry: If True, adds "Leading proteins entry name" column.
+        protein_length: If True, adds a "Leading proteins length" column.
+        fasta_header: If True, adds a "Leading proteins fasta header" column.
+        ibaq_peptides: If True, adds a "Leading proteins iBAQ peptides" columns. The
+            number of iBAQ peptides is calculated as the theoretical number of tryptic
+            peptides with a length between 7 and 30.
+        database_origin: If True, adds a "Leading proteins database origin" column.
+    """
+    # not tested #
+    leading_protein_entries = table[id_column].to_list()
+
+    proteins_not_in_db = []
+    for leading_entry in leading_protein_entries:
+        for protein_id in leading_entry.split(";"):
+            if protein_id not in protein_db.proteins:
+                proteins_not_in_db.append(protein_id)
+    if proteins_not_in_db:
+        warnings.warn(
+            f"Some proteins could not be annotated: {repr(proteins_not_in_db)}",
+            ProteinsNotInFastaWarning,
+        )
+
+    annotation = {}
+    if gene_name:
+        annotation["Leading proteins gene name"] = _annotate_leading_from_db(
+            leading_protein_entries, protein_db, _get_annotation_gene_name
+        )
+    if protein_entry:
+        annotation["Leading proteins entry name"] = _annotate_leading_from_db(
+            leading_protein_entries, protein_db, _get_annotation_protein_entry_name
+        )
+    if protein_length:
+        annotation["Leading proteins length"] = _annotate_leading_from_db(
+            leading_protein_entries, protein_db, _get_annotation_sequence_length
+        )
+    if fasta_header:
+        annotation["Leading proteins fasta header"] = _annotate_leading_from_db(
+            leading_protein_entries, protein_db, _get_annotation_fasta_header
+        )
+    if ibaq_peptides:
+        annotation["Leading proteins iBAQ peptides"] = _annotate_leading_from_db(
+            leading_protein_entries, protein_db, _get_annotation_ibaq_peptides
+        )
+    if database_origin:
+        annotation["Leading proteins database origin"] = _annotate_leading_from_db(
+            leading_protein_entries, protein_db, _get_annotation_db_origin
+        )
     for column in annotation.keys():
         table[column] = annotation[column]
 
@@ -1309,6 +1380,24 @@ def _mark_contaminants(entries: list[str], tag: str) -> list[bool]:
     """
     # TODO: not tested #
     return [True if tag in entry else False for entry in entries]
+
+
+def _annotate_leading_from_db(
+    protein_entries: Iterable[str],
+    protein_db: helper.ProteinDatabase,
+    query_function: Callable,
+) -> list[any]:
+    """TODO: add docstring"""
+    # not tested #
+    annotation_values = []
+    default_value = ""
+    for protein_query in protein_entries:
+        query_result = []
+        for protein_id in protein_query.split(";"):
+            query_result.append(query_function(protein_id, protein_db, default_value))
+        query_result = ";".join(map(str, query_result))
+        annotation_values.append(query_result)
+    return annotation_values
 
 
 def _get_annotation_sequence_length(
