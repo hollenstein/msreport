@@ -18,9 +18,8 @@ Unified column names:
 - LFQ intensity "sample name"
 - iBAQ intensity "sample name"
 """
-
+from collections import OrderedDict, defaultdict
 import os
-from collections import OrderedDict
 from typing import Callable, Iterable, Optional
 import warnings
 
@@ -814,8 +813,10 @@ def sort_leading_proteins(
         special_proteins: Optional, allows specifying a list of protein IDs that
             will always be sorted to the beginning.
         database_order: Optional, allows specifying an order of protein databases that
-            will be considered for sorting. The protein database of a fasta entry is
-            written in the very beginning of the fasta header, e.g. "sp" or "tr".
+            will be considered for sorting. Database names that are not present in
+            'database_order' are sorted to the end. The protein database of a fasta
+            entry is written in the very beginning of the fasta header, e.g. "sp" from
+            the fasta header ">sp|P60709|ACTB_HUMAN Actin".
     """
     sorted_entries = {
         "Representative protein": [],
@@ -824,8 +825,9 @@ def sort_leading_proteins(
         "Leading potential contaminants": [],
     }
     if database_order is not None:
-        raise NotImplementedError()
-        # Add database to leading proteins
+        database_encoding = defaultdict(lambda: 999)
+        database_encoding.update({db: i for i, db in enumerate(database_order)})
+        # raise NotImplementedError()
 
     for idx, row in table.iterrows():
         protein_ids = row["Leading proteins"].split(";")
@@ -842,7 +844,10 @@ def sort_leading_proteins(
             for i, is_contaminant in enumerate(potential_contaminants):
                 sorting_info[i][0].append(is_contaminant)
         if database_order:
-            raise NotImplementedError()
+            db_origins = row["Leading proteins database origin"].split(";")
+            for i, db_origin in enumerate(db_origins):
+                sorting_info[i][0].append(database_encoding[db_origin])
+            # raise NotImplementedError()
         if alphanumeric:
             for i, _id in enumerate(protein_ids):
                 sorting_info[i][0].append(_id)
@@ -858,7 +863,6 @@ def sort_leading_proteins(
         )
     for key in sorted_entries:
         table[key] = sorted_entries[key]
-    return table
 
 
 def add_protein_annotation(

@@ -74,14 +74,21 @@ class TestSortLeadingProteins:
             "Leading potential contaminants",
             "Representative protein",
             "Potential contaminant",
+            "Leading proteins database origin",
         ]
         self.input_table = pd.DataFrame(
             data=[
-                ["C;A_cont;B", "False;True;False", "C", False],
-                ["A;C;B", "False;False;False", "A", False],
+                ["C;A_cont;B", "False;True;False", "C", False, "sp;tr;sp"],
+                ["A;C;B", "False;False;False", "A", False, "tr;xx;sp"],
             ],
             columns=self.table_columns,
         )
+        self.expected_table_columns = [
+            "Leading proteins",
+            "Leading potential contaminants",
+            "Representative protein",
+            "Potential contaminant",
+        ]
 
     def test_alhpanumeric_sorting(self):
         expected = pd.DataFrame(
@@ -89,7 +96,7 @@ class TestSortLeadingProteins:
                 ["A_cont;B;C", "True;False;False", "A_cont", True],
                 ["A;B;C", "False;False;False", "A", False],
             ],
-            columns=self.table_columns,
+            columns=self.expected_table_columns,
         )
 
         sorted_table = msreport.reader.sort_leading_proteins(
@@ -104,7 +111,7 @@ class TestSortLeadingProteins:
                 ["C;B;A_cont", "False;False;True", "C", False],
                 ["A;C;B", "False;False;False", "A", False],
             ],
-            columns=self.table_columns,
+            columns=self.expected_table_columns,
         )
 
         sorted_table = msreport.reader.sort_leading_proteins(
@@ -120,7 +127,7 @@ class TestSortLeadingProteins:
                 ["B;C;A_cont", "False;False;True", "B", False],
                 ["B;A;C", "False;False;False", "B", False],
             ],
-            columns=self.table_columns,
+            columns=self.expected_table_columns,
         )
 
         sorted_table = msreport.reader.sort_leading_proteins(
@@ -132,14 +139,33 @@ class TestSortLeadingProteins:
         for column in expected.columns:
             assert sorted_table[column].tolist() == expected[column].tolist()
 
-    def test_all_sorting_options(self):
+    def test_database_order_sorting(self):
+        database_order = ["sp", "tr"]
+        expected = pd.DataFrame(
+            data=[
+                ["C;B;A_cont", "False;False;True", "C", False],
+                ["B;A;C", "False;False;False", "B", False],
+            ],
+            columns=self.expected_table_columns,
+        )
+
+        sorted_table = msreport.reader.sort_leading_proteins(
+            self.input_table,
+            alphanumeric=False,
+            penalize_contaminants=False,
+            database_order=database_order,
+        )
+        for column in expected.columns:
+            assert sorted_table[column].tolist() == expected[column].tolist()
+
+    def test_multiple_sorting_options(self):
         special_proteins = ["C"]
         expected = pd.DataFrame(
             data=[
                 ["C;B;A_cont", "False;False;True", "C", False],
                 ["C;A;B", "False;False;False", "C", False],
             ],
-            columns=self.table_columns,
+            columns=self.expected_table_columns,
         )
 
         sorted_table = msreport.reader.sort_leading_proteins(
