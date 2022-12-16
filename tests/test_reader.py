@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 import msreport.reader
-from msreport.helper.temp import ProteinDatabase, Protein
+from msreport.helper.temp import Protein
 
 
 @pytest.fixture
@@ -550,6 +550,22 @@ class TestFPReader:
         assert "Intensity SampleA_1" in table
 
 
+def test_create_multi_entry_annotation_from_db():
+    protein_db = {
+        "entry 1": "value 1",
+        "entry 2": "value 2",
+        "entry 3": "value 3",
+        "entry 4": "value 4",
+    }
+    protein_entries = ["entry 1;entry 2", "entry 3", "entry 4;missing entry"]
+    expected_annotation = ["value 1;value 2", "value 3", "value 4;"]
+
+    annotation = msreport.reader._create_multi_entry_annotation_from_db(
+        protein_entries, protein_db, lambda return_value, default: return_value
+    )
+    assert annotation == expected_annotation
+
+
 class TestGetAnnotationFunctions:
     @pytest.fixture(autouse=True)
     def _init_protein_db(self):
@@ -563,8 +579,7 @@ class TestGetAnnotationFunctions:
         self.db_origin = "sp"
         self.default_value = "Default"
 
-        self.protein_db = msreport.helper.ProteinDatabase()
-        self.protein_db.proteins[self.protein_id] = Protein(
+        self.protein_entry = Protein(
             sequence=self.sequence,
             header=self.fasta_header,
             info={
@@ -585,49 +600,31 @@ class TestGetAnnotationFunctions:
     # fmt: off
     def test_get_annotation_sequence_length(self):
         assert self.sequence_length == msreport.reader._get_annotation_sequence_length(
-            self.protein_id, self.protein_db, default_value=None
-        )
-        assert self.default_value == msreport.reader._get_annotation_sequence_length(
-            "Absent database entry", self.protein_db, default_value=self.default_value
+            self.protein_entry, default_value=None
         )
 
     def test_get_annotation_fasta_header(self):
         assert self.fasta_header == msreport.reader._get_annotation_fasta_header(
-            self.protein_id, self.protein_db, default_value=None
-        )
-        assert self.default_value == msreport.reader._get_annotation_fasta_header(
-            "Absent database entry", self.protein_db, default_value=self.default_value
+            self.protein_entry, default_value=None
         )
 
     def test_get_annotation_gene_name(self):
         assert self.gene_name == msreport.reader._get_annotation_gene_name(
-            self.protein_id, self.protein_db, default_value=None
-        )
-        assert self.default_value == msreport.reader._get_annotation_gene_name(
-            "Absent database entry", self.protein_db, default_value=self.default_value
+            self.protein_entry, default_value=None
         )
 
     def test_get_annotation_protein_entry_name(self):
         assert self.entry_name == msreport.reader._get_annotation_protein_entry_name(
-            self.protein_id, self.protein_db, default_value=None
-        )
-        assert self.default_value == msreport.reader._get_annotation_protein_entry_name(
-            "Absent database entry", self.protein_db, default_value=self.default_value
+            self.protein_entry, default_value=None
         )
 
     def test_get_annotation_db_origin(self):
         assert self.db_origin == msreport.reader._get_annotation_db_origin(
-            self.protein_id, self.protein_db, default_value=None
-        )
-        assert self.default_value == msreport.reader._get_annotation_db_origin(
-            "Absent database entry", self.protein_db, default_value=self.default_value
+            self.protein_entry, default_value=None
         )
 
     def test_get_annotation_ibaq_peptides(self):
         assert self.tryptic_ibaq_peptides == msreport.reader._get_annotation_ibaq_peptides(
-            self.protein_id, self.protein_db, default_value=None
-        )
-        assert self.default_value == msreport.reader._get_annotation_ibaq_peptides(
-            "Absent database entry", self.protein_db, default_value=self.default_value
+            self.protein_entry, default_value=None
         )
     # fmt: on

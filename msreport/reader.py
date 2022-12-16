@@ -20,13 +20,14 @@ Unified column names:
 """
 from collections import OrderedDict, defaultdict
 import os
-from typing import Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional
 import warnings
 
 import numpy as np
 import pandas as pd
 
 import msreport.helper as helper
+from msreport.helper.temp import Protein
 from msreport.errors import ProteinsNotInFastaWarning
 
 
@@ -885,7 +886,8 @@ def add_protein_annotation(
 
     Args:
         table: Dataframe to which the protein annotations are added.
-        protein_db: A protein database generated from one or several FASTA files.
+        protein_db: A protein database containing entries from one or multiple FASTA
+            files.
         id_column: Column in 'table' that contains protein uniprot IDs, which will be
             used to look up entries in the 'protein_db'.
         gene_name: If True, adds a "Gene name" column.
@@ -913,34 +915,34 @@ def add_protein_annotation(
     annotation = {}
     if gene_name:
         annotation["Gene name"] = [
-            _get_annotation_gene_name(protein_id, protein_db, default_value="")
+            _get_annotation_gene_name(protein_db[protein_id], default_value="")
             for protein_id in proteins
         ]
     if protein_entry:
         annotation["Protein entry name"] = [
-            _get_annotation_protein_entry_name(protein_id, protein_db, default_value="")
+            _get_annotation_protein_entry_name(protein_db[protein_id], default_value="")
             for protein_id in proteins
         ]
     if protein_length:
         annotation["Protein length"] = [
             _get_annotation_sequence_length(
-                protein_id, protein_db, default_value=np.nan
+                protein_db[protein_id], default_value=np.nan
             )
             for protein_id in proteins
         ]
     if fasta_header:
         annotation["Fasta header"] = [
-            _get_annotation_fasta_header(protein_id, protein_db, default_value="")
+            _get_annotation_fasta_header(protein_db[protein_id], default_value="")
             for protein_id in proteins
         ]
     if database_origin:
         annotation["Database origin"] = [
-            _get_annotation_db_origin(protein_id, protein_db, default_value="")
+            _get_annotation_db_origin(protein_db[protein_id], default_value="")
             for protein_id in proteins
         ]
     if ibaq_peptides:
         annotation["iBAQ peptides"] = [
-            _get_annotation_ibaq_peptides(protein_id, protein_db, default_value=np.nan)
+            _get_annotation_ibaq_peptides(protein_db[protein_id], default_value=np.nan)
             for protein_id in proteins
         ]
     for column in annotation.keys():
@@ -960,9 +962,13 @@ def add_leading_proteins_annotation(
 ) -> None:
     """Uses a FASTA protein database to add leading protein annotation columns.
 
+    Generates protein annotations for multi protein entries, where each entry can
+    contain one or multiple protein ids, multiple protein ids are separated by ";".
+
     Args:
         table: Dataframe to which the protein annotations are added.
-        protein_db: A protein database generated from one or several FASTA files.
+        protein_db: A protein database containing entries from one or multiple FASTA
+            files.
         id_column: Column in 'table' that contains leading protein uniprot IDs, which
             will be used to look up entries in the 'protein_db'.
         gene_name: If True, adds a "Leading proteins gene name" column.
@@ -990,29 +996,35 @@ def add_leading_proteins_annotation(
 
     annotation = {}
     if gene_name:
-        annotation["Leading proteins gene name"] = _annotate_leading_from_db(
+        annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_gene_name
         )
+        annotation["Leading proteins gene name"] = annotation
     if protein_entry:
-        annotation["Leading proteins entry name"] = _annotate_leading_from_db(
+        annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_protein_entry_name
         )
+        annotation["Leading proteins entry name"] = annotation
     if protein_length:
-        annotation["Leading proteins length"] = _annotate_leading_from_db(
+        annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_sequence_length
         )
+        annotation["Leading proteins length"] = annotation
     if fasta_header:
-        annotation["Leading proteins fasta header"] = _annotate_leading_from_db(
+        annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_fasta_header
         )
+        annotation["Leading proteins fasta header"] = annotation
     if ibaq_peptides:
-        annotation["Leading proteins iBAQ peptides"] = _annotate_leading_from_db(
+        annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_ibaq_peptides
         )
+        annotation["Leading proteins iBAQ peptides"] = annotation
     if database_origin:
-        annotation["Leading proteins database origin"] = _annotate_leading_from_db(
+        annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_db_origin
         )
+        annotation["Leading proteins database origin"] = annotation
     for column in annotation.keys():
         table[column] = annotation[column]
 
@@ -1100,7 +1112,8 @@ def add_peptide_positions(
 
     Args:
         table: Dataframe to which the protein annotations are added.
-        protein_db: A protein database generated from one or several FASTA files.
+        protein_db: A protein database containing entries from one or multiple FASTA
+            files.
         peptide_column: Column in 'table' that contains the peptide sequence. Peptide
             sequences must only contain amino acids and no other symbols.
         protein_column: Column in 'table' that contains protein IDs that are used to
@@ -1391,73 +1404,71 @@ def _mark_contaminants(entries: list[str], tag: str) -> list[bool]:
     return [True if tag in entry else False for entry in entries]
 
 
-def _annotate_leading_from_db(
+def _create_multi_entry_annotation_from_db(
     protein_entries: Iterable[str],
     protein_db: helper.ProteinDatabase,
     query_function: Callable,
-) -> list[any]:
-    """TODO: add docstring"""
+) -> list[str]:
+    """Returns a list of multi protein entry annotations.
+
+    Can be used to generate protein annotations for multi protein entries, where each
+    entry can contain one or multiple protein ids, multiple protein ids are separated
+    by ";". For each protein id an annotation is generated by looking up the protein
+    entry in the protein database, which is then submitted to the specified query
+    function. If a protein id is not present in the protein database or if the query
+    function cannot extract an annotation from the database entry, an empty string will
+    be used.
+
+    Args:
+        protein_entries: Iterable of protein entries. Each protein entry correpsonds to
+            one or multiple protein ids, separated by ";".
+        protein_db: A protein database containing entries from one or multiple FASTA
+            files.
+        query_function: Function that gets as arguments an msreport.helper.temp.Protein
+            instance and a default return value and returns either a string or float.
+
+    Returns:
+        A list of multi protein annotations, where each entry can either correspond to
+        the annotation of one or multiple proteins, which are separated by ";".
+    """
     # not tested #
     annotation_values = []
     default_value = ""
     for protein_query in protein_entries:
         query_result = []
         for protein_id in protein_query.split(";"):
-            query_result.append(query_function(protein_id, protein_db, default_value))
+            if protein_id in protein_db:
+                db_entry = protein_db[protein_id]
+                query_result.append(query_function(db_entry, default_value))
+            else:
+                query_result.append(default_value)
         query_result = ";".join(map(str, query_result))
         annotation_values.append(query_result)
     return annotation_values
 
 
-def _get_annotation_sequence_length(
-    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
-) -> any:
-    if protein_id not in protein_db.proteins:
-        return default_value
-    else:
-        return protein_db[protein_id].length()
+def _get_annotation_sequence_length(protein_entry: Protein, default_value: Any) -> Any:
+    return protein_entry.length()
 
 
-def _get_annotation_fasta_header(
-    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
-) -> any:
-    if protein_id not in protein_db.proteins:
-        return default_value
-    else:
-        return protein_db[protein_id].fastaHeader
+def _get_annotation_fasta_header(protein_entry: Protein, default_value: Any) -> Any:
+    return protein_entry.fastaHeader
 
 
-def _get_annotation_gene_name(
-    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
-) -> any:
-    if protein_id not in protein_db.proteins:
-        return default_value
-    else:
-        return protein_db[protein_id].headerInfo.get("GN", default_value)
+def _get_annotation_gene_name(protein_entry: Protein, default_value: Any) -> Any:
+    return protein_entry.headerInfo.get("GN", default_value)
 
 
 def _get_annotation_protein_entry_name(
-    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
-) -> any:
-    if protein_id not in protein_db.proteins:
-        return default_value
-    else:
-        return protein_db[protein_id].headerInfo.get("entry", default_value)
+    protein_entry: Protein,
+    default_value: Any,
+) -> Any:
+    return protein_entry.headerInfo.get("entry", default_value)
 
 
-def _get_annotation_db_origin(
-    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
-) -> any:
-    if protein_id not in protein_db.proteins:
-        return default_value
-    else:
-        return protein_db[protein_id].headerInfo.get("db", default_value)
+def _get_annotation_db_origin(protein_entry: Protein, default_value: Any) -> Any:
+    return protein_entry.headerInfo.get("db", default_value)
 
 
-def _get_annotation_ibaq_peptides(
-    protein_id: str, protein_db: helper.ProteinDatabase, default_value: any
-) -> any:
-    if protein_id not in protein_db.proteins:
-        return default_value
-    else:
-        return helper.calculate_tryptic_ibaq_peptides(protein_db[protein_id].sequence)
+def _get_annotation_ibaq_peptides(protein_entry: Protein, default_value: Any) -> Any:
+    return helper.calculate_tryptic_ibaq_peptides(protein_entry.sequence)
