@@ -852,7 +852,10 @@ def sort_leading_proteins(
             db_origins = row["Leading proteins database origin"].split(";")
             for i, db_origin in enumerate(db_origins):
                 sorting_info[i][0].append(database_encoding[db_origin])
-            # raise NotImplementedError()
+                warnings.warn(
+                    "Leading protein entries will be sorted by protein database but the"
+                    '"Leading proteins database origin" column will not be updated.'
+                )
         if alphanumeric:
             for i, _id in enumerate(protein_ids):
                 sorting_info[i][0].append(_id)
@@ -994,39 +997,39 @@ def add_leading_proteins_annotation(
             ProteinsNotInFastaWarning,
         )
 
-    annotation = {}
+    annotations = {}
     if gene_name:
         annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_gene_name
         )
-        annotation["Leading proteins gene name"] = annotation
+        annotations["Leading proteins gene name"] = annotation
     if protein_entry:
         annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_protein_entry_name
         )
-        annotation["Leading proteins entry name"] = annotation
+        annotations["Leading proteins entry name"] = annotation
     if protein_length:
         annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_sequence_length
         )
-        annotation["Leading proteins length"] = annotation
+        annotations["Leading proteins length"] = annotation
     if fasta_header:
         annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_fasta_header
         )
-        annotation["Leading proteins fasta header"] = annotation
+        annotations["Leading proteins fasta header"] = annotation
     if ibaq_peptides:
         annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_ibaq_peptides
         )
-        annotation["Leading proteins iBAQ peptides"] = annotation
+        annotations["Leading proteins iBAQ peptides"] = annotation
     if database_origin:
         annotation = _create_multi_entry_annotation_from_db(
             leading_protein_entries, protein_db, _get_annotation_db_origin
         )
-        annotation["Leading proteins database origin"] = annotation
-    for column in annotation.keys():
-        table[column] = annotation[column]
+        annotations["Leading proteins database origin"] = annotation
+    for column in annotations.keys():
+        table[column] = annotations[column]
 
 
 def add_sequence_coverage(
