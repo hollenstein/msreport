@@ -1,8 +1,18 @@
-from typing import Iterable, Optional, Union
+from typing import Any, Iterable, Union
 import re
 
 import pathlib
 import pyteomics.fasta
+
+
+class Protein:
+    def __init__(self, sequence, header, info):
+        self.sequence = sequence
+        self.fastaHeader = header
+        self.headerInfo = info
+
+    def length(self):
+        return len(self.sequence)
 
 
 class ProteinDatabase:
@@ -15,18 +25,17 @@ class ProteinDatabase:
             header_info = pyteomics.fasta.parse(header, parsers=fasta_parsers)
             self.proteins[header_info["id"]] = Protein(sequence, header, header_info)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
+        """Evaluation of self.proteins[key]"""
         return self.proteins[key]
 
+    def __setitem__(self, key: str, value: Protein):
+        """Item assignment of self.proteins[key]"""
+        self.data[key] = value
 
-class Protein:
-    def __init__(self, sequence, header, info):
-        self.sequence = sequence
-        self.fastaHeader = header
-        self.headerInfo = info
-
-    def length(self):
-        return len(self.sequence)
+    def __contains__(self, key: str) -> bool:
+        """True if key is in the info axis of self.data"""
+        return key in self.data
 
 
 class SimpleUniProtLikeMixin(pyteomics.fasta.FlavoredMixin):
