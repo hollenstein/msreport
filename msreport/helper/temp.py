@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Union
+from typing import Iterable, Union
 import re
 
 import pathlib
@@ -31,11 +31,11 @@ class ProteinDatabase:
 
     def __setitem__(self, key: str, value: Protein):
         """Item assignment of self.proteins[key]"""
-        self.data[key] = value
+        self.proteins[key] = value
 
     def __contains__(self, key: str) -> bool:
-        """True if key is in the info axis of self.data"""
-        return key in self.data
+        """True if key is in the info axis of self.proteins"""
+        return key in self.proteins
 
 
 class SimpleUniProtLikeMixin(pyteomics.fasta.FlavoredMixin):
