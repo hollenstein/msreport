@@ -47,6 +47,7 @@ Qtable into the Amica input format, and generating contaminant tables for the
 inspection of potential contaminants.
 
 Additional scripts
+
 - The "excel_report" module enables the generation of a formatted excel protein report
   by using the XlsxReport library.
 - The "benchmark" module contains functions to generate benchmark plots from multiple
