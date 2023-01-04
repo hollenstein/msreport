@@ -891,7 +891,7 @@ def add_protein_annotation(
     fasta_header: bool = False,
     ibaq_peptides: bool = False,
     database_origin: bool = False,
-) -> None:
+) -> pd.DataFrame:
     """Uses a FASTA protein database to add protein annotation columns.
 
     Args:
@@ -908,6 +908,9 @@ def add_protein_annotation(
             peptides is calculated as the theoretical number of tryptic peptides with
             a length between 7 and 30.
         database_origin: If True, adds a "Database origin" column.
+
+    Returns:
+        The updated 'table' dataframe.
     """
     # not tested #
     proteins = table[id_column].to_list()
@@ -949,6 +952,7 @@ def add_protein_annotation(
         )
     for column in annotations.keys():
         table[column] = annotations[column]
+    return table
 
 
 def add_leading_proteins_annotation(
@@ -961,7 +965,7 @@ def add_leading_proteins_annotation(
     fasta_header: bool = False,
     ibaq_peptides: bool = False,
     database_origin: bool = False,
-) -> None:
+) -> pd.DataFrame:
     """Uses a FASTA protein database to add leading protein annotation columns.
 
     Generates protein annotations for multi protein entries, where each entry can
@@ -981,6 +985,9 @@ def add_leading_proteins_annotation(
             number of iBAQ peptides is calculated as the theoretical number of tryptic
             peptides with a length between 7 and 30.
         database_origin: If True, adds a "Leading proteins database origin" column.
+
+    Returns:
+        The updated 'table' dataframe.
     """
     # not tested #
     leading_protein_entries = table[id_column].to_list()
@@ -1029,6 +1036,7 @@ def add_leading_proteins_annotation(
         annotations["Leading proteins database origin"] = annotation
     for column in annotations.keys():
         table[column] = annotations[column]
+    return table
 
 
 def add_sequence_coverage(
