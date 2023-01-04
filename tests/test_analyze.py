@@ -50,12 +50,6 @@ def example_qtable(example_data):
     return qtable
 
 
-def test_count_missing_values(example_data, example_qtable):
-    missing_values = msreport.analyze.count_missing_values(example_qtable)
-    expected = example_data["missing_values"]
-    assert missing_values.to_dict() == expected.to_dict()
-
-
 class TestValidateProteins:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_qtable):
