@@ -18,12 +18,15 @@ class Protein:
 class ProteinDatabase:
     def __init__(self):
         self.proteins = {}
+        self._fasta_parsers = _get_updated_fasta_parsers()
 
     def add_fasta(self, fasta_path):
         for header, sequence in parse_fasta(fasta_path):
-            fasta_parsers = _get_updated_fasta_parsers()
-            header_info = pyteomics.fasta.parse(header, parsers=fasta_parsers)
-            self.proteins[header_info["id"]] = Protein(sequence, header, header_info)
+            self.add_fasta_entry(header, sequence)
+
+    def add_fasta_entry(self, header, sequence):
+        header_info = pyteomics.fasta.parse(header, parsers=self._fasta_parsers)
+        self.proteins[header_info["id"]] = Protein(sequence, header, header_info)
 
     def __getitem__(self, key: str):
         """Evaluation of self.proteins[key]"""
