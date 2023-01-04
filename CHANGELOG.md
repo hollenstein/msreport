@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.0.5 (upcoming)
+
+- Reader module
+  - Leading proteins are no longer sorted during the protein import. Protein sorting is now done by
+    a dedicated function, `reader.sort_leading_proteins`.
+  - Added `reader.sort_leading_proteins`, which allows sorting of leading proteins with four
+    options: Alphanumeric sorting by protein ID, penalization of contaminants, promotion of special
+    proteins, and sorting of protein entries by the database from which the entry originates.
+  - Added `reader.add_protein_annotation`, which allows adding protein annotations from a protein
+    database. Optional arguments allow to specify the added annotation columns.
+  - Added `reader.add_leading_proteins_annotation`, which allows adding protein annotations for the
+    "Leading proteins" column, i.e. multiple annotation per field, one for each protein ID. Uses the
+    same syntax as `reader.add_protein_annotation` to specify the added annotation columns.
+
+- Introduced breaking changes
+  - Replaced `reader.add_protein_annotations` with `reader.add_protein_annotation`
+  - `reader.add_peptide_positions`, now requires a protein database instead of a fasta path.
+
 
 ## 0.0.4
 
