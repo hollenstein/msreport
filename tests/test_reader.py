@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 import msreport.reader
-from msreport.helper.temp import Protein
+from msreport.helper.temp import Protein, ProteinDatabase
 
 
 @pytest.fixture
@@ -16,6 +16,16 @@ def example_fpreader():
 @pytest.fixture
 def example_mqreader():
     return msreport.reader.MQReader("./tests/testdata/maxquant_")
+
+
+@pytest.fixture
+def example_protein_db():
+    db = ProteinDatabase()
+    db.add_fasta_entry(
+        header="sp|P60709|ACTB_HUMAN Actin, cytoplasmic 1 OS=Homo sapiens OX=9606 GN=ACTB PE=1 SV=1",
+        sequence="MDDDIAALVVDNGSGMCKAGFAGDDAPRAVFPSIVGRPRHQGVMVGMGQK",
+    )
+    return db
 
 
 def test_that_always_passes():
@@ -559,6 +569,21 @@ class TestFPReader:
         assert "Intensity SampleA_1" in table
 
 
+def test_create_protein_annotations_from_db():
+    default_value = ""
+    protein_db = {
+        "entry 1": "value 1",
+        "entry 2": "value 2",
+    }
+    protein_ids = ["entry 1", "entry 2", "missing entry"]
+    expected_annotation = ["value 1", "value 2", default_value]
+
+    annotation = msreport.reader._create_protein_annotations_from_db(
+        protein_ids, protein_db, lambda return_value, _: return_value, default_value
+    )
+    assert annotation == expected_annotation
+
+
 def test_create_multi_entry_annotation_from_db():
     protein_db = {
         "entry 1": "value 1",
@@ -570,41 +595,22 @@ def test_create_multi_entry_annotation_from_db():
     expected_annotation = ["value 1;value 2", "value 3", "value 4;"]
 
     annotation = msreport.reader._create_multi_entry_annotation_from_db(
-        protein_entries, protein_db, lambda return_value, default: return_value
+        protein_entries, protein_db, lambda return_value, _: return_value
     )
     assert annotation == expected_annotation
 
 
 class TestGetAnnotationFunctions:
     @pytest.fixture(autouse=True)
-    def _init_protein_db(self):
-        self.protein_id = "P60709"
-        self.sequence = "MDDDIAALVVDNGSGMCKAGFAGDDAPRAVFPSIVGRPRHQGVMVGMGQK"
+    def _init_protein_db(self, example_protein_db):
+        self.protein_entry = example_protein_db["P60709"]
         self.tryptic_ibaq_peptides = 4
-        self.sequence_length = len(self.sequence)
-        self.fasta_header = "sp|P60709|ACTB_HUMAN Actin, cytoplasmic 1 OS=Homo sapiens OX=9606 GN=ACTB PE=1 SV=1"
-        self.gene_name = "ACTB"
-        self.entry_name = "ACTB_HUMAN"
-        self.db_origin = "sp"
+        self.sequence_length = len(self.protein_entry.sequence)
+        self.fasta_header = self.protein_entry.fastaHeader
+        self.gene_name = self.protein_entry.headerInfo["gene_id"]
+        self.entry_name = self.protein_entry.headerInfo["entry"]
+        self.db_origin = self.protein_entry.headerInfo["db"]
         self.default_value = "Default"
-
-        self.protein_entry = Protein(
-            sequence=self.sequence,
-            header=self.fasta_header,
-            info={
-                "db": self.db_origin,
-                "entry": self.entry_name,
-                "gene_id": self.gene_name,
-                "id": self.protein_id,
-                "name": "Actin, cytoplasmic 1",
-                "taxon": "HUMAN",
-                "OS": "Homo sapiens",
-                "OX": "9606",
-                "GN": "ACTB",
-                "PE": 1,
-                "SV": 1,
-            },
-        )
 
     # fmt: off
     def test_get_annotation_sequence_length(self):
@@ -637,3 +643,76 @@ class TestGetAnnotationFunctions:
             self.protein_entry, default_value=None
         )
     # fmt: on
+
+
+class TestAddProteinAnnotation:
+    def test_add_protein_annotation(self, example_protein_db):
+        expected_columns = [
+            "Gene name",
+            "Protein entry name",
+            "Protein length",
+            "Fasta header",
+            "Database origin",
+            "iBAQ peptides",
+        ]
+        protein_table = pd.DataFrame({"Representative protein": ["P60709"]})
+        msreport.reader.add_protein_annotation(
+            protein_table,
+            example_protein_db,
+            id_column="Representative protein",
+            gene_name=True,
+            protein_entry=True,
+            protein_length=True,
+            fasta_header=True,
+            ibaq_peptides=True,
+            database_origin=True,
+        )
+        for column in expected_columns:
+            assert column in protein_table.columns
+
+    def test_proteins_not_in_db_warning(self, example_protein_db):
+        with pytest.warns(msreport.errors.ProteinsNotInFastaWarning):
+            protein_table = pd.DataFrame({"Representative protein": ["Missing"]})
+            msreport.reader.add_protein_annotation(
+                protein_table, example_protein_db, fasta_header=True
+            )
+
+
+class TestAddLeadingProteinsAnnotation:
+    def test_add_leading_proteins_annotation(self, example_protein_db):
+        expected_columns = [
+            "Leading proteins database origin",
+            "Leading proteins gene name",
+            "Leading proteins entry name",
+            "Leading proteins length",
+            "Leading proteins fasta header",
+            "Leading proteins iBAQ peptides",
+        ]
+        protein_table = pd.DataFrame(
+            {"Representative protein": ["P60709"], "Leading proteins": ["P60709"]}
+        )
+        msreport.reader.add_leading_proteins_annotation(
+            protein_table,
+            example_protein_db,
+            id_column="Representative protein",
+            gene_name=True,
+            protein_entry=True,
+            protein_length=True,
+            fasta_header=True,
+            ibaq_peptides=True,
+            database_origin=True,
+        )
+        for column in expected_columns:
+            assert column in protein_table.columns
+
+    def test_proteins_not_in_db_warning(self, example_protein_db):
+        with pytest.warns(msreport.errors.ProteinsNotInFastaWarning):
+            protein_table = pd.DataFrame(
+                {
+                    "Representative protein": ["P60709"],
+                    "Leading proteins": ["P60709;Missing"],
+                }
+            )
+            msreport.reader.add_leading_proteins_annotation(
+                protein_table, example_protein_db, fasta_header=True
+            )
