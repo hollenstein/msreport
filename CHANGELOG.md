@@ -1,9 +1,7 @@
-Changelog
-=========
+# Changelog
 
 
-0.0.4
------
+## 0.0.4
 
 - Analyze module
   - Added several additional arguments to impute_missing_values(), which allow
@@ -29,8 +27,7 @@ Changelog
     and "iBAQ peptides" should be added or not.
 
 
-0.0.3
------
+## 0.0.3
 
 - Reader module
   - Added function for converting peptide sites from the "Modifications" column
@@ -60,8 +57,7 @@ Changelog
   - Fixed issue with exported amica tables being incompatible with amica.
 
 
-0.0.2
------
+## 0.0.2
 
 - Plot module
   - Plot for Comparing expression values between replicates of each experiments.
@@ -83,8 +79,7 @@ Changelog
     formatted excel protein report from a Qtable.
 
 
-0.0.1
------
+## 0.0.1
 
 - Initial unstable release of MsReport
 
