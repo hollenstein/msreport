@@ -794,21 +794,20 @@ def sort_leading_proteins(
     penalize_contaminants: bool = True,
     special_proteins: Optional[list[str]] = None,
     database_order: Optional[list[str]] = None,
-) -> None:
+) -> pd.DataFrame:
     """Returns a copy of 'table' with sorted leading proteins.
 
-    Sorts "Leading proteins" and "Leading potential contaminants", then reassigns values
-    for "Representative protein" and "Potential contaminant".
+    "Leading proteins" are sorted according to the selected options. The first entry
+    of the sorted leading proteins is selected as the new "Representative protein". If
+    the columns are present, also the entries of "Leading proteins database origin" and
+    "Leading potential contaminants" are reordered, and "Potential contaminant" is
+    reassigned according to the representative protein.
 
-    Leading proteins are sorted according to the selected options and entries from the
-    column "Leading potential contaminants" are updated accordingly. The first entry of
-    leading proteins is selected as the "Representative protein", and the column
-    "Potential contaminant" is updated accordingly.
-
-    Protein annotation columns, refering to a representative protein that has been
-    changed, will no longer be valid. It is therefore recommended to remove all columns
-    containing protein specific information by enabling 'drop_protein_info' during the
-    import of protein tables or to update protein annotation columns if possible.
+    Additional protein annotation columns, refering to a representative protein that has
+    been changed, will no longer be valid. It is therefore recommended to remove all
+    columns containing protein specific information by enabling 'drop_protein_info'
+    during the import of protein tables or to update protein annotation columns if
+    possible.
 
     Args:
         table: Dataframe in which "Leading proteins" will be sorted.
@@ -821,54 +820,62 @@ def sort_leading_proteins(
             'database_order' are sorted to the end. The protein database of a fasta
             entry is written in the very beginning of the fasta header, e.g. "sp" from
             the fasta header ">sp|P60709|ACTB_HUMAN Actin".
+
+    Returns:
+        A copy of the 'table', containing sorted leading protein entries.
     """
-    sorted_table = table.copy()
-    sorted_entries = {
-        "Representative protein": [],
-        "Potential contaminant": [],
-        "Leading proteins": [],
-        "Leading potential contaminants": [],
-    }
+    sorted_entries = defaultdict(list)
+    contaminants_present = "Leading potential contaminants" in table
+    db_origins_present = "Leading proteins database origin" in table
+
     if database_order is not None:
         database_encoding = defaultdict(lambda: 999)
         database_encoding.update({db: i for i, db in enumerate(database_order)})
-        # raise NotImplementedError()
+    if penalize_contaminants is not None:
+        contaminant_encoding = {"False": 0, "True": 1, False: 0, True: 1}
 
-    for idx, row in sorted_table.iterrows():
+    for idx, row in table.iterrows():
         protein_ids = row["Leading proteins"].split(";")
-        potential_contaminants = [
-            i == "True" for i in row["Leading potential contaminants"].split(";")
-        ]
 
-        sorting_info = [([], i, j) for i, j in zip(protein_ids, potential_contaminants)]
-
+        sorting_info = [[] for _ in protein_ids]
         if special_proteins is not None:
             for i, _id in enumerate(protein_ids):
-                sorting_info[i][0].append(_id not in special_proteins)
+                sorting_info[i].append(_id not in special_proteins)
         if penalize_contaminants:
-            for i, is_contaminant in enumerate(potential_contaminants):
-                sorting_info[i][0].append(is_contaminant)
+            for i, is_contaminant in enumerate(
+                row["Leading potential contaminants"].split(";")
+            ):
+                sorting_info[i].append(contaminant_encoding[is_contaminant])
         if database_order is not None:
-            db_origins = row["Leading proteins database origin"].split(";")
-            for i, db_origin in enumerate(db_origins):
-                sorting_info[i][0].append(database_encoding[db_origin])
-                warnings.warn(
-                    "Leading protein entries will be sorted by protein database but the"
-                    '"Leading proteins database origin" column will not be updated.'
-                )
+            for i, db_origin in enumerate(
+                row["Leading proteins database origin"].split(";")
+            ):
+                sorting_info[i].append(database_encoding[db_origin])
         if alphanumeric:
             for i, _id in enumerate(protein_ids):
-                sorting_info[i][0].append(_id)
+                sorting_info[i].append(_id)
+        sorting_order = [
+            i[0] for i in sorted(enumerate(sorting_info), key=lambda x: x[1])
+        ]
 
-        sorting_info.sort(key=lambda x: x[0])
-        _, protein_ids, potential_contaminants = zip(*sorting_info)
-
+        protein_ids = [protein_ids[i] for i in sorting_order]
         sorted_entries["Representative protein"].append(protein_ids[0])
-        sorted_entries["Potential contaminant"].append(potential_contaminants[0])
         sorted_entries["Leading proteins"].append(";".join(protein_ids))
-        sorted_entries["Leading potential contaminants"].append(
-            ";".join(map(str, potential_contaminants))
-        )
+
+        if contaminants_present:
+            contaminants = row["Leading potential contaminants"].split(";")
+            contaminants = [contaminants[i] for i in sorting_order]
+            potential_contaminant = contaminants[0] == "True"
+            contaminants = ";".join(contaminants)
+            sorted_entries["Potential contaminant"].append(potential_contaminant)
+            sorted_entries["Leading potential contaminants"].append(contaminants)
+
+        if db_origins_present:
+            db_origins = row["Leading proteins database origin"].split(";")
+            db_origins = ";".join([db_origins[i] for i in sorting_order])
+            sorted_entries["Leading proteins database origin"].append(db_origins)
+
+    sorted_table = table.copy()
     for key in sorted_entries:
         sorted_table[key] = sorted_entries[key]
     return sorted_table

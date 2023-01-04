@@ -88,93 +88,102 @@ class TestSortLeadingProteins:
             "Leading potential contaminants",
             "Representative protein",
             "Potential contaminant",
+            "Leading proteins database origin",
         ]
 
-    def test_alhpanumeric_sorting(self):
-        expected = pd.DataFrame(
-            data=[
-                ["A_cont;B;C", "True;False;False", "A_cont", True],
-                ["A;B;C", "False;False;False", "A", False],
-            ],
-            columns=self.expected_table_columns,
-        )
+    def observed_protein_order_after_sorting(self, sorted_table) -> list[list[int]]:
+        """Returns the observed leading protein sorting order in sorted_table."""
+        observed_orders = []
+        for entry_before, entry_after in zip(
+            self.input_table["Leading proteins"], sorted_table["Leading proteins"]
+        ):
+            proteins_before = entry_before.split(";")
+            proteins_after = entry_after.split(";")
+            observed_orders.append(
+                [proteins_before.index(protein) for protein in proteins_after]
+            )
+        return observed_orders
 
+    def test_alhpanumeric_sorting(self):
         sorted_table = msreport.reader.sort_leading_proteins(
             self.input_table, alphanumeric=True, penalize_contaminants=False
         )
-        for column in expected.columns:
-            assert sorted_table[column].tolist() == expected[column].tolist()
+        expected_protein_order = [[1, 2, 0], [0, 2, 1]]
+
+        observed_protein_order = self.observed_protein_order_after_sorting(sorted_table)
+        assert observed_protein_order == expected_protein_order
 
     def test_penalize_contaminant_sorting(self):
-        expected = pd.DataFrame(
-            data=[
-                ["C;B;A_cont", "False;False;True", "C", False],
-                ["A;C;B", "False;False;False", "A", False],
-            ],
-            columns=self.expected_table_columns,
-        )
-
         sorted_table = msreport.reader.sort_leading_proteins(
             self.input_table, alphanumeric=False, penalize_contaminants=True
         )
-        for column in expected.columns:
-            assert sorted_table[column].tolist() == expected[column].tolist()
+        expected_protein_order = [[0, 2, 1], [0, 1, 2]]
+
+        observed_protein_order = self.observed_protein_order_after_sorting(sorted_table)
+        assert observed_protein_order == expected_protein_order
 
     def test_special_protein_sorting(self):
         special_proteins = ["B"]
-        expected = pd.DataFrame(
-            data=[
-                ["B;C;A_cont", "False;False;True", "B", False],
-                ["B;A;C", "False;False;False", "B", False],
-            ],
-            columns=self.expected_table_columns,
-        )
-
         sorted_table = msreport.reader.sort_leading_proteins(
             self.input_table,
             alphanumeric=False,
             penalize_contaminants=True,
             special_proteins=special_proteins,
         )
-        for column in expected.columns:
-            assert sorted_table[column].tolist() == expected[column].tolist()
+        expected_protein_order = [[2, 0, 1], [2, 0, 1]]
+
+        observed_protein_order = self.observed_protein_order_after_sorting(sorted_table)
+        assert observed_protein_order == expected_protein_order
 
     def test_database_order_sorting(self):
         database_order = ["sp", "tr"]
-        expected = pd.DataFrame(
-            data=[
-                ["C;B;A_cont", "False;False;True", "C", False],
-                ["B;A;C", "False;False;False", "B", False],
-            ],
-            columns=self.expected_table_columns,
-        )
-
         sorted_table = msreport.reader.sort_leading_proteins(
             self.input_table,
             alphanumeric=False,
             penalize_contaminants=False,
             database_order=database_order,
         )
-        for column in expected.columns:
-            assert sorted_table[column].tolist() == expected[column].tolist()
+        expected_protein_order = [[0, 2, 1], [2, 0, 1]]
 
-    def test_multiple_sorting_options(self):
-        special_proteins = ["C"]
+        observed_protein_order = self.observed_protein_order_after_sorting(sorted_table)
+        assert observed_protein_order == expected_protein_order
+
+    def test_all_leading_columns_are_sorted(self):
         expected = pd.DataFrame(
             data=[
-                ["C;B;A_cont", "False;False;True", "C", False],
-                ["C;A;B", "False;False;False", "C", False],
+                ["A_cont;B;C", "True;False;False", "A_cont", True, "tr;sp;sp"],
+                ["A;B;C", "False;False;False", "A", False, "tr;sp;xx"],
             ],
-            columns=self.expected_table_columns,
+            columns=[
+                "Leading proteins",
+                "Leading potential contaminants",
+                "Representative protein",
+                "Potential contaminant",
+                "Leading proteins database origin",
+            ],
         )
 
         sorted_table = msreport.reader.sort_leading_proteins(
             self.input_table,
-            alphanumeric=False,
-            penalize_contaminants=True,
-            special_proteins=special_proteins,
+            alphanumeric=True,
+            penalize_contaminants=False,
         )
         for column in expected.columns:
+            assert sorted_table[column].tolist() == expected[column].tolist()
+
+    def test_absent_columns_are_ignored(self):
+        input_table = pd.DataFrame(
+            data=[["C;B;A_cont", "C"], ["A;C;B", "A"]],
+            columns=["Leading proteins", "Representative protein"],
+        )
+        expected = pd.DataFrame(
+            data=[["A_cont;B;C", "A_cont"], ["A;B;C", "A"]],
+            columns=["Leading proteins", "Representative protein"],
+        )
+        sorted_table = msreport.reader.sort_leading_proteins(
+            input_table, alphanumeric=True, penalize_contaminants=False
+        )
+        for column in expected:
             assert sorted_table[column].tolist() == expected[column].tolist()
 
 
