@@ -584,7 +584,7 @@ def test_create_protein_annotations_from_db():
     assert annotation == expected_annotation
 
 
-def test_create_multi_entry_annotation_from_db():
+def test_create_multi_protein_annotations_from_db():
     protein_db = {
         "entry 1": "value 1",
         "entry 2": "value 2",
@@ -594,7 +594,7 @@ def test_create_multi_entry_annotation_from_db():
     protein_entries = ["entry 1;entry 2", "entry 3", "entry 4;missing entry"]
     expected_annotation = ["value 1;value 2", "value 3", "value 4;"]
 
-    annotation = msreport.reader._create_multi_entry_annotation_from_db(
+    annotation = msreport.reader._create_multi_protein_annotations_from_db(
         protein_entries, protein_db, lambda return_value, _: return_value
     )
     assert annotation == expected_annotation

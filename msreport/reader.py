@@ -998,32 +998,32 @@ def add_leading_proteins_annotation(
 
     annotations = {}
     if gene_name:
-        annotation = _create_multi_entry_annotation_from_db(
+        annotation = _create_multi_protein_annotations_from_db(
             leading_protein_entries, protein_db, _get_annotation_gene_name
         )
         annotations["Leading proteins gene name"] = annotation
     if protein_entry:
-        annotation = _create_multi_entry_annotation_from_db(
+        annotation = _create_multi_protein_annotations_from_db(
             leading_protein_entries, protein_db, _get_annotation_protein_entry_name
         )
         annotations["Leading proteins entry name"] = annotation
     if protein_length:
-        annotation = _create_multi_entry_annotation_from_db(
+        annotation = _create_multi_protein_annotations_from_db(
             leading_protein_entries, protein_db, _get_annotation_sequence_length
         )
         annotations["Leading proteins length"] = annotation
     if fasta_header:
-        annotation = _create_multi_entry_annotation_from_db(
+        annotation = _create_multi_protein_annotations_from_db(
             leading_protein_entries, protein_db, _get_annotation_fasta_header
         )
         annotations["Leading proteins fasta header"] = annotation
     if ibaq_peptides:
-        annotation = _create_multi_entry_annotation_from_db(
+        annotation = _create_multi_protein_annotations_from_db(
             leading_protein_entries, protein_db, _get_annotation_ibaq_peptides
         )
         annotations["Leading proteins iBAQ peptides"] = annotation
     if database_origin:
-        annotation = _create_multi_entry_annotation_from_db(
+        annotation = _create_multi_protein_annotations_from_db(
             leading_protein_entries, protein_db, _get_annotation_db_origin
         )
         annotations["Leading proteins database origin"] = annotation
@@ -1444,7 +1444,7 @@ def _create_protein_annotations_from_db(
     return annotation_values
 
 
-def _create_multi_entry_annotation_from_db(
+def _create_multi_protein_annotations_from_db(
     protein_entries: Iterable[str],
     protein_db: helper.ProteinDatabase,
     query_function: Callable,
