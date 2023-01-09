@@ -1,6 +1,15 @@
 # Changelog
 
-## 0.0.5 (upcoming)
+## Unreleased
+
+### Added
+- Qtable.data is now always initiliazed with a "Valid" column
+
+### Changed 
+- Removed maspy dependency
+
+
+## 0.0.5
 
 - Reader module
   - Leading proteins are no longer sorted during the protein import. Protein sorting is now done by
