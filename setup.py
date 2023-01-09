@@ -15,7 +15,6 @@ setup(
     author="David M. Hollenstein",
     author_email="hollenstein.david@gmail.com",
     install_requires=[
-        "maspy",
         "matplotlib",
         "numpy",
         "pandas",

@@ -6,7 +6,7 @@ import pandas as pd
 import scipy.stats
 import scipy.optimize
 
-import maspy.peptidemethods
+import pyteomics.parser
 
 
 def gaussian_imputation(
@@ -127,16 +127,16 @@ def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
     min_length = 7
     max_length = 30
 
-    digestion_products = maspy.peptidemethods.digestInSilico(
+    digestion_products = pyteomics.parser.icleave(
         protein_sequence,
-        removeNtermM=False,
-        cleavageRule=cleavage_rule,
-        missedCleavage=missed_cleavage,
-        minLength=min_length,
-        maxLength=max_length,
+        cleavage_rule,
+        missed_cleavages=missed_cleavage,
+        min_length=min_length,
+        max_length=max_length,
+        regex=True,
     )
-    unique_peptide_sequences = [p for p, i in digestion_products]
-    return len(unique_peptide_sequences)
+    ibaq_peptides = [sequence for index, sequence in digestion_products]
+    return len(ibaq_peptides)
 
 
 def make_coverage_mask(
