@@ -25,6 +25,9 @@ class Qtable:
     def __init__(self, data: pd.DataFrame, design: Optional[pd.DataFrame] = None):
         """Initializes the Qtable.
 
+        If data does not vontain a "Valid" column, this column is added and all its row
+        values are set to True.
+
         Args:
             data: A dataframe containing quantitative proteomics data in a wide format.
             design: A dataframe describing the experimental design that must at least
@@ -32,11 +35,15 @@ class Qtable:
                 should correspond to the Sample names present in the quantitative
                 columns of the data.
         """
-        self.data: pd.DataFrame = data.copy()
         self.design: pd.DataFrame
+        self.data: pd.DataFrame
 
+        self.data = data.copy()
+        if "Valid" not in self.data.columns:
+            self.data["Valid"] = True
         if design is not None:
             self.add_design(design)
+
         self._expression_columns: list[str] = []
         self._expression_features: list[str] = []
         self._expression_sample_mapping: dict[str, str] = {}
