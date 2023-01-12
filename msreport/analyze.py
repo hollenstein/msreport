@@ -250,8 +250,8 @@ def two_group_comparison(
     """Calculates comparison values for two experiments.
 
     Adds new columns "Average expression Experiment_1 vs Experiment_2" and
-    "logFC Experiment_1 vs Experiment_2" to the qtable. Expects that expression values
-    are log2 transformed.
+    "Ratio [log2] Experiment_1 vs Experiment_2" to the qtable. Expects that expression
+    values are log2 transformed.
 
     Args:
         qtable: A Qtable instance, containing expression values.
@@ -281,7 +281,7 @@ def two_group_comparison(
     comparison_table = pd.DataFrame(
         {
             f"Average expression {comparison_tag}": average_expressions,
-            f"logFC {comparison_tag}": ratios,
+            f"Ratio [log2] {comparison_tag}": ratios,
         }
     )
     comparison_table[invalid] = np.nan
@@ -302,7 +302,7 @@ def calculate_multi_group_limma(
     - "P-value Experiment_1 vs Experiment_2"
     - "Adjusted p-value Experiment_1 vs Experiment_2"
     - "Average expression Experiment_1 vs Experiment_2"
-    - "logFC Experiment_1 vs Experiment_2"
+    - "Ratio [log2] Experiment_1 vs Experiment_2"
 
     Requires that expression columns are set, and expression values are log2 transformed
     All rows with missing values are ignored, impute missing values to allow
@@ -393,7 +393,7 @@ def calculate_two_group_limma(
     Adds new columns "P-value Experiment_1 vs Experiment_2",
     "Adjusted p-value Experiment_1 vs Experiment_2",
     "Average expression Experiment_1 vs Experiment_2", and
-    "logFC Experiment_1 vs Experiment_2" to the qtable.
+    "Ratio [log2] Experiment_1 vs Experiment_2" to the qtable.
 
     Requires that expression columns are set, and expression values are log2
     transformed. All rows with missing values are ignored, impute missing values to
@@ -411,8 +411,8 @@ def calculate_two_group_limma(
             variances; default True.
 
     Returns:
-        A dataframe containing "logFC", "P-value", "Adjusted p-value" and
-        "Average expression". The logFC is calculated as the mean intensity of
+        A dataframe containing "Ratio [log2]", "P-value", "Adjusted p-value" and
+        "Average expression". The Ratio [log2] is calculated as the mean intensity of
         experiment 2 - experiment 1.
     """
     # TODO: not tested #

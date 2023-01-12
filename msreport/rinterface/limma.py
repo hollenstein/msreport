@@ -39,9 +39,9 @@ def multi_group_limma(
         A dictionary with keys being the comparison groups and values being a
         dataframe that contains the respective results of the differential expression
         analysis. Dataframes contain the following columns: "Average expression",
-        "logFC", "P-value", and "Adjusted p-value". Note that the "Average expression"
-        calcualted by limma corresponds to the row mean of all samples, and not the
-        average of the two experiments that were compared.
+        "Ratio [log2]", "P-value", and "Adjusted p-value". Note that the
+        "Average expression" calcualted by limma corresponds to the row mean of all
+        samples, and not the average of the two experiments that were compared.
     """
     install_limma_if_missing()
     rscript_path = _find_rscript_paths()["limma.R"]
@@ -50,7 +50,7 @@ def multi_group_limma(
 
     column_mapping = {
         "AveExpr": "Average expression",
-        "logFC": "logFC",
+        "logFC": "Ratio [log2]",
         "P.Value": "P-value",
         "adj.P.Val": "Adjusted p-value",
     }
@@ -86,7 +86,7 @@ def two_group_limma(
             details.
 
     Returns:
-        A dataframe containing "Average expression", "logFC", "P-value", and
+        A dataframe containing "Average expression", "Ratio [log2]", "P-value", and
         "Adjusted p-value".
     """
     install_limma_if_missing()
@@ -97,14 +97,14 @@ def two_group_limma(
     with localconverter(robjects.default_converter + pandas2ri.converter):
         limma_result = R_two_group_limma(table, column_groups, group1, group2, trend)
 
-    keep_columns = ["AveExpr", "logFC", "P.Value", "adj.P.Val"]
     column_mapping = {
         "AveExpr": "Average expression",
-        "logFC": "logFC",
+        "logFC": "Ratio [log2]",
         "P.Value": "P-value",
         "adj.P.Val": "Adjusted p-value",
     }
-    return limma_result[keep_columns].rename(columns=column_mapping)
+    columns_to_keep = column_mapping.keys()
+    return limma_result[columns_to_keep].rename(columns=column_mapping)
 
 
 def _find_rscript_paths() -> dict[str, str]:

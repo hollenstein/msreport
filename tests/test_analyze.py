@@ -27,7 +27,7 @@ def example_data():
             "Intensity Sample_B2": [15, np.nan, 10.3],
             "Mean Experiment_A": [10, np.nan, 10.3],  # <- Adjust to Sample_A1/A2
             "Mean Experiment_B": [13, np.nan, 10.3],  # <- Adjust to Sample_A1/A2
-            "logFC": [-3, np.nan, 0],  # <- Experiment_A/Experiment_B
+            "Ratio [log2]": [-3, np.nan, 0],  # <- Experiment_A/Experiment_B
             "Average expression": [11.5, np.nan, 10.3],  # <- Experiment_A/Experiment_B
         }
     )
@@ -100,7 +100,7 @@ def test_two_group_comparison(example_data, example_qtable):
     msreport.analyze.two_group_comparison(example_qtable, experiment_pair)
 
     qtable_columns = example_qtable.data.columns.to_list()
-    for column_tag in ["Average expression", "logFC"]:
+    for column_tag in ["Average expression", "Ratio [log2]"]:
         assert f"{column_tag} {exp1} vs {exp2}" in qtable_columns
         assert np.allclose(
             example_qtable.data[f"{column_tag} {exp1} vs {exp2}"],

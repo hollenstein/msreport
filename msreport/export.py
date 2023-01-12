@@ -125,7 +125,7 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
         "Spectral count ": "razorUniqueCount_",
         "iBAQ intensity ": "iBAQ_",
         "Average expression ": "AveExpr_",
-        "logFC ": "logFC_",
+        "Ratio [log2] ": "logFC_",
         "P-value ": "P.Value_",
         "Adjusted p-value ": "adj.P.Val_",
     }

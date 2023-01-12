@@ -603,8 +603,8 @@ def volcano_ma(
     fig.suptitle(comparison_group)
 
     for ax, x_variable, y_variable in [
-        (axes[0], "logFC", pvalue_tag),
-        (axes[1], "logFC", "Average expression"),
+        (axes[0], "Ratio [log2]", pvalue_tag),
+        (axes[1], "Ratio [log2]", "Average expression"),
     ]:
         x_col = " ".join([x_variable, comparison_group])
         y_col = " ".join([y_variable, comparison_group])
@@ -683,7 +683,7 @@ def expression_comparison(
     ax = axes[1]
     values = qtable_data[mask_both]
     s = scattersize(values, total_scatter_area)
-    x_variable = f"logFC"
+    x_variable = f"Ratio [log2]"
     y_variable = (
         f"Average expression" if plot_average_expression else f"Maximum expression"
     )
