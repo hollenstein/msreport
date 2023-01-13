@@ -7,6 +7,10 @@
 
 ### Changed 
 - Removed maspy dependency
+- Group comparison column tag "logFC" renamed to "Ratio [log2]"
+  - analyze.two_group_comparison()
+  - analyze.calculate_multi_group_limma()
+  - analyze.calculate_two_group_limma()
 
 
 ## 0.0.5
