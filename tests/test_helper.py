@@ -175,6 +175,22 @@ class TestGuessDesign:
         design = msreport.helper.guess_design(table, tag)
         assert expected_design.equals(design)
 
+    def test_ignore_total_and_combined_as_sample_names(self):
+        table = pd.DataFrame(
+            columns=[
+                "Intensity ValidSampleName",
+                "Intensity total",
+                "Intensity Total",
+                "Intensity combined",
+                "Intensity Combined",
+                "Intensity COMBINED",
+            ]
+        )
+        tag = "Intensity"
+
+        design = msreport.helper.guess_design(table, tag)
+        assert design["Sample"].to_list() == ["ValidSampleName"]
+
 
 @pytest.mark.parametrize(
     "data, data_in_logspace",
