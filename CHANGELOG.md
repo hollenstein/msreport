@@ -22,6 +22,8 @@
   - `analyze.calculate_two_group_limma()`
 - `analyze.add_protein_annotation()` now returns -1 for missing "Protein length" and
   "iBAQ peptides" entries.
+- "Total" and "Combined", and their lower case variants, are ignored as samples names
+  when using `guess_design()`.
 - Removed maspy dependency
 
 ### Fixes
