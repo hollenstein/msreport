@@ -811,3 +811,46 @@ def box_and_bars(
     ax.set_xlim(xlim)
     fig.tight_layout()
     return fig, axes
+
+
+def cluster_map(
+    qtable: Qtable,
+    exclude_invalid: bool = True,
+) -> sns.matrix.ClusterGrid:
+    color_wheel = ColorWheelDict()
+
+    samples = qtable.get_samples()
+    experiments = qtable.get_experiments()
+
+    data = qtable.make_expression_table(samples_as_columns=True)
+    data = data[samples]
+    for sample in samples:
+        data.loc[qtable.data[f"Missing {sample}"], sample] = 0
+
+    imputated_values = qtable.data[
+        [f"Missing {sample}" for sample in samples]
+    ].to_numpy()
+
+    _ = [color_wheel[exp] for exp in experiments]
+    sample_colors = [color_wheel[qtable.get_experiment(sample)] for sample in samples]
+    figsize = (0.3 + len(samples) * 0.4, 5)
+
+    # Generate the plot
+    cluster_grid = sns.clustermap(
+        data,
+        col_colors=sample_colors,
+        cmap="magma",
+        yticklabels=False,
+        mask=imputated_values,
+        figsize=figsize,
+        metric="euclidean",
+        method="median",
+    )
+    cluster_grid.ax_row_dendrogram.set_visible(False)
+
+    # Add background color and spines
+    cluster_grid.ax_heatmap.set_facecolor("#F9F9F9")
+    for _, spine in cluster_grid.ax_heatmap.spines.items():
+        spine.set_visible(True)
+        spine.set_linewidth(0.75)
+    return cluster_grid
