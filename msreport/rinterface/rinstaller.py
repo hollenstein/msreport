@@ -1,5 +1,15 @@
 from rpy2.robjects.packages import importr
 import rpy2.robjects.packages as rpackages
+import rpy2.robjects as robjects
+
+
+def r_package_version(package_name: str) -> (str, str):
+    """Returns the version number of an installed R package."""
+    with robjects.conversion.localconverter(robjects.default_converter):
+        utils = importr("utils")
+        version_print = utils.packageVersion(package_name)
+        package_version = str(version_print).split("]")[1].strip().replace("'", "")
+    return package_version
 
 
 def install_limma_if_missing() -> None:

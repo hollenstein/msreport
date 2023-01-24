@@ -3,7 +3,8 @@
 ## Unreleased
 
 ### Added
-- Qtable.data is now always initiliazed with a "Valid" column
+- Qtable.data is now always initiliazed with a "Valid" column with all rows being True.
+- `rinterface.package_version()` to return the version of an installed R package
 
 ### Changed
 - Renamed MQReader to MaxQuantReader
