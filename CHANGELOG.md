@@ -5,31 +5,42 @@
 ### Added
 - Qtable.data is now always initiliazed with a "Valid" column
 
-### Changed 
-- Removed maspy dependency
+### Changed
+- Renamed MQReader to MaxQuantReader
+- Renamed FPReader to FragPipeReader
 - Group comparison column tag "logFC" renamed to "Ratio [log2]"
   - analyze.two_group_comparison()
   - analyze.calculate_multi_group_limma()
   - analyze.calculate_two_group_limma()
+- `analyze.add_protein_annotation()` now returns -1 for missing "Protein length" and
+  "iBAQ peptides" entries.
+- Removed maspy dependency
+
+### Fixes
+- Error when calling `reader.add_sequence_coverage()` with protein length as floats
 
 
 ## 0.0.5
 
 - Reader module
-  - Leading proteins are no longer sorted during the protein import. Protein sorting is now done by
-    a dedicated function, `reader.sort_leading_proteins`.
-  - Added `reader.sort_leading_proteins`, which allows sorting of leading proteins with four
-    options: Alphanumeric sorting by protein ID, penalization of contaminants, promotion of special
-    proteins, and sorting of protein entries by the database from which the entry originates.
-  - Added `reader.add_protein_annotation`, which allows adding protein annotations from a protein
-    database. Optional arguments allow to specify the added annotation columns.
-  - Added `reader.add_leading_proteins_annotation`, which allows adding protein annotations for the
-    "Leading proteins" column, i.e. multiple annotation per field, one for each protein ID. Uses the
-    same syntax as `reader.add_protein_annotation` to specify the added annotation columns.
+  - Leading proteins are no longer sorted during the protein import. Protein sorting is
+    now done by a dedicated function, `reader.sort_leading_proteins`.
+  - Added `reader.sort_leading_proteins`, which allows sorting of leading proteins with
+    four options: Alphanumeric sorting by protein ID, penalization of contaminants,
+    promotion of special proteins, and sorting of protein entries by the database from
+    which the entry originates.
+  - Added `reader.add_protein_annotation`, which allows adding protein annotations from
+    a protein database. Optional arguments allow to specify the added annotation
+    columns.
+  - Added `reader.add_leading_proteins_annotation`, which allows adding protein
+    annotations for the "Leading proteins" column, i.e. multiple annotation per field,
+    one for each protein ID. Uses the same syntax as `reader.add_protein_annotation` to
+    specify the added annotation columns.
 
 - Introduced breaking changes
   - Replaced `reader.add_protein_annotations` with `reader.add_protein_annotation`
-  - `reader.add_peptide_positions`, now requires a protein database instead of a fasta path.
+  - `reader.add_peptide_positions`, now requires a protein database instead of a fasta
+    path.
 
 
 ## 0.0.4
