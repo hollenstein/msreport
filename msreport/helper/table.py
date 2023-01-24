@@ -8,6 +8,9 @@ import pandas as pd
 def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
     """Extracts sample name, experiment, and replicate from specified sample columns.
 
+    "Total" and "Combined", and their lower case variants, are not allowed as sample
+    names and will be ignored.
+
     First a subset of columns containing a column tag are identified. Then sample names
     are extracted by removing the column tag from each column name. And finally, sample
     names are split into experiment and replicate at the last underscore.
@@ -30,6 +33,8 @@ def guess_design(table: pd.DataFrame, tag: str) -> pd.DataFrame:
     sample_entries = []
     for column in find_columns(table, tag, must_be_substring=True):
         sample = column.replace(tag, "").strip()
+        if sample.lower() in ["total", "combined"]:
+            continue
         experiment = "_".join(sample.split("_")[:-1])
         experiment = experiment if experiment else sample
         replicate = sample.split("_")[-1]
