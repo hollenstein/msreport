@@ -936,7 +936,7 @@ def add_protein_annotation(
         )
     if protein_length:
         annotations["Protein length"] = _create_protein_annotations_from_db(
-            proteins, protein_db, _get_annotation_sequence_length, np.nan
+            proteins, protein_db, _get_annotation_sequence_length, -1
         )
     if fasta_header:
         annotations["Fasta header"] = _create_protein_annotations_from_db(
@@ -948,7 +948,7 @@ def add_protein_annotation(
         )
     if ibaq_peptides:
         annotations["iBAQ peptides"] = _create_protein_annotations_from_db(
-            proteins, protein_db, _get_annotation_ibaq_peptides, np.nan
+            proteins, protein_db, _get_annotation_ibaq_peptides, -1
         )
     for column in annotations.keys():
         table[column] = annotations[column]
@@ -1048,7 +1048,8 @@ def add_sequence_coverage(
 
     Sequence coverage is represented as a percentage, with values ranging from 0 to 100.
     Requires the columns "Start position" and "End position" in the 'peptide_table', and
-    "Protein length" in the 'protein_table'.
+    "Protein length" in the 'protein_table'. For protein entries where the sequence
+    coverage cannot be calculated, a value of -1 is added.
 
     Args:
         protein_table: Dataframe to which the "Sequence coverage" column is added.
@@ -1058,7 +1059,6 @@ def add_sequence_coverage(
             'peptide_table', must be present in both tables. Default
             "Protein reported by software".
     """
-    # not tested #
     peptide_positions = {}
     for protein_id, peptide_group in peptide_table.groupby(by=id_column):
         positions = list(
@@ -1070,9 +1070,22 @@ def add_sequence_coverage(
     for protein_id, protein_length in zip(
         protein_table[id_column], protein_table["Protein length"]
     ):
-        sequence_coverage = helper.calculate_sequence_coverage(
-            protein_length, peptide_positions[protein_id], ndigits=1
-        )
+        can_calculate_coverage = True
+        if protein_id not in peptide_positions:
+            can_calculate_coverage = False
+        if protein_length < 1:
+            can_calculate_coverage = False
+        try:
+            protein_length = int(protein_length)
+        except ValueError:
+            can_calculate_coverage = False
+
+        if can_calculate_coverage:
+            sequence_coverage = helper.calculate_sequence_coverage(
+                protein_length, peptide_positions[protein_id], ndigits=1
+            )
+        else:
+            sequence_coverage = np.nan
         sequence_coverages.append(sequence_coverage)
     protein_table["Sequence coverage"] = sequence_coverages
 

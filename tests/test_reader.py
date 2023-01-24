@@ -225,6 +225,47 @@ def test_process_protein_entries():
         assert table[column].tolist() == expected_values
 
 
+class TestAddSequenceCoverage:
+    def test_calculate_correct_coverage(self):
+        peptide_table = pd.DataFrame(
+            {"Start position": [1, 1], "End position": [10, 10], "ID": ["A", "B"]}
+        )
+        protein_table = pd.DataFrame({"ID": ["A", "B"], "Protein length": [10, 20]})
+        expected_coverage = np.array([100, 50])
+
+        msreport.reader.add_sequence_coverage(
+            protein_table, peptide_table, id_column="ID"
+        )
+        observed_coverage = protein_table["Sequence coverage"].to_numpy()
+        assert np.array_equal(observed_coverage, expected_coverage, equal_nan=True)
+
+    def test_absent_peptide_entries_returns_nan_coverage(self):
+        peptide_table = pd.DataFrame(
+            {"Start position": [1], "End position": [10], "ID": ["A"]}
+        )
+        protein_table = pd.DataFrame({"ID": ["A", "B"], "Protein length": [10, 20]})
+        expected_coverage = np.array([100, np.nan])
+
+        msreport.reader.add_sequence_coverage(
+            protein_table, peptide_table, id_column="ID"
+        )
+        observed_coverage = protein_table["Sequence coverage"].to_numpy()
+        assert np.array_equal(observed_coverage, expected_coverage, equal_nan=True)
+
+    def test_negative_protein_length_returns_nan_coverage(self):
+        peptide_table = pd.DataFrame(
+            {"Start position": [1], "End position": [10], "ID": ["A"]}
+        )
+        protein_table = pd.DataFrame({"ID": ["A"], "Protein length": [-1]})
+        expected_coverage = np.array([np.nan])
+
+        msreport.reader.add_sequence_coverage(
+            protein_table, peptide_table, id_column="ID"
+        )
+        observed_coverage = protein_table["Sequence coverage"].to_numpy()
+        assert np.array_equal(observed_coverage, expected_coverage, equal_nan=True)
+
+
 def test_add_protein_modifications():
     table = pd.DataFrame(
         {
