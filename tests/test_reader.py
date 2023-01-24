@@ -14,8 +14,8 @@ def example_fpreader():
 
 
 @pytest.fixture
-def example_mqreader():
-    return msreport.reader.MQReader("./tests/testdata/maxquant_")
+def example_maxquant_reader():
+    return msreport.reader.MaxQuantReader("./tests/testdata/maxquant_")
 
 
 @pytest.fixture
@@ -439,10 +439,10 @@ class TestResultReaderSpectronautStyleTags:
             assert column in self.table.columns.to_list()
 
 
-class TestMQReader:
+class TestMaxQuantReader:
     @pytest.fixture(autouse=True)
     def _init_reader(self):
-        self.reader = msreport.reader.MQReader(
+        self.reader = msreport.reader.MaxQuantReader(
             "./tests/testdata/maxquant",
             contaminant_tag="CON__",
         )

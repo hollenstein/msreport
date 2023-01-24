@@ -118,7 +118,7 @@ class ResultReader:
         self.data_directory = path
 
 
-class MQReader(ResultReader):
+class MaxQuantReader(ResultReader):
     """MaxQuant result reader.
 
     Methods:
@@ -192,7 +192,7 @@ class MQReader(ResultReader):
     def __init__(
         self, directory: str, isobar: bool = False, contaminant_tag: str = "CON__"
     ) -> None:
-        """Initializes the MQReader.
+        """Initializes the MaxQuantReader.
 
         Args:
             directory: Location of the MaxQuant "txt" folder.
@@ -245,8 +245,8 @@ class MQReader(ResultReader):
                 True.
             drop_protein_info: If True, columns containing protein specific information,
                 such as "Gene names", "Sequence coverage [%]" or "iBAQ peptides". See
-                MQReader.protein_info_columns and MQReader.protein_info_tags for the
-                full list of columns that will be removed. Default False.
+                MaxQuantReader.protein_info_columns and MaxQuantReader.protein_info_tags
+                for a full list of columns that will be removed. Default False.
 
         Returns:
             A dataframe containing the processed protein table.
