@@ -9,8 +9,8 @@ from msreport.helper.temp import Protein, ProteinDatabase
 
 
 @pytest.fixture
-def example_fpreader():
-    return msreport.reader.FPReader("./tests/testdata/fragpipe_")
+def example_fragpipe_reader():
+    return msreport.reader.FragPipeReader("./tests/testdata/fragpipe_")
 
 
 @pytest.fixture
@@ -523,10 +523,10 @@ class TestMaxQuantReader:
         assert not table["Leading razor protein"].str.contains("REV__").any()
 
 
-class TestFPReader:
+class TestFragPipeReader:
     @pytest.fixture(autouse=True)
     def _init_reader(self):
-        self.reader = msreport.reader.FPReader(
+        self.reader = msreport.reader.FragPipeReader(
             "./tests/testdata/fragpipe",
             contaminant_tag="contam_",
         )

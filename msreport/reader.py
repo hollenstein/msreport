@@ -460,7 +460,7 @@ class MaxQuantReader(ResultReader):
         )
 
 
-class FPReader(ResultReader):
+class FragPipeReader(ResultReader):
     """FragPipe result reader.
 
     Methods:
@@ -550,7 +550,7 @@ class FPReader(ResultReader):
     def __init__(
         self, directory: str, isobar: bool = False, contaminant_tag: str = "contam_"
     ) -> None:
-        """Initializes the FPReader.
+        """Initializes the FragPipeReader.
 
         Args:
             directory: Location of the FragPipe result folder
@@ -602,9 +602,9 @@ class FPReader(ResultReader):
                 column tags are added afterwards, e.g. "Sample_name Intensity"; default
                 True.
             drop_protein_info: If True, columns containing protein specific information,
-                such as "Gene" or "Protein Length". See FPReader.protein_info_columns
-                and FPReader.protein_info_tags for the full list of columns that will be
-                removed. Default False.
+                such as "Gene" or "Protein Length". See
+                FragPipeReader.protein_info_columns and FragPipeReader.protein_info_tags
+                for a full list of columns that will be removed. Default False.
 
         Returns:
             A dataframe containing the processed protein table.
