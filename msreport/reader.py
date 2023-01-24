@@ -167,9 +167,13 @@ class MaxQuantReader(ResultReader):
         [
             ("Peptides", "Total peptides"),
             ("Sequence coverage [%]", "Sequence coverage"),
-            ("MS/MS count", "Spectral count Combined"),  # proteinGroups and evidence
+            ("MS/MS count", "Spectral count Combined"),  # proteinGroups, evidence
             ("MS/MS Count", "Spectral count Combined"),  # peptides
-            ("Sequence", "Peptide sequence"),  # peptides and evidence
+            ("Sequence", "Peptide sequence"),  # peptides, evidence
+            ("Sequence length", "Protein length"),
+            ("Mol. weight [kDa]", "Molecular weight [kDa]"),
+            ("Intensity", "Intensity combined"),
+            ("iBAQ", "iBAQ combined"),
         ]
     )
     column_tag_mapping: OrderedDict[str, str] = OrderedDict(
@@ -524,6 +528,7 @@ class FragPipeReader(ResultReader):
             ("End", "End position"),  # Peptide and ion
             ("Combined Total Peptides", "Total peptides"),  # From LFQ
             ("Total Peptides", "Total peptides"),  # From TMT
+            ("Description", "Protein name"),
         ]
     )
     column_tag_mapping: OrderedDict[str, str] = OrderedDict(
