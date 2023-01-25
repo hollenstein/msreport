@@ -26,6 +26,8 @@
   "iBAQ peptides" entries.
 - "Total" and "Combined", and their lower case variants, are ignored as samples names
   when using `guess_design()`.
+- Renamed outdated XlsxReport config file for LFQ protein reports from
+  "qtable_proteins.yaml" to "msreport_lfq_protein.yaml"
 - Removed maspy dependency
 
 ### Fixes
