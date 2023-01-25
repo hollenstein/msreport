@@ -5,6 +5,8 @@
 ### Added
 - Qtable.data is now always initiliazed with a "Valid" column with all rows being True.
 - `rinterface.package_version()` to return the version of an installed R package
+- Add `plot.expression_clustermap()` for plotting sample expession values as a
+  hierarchically-clustered heatmap.
 
 ### Changed
 - Renamed MQReader to MaxQuantReader
