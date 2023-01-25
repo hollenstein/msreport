@@ -813,12 +813,21 @@ def box_and_bars(
     return fig, axes
 
 
-def cluster_map(
+def expression_clustermap(
     qtable: Qtable,
     exclude_invalid: bool = True,
 ) -> sns.matrix.ClusterGrid:
-    color_wheel = ColorWheelDict()
+    """Plot sample expression values as a hierarchically-clustered heatmap.
 
+    Args:
+        qtable: A Qtable instance, which expression data is used for the heatmap.
+        exclude_invalid: Optional, if True rows are filtered according to the Boolean
+            entries of "Valid"; default True.
+
+    Returns:
+        A seaborn ClusterGrid instance, which has a `savefig` method that can be used
+        for saving the figure.
+    """
     samples = qtable.get_samples()
     experiments = qtable.get_experiments()
 
@@ -826,11 +835,13 @@ def cluster_map(
     data = data[samples]
     for sample in samples:
         data.loc[qtable.data[f"Missing {sample}"], sample] = 0
+    imputed_values = qtable.data[[f"Missing {sample}" for sample in samples]].to_numpy()
 
-    imputated_values = qtable.data[
-        [f"Missing {sample}" for sample in samples]
-    ].to_numpy()
+    if exclude_invalid:
+        data = data[qtable.data["Valid"]]
+        imputed_values = imputed_values[qtable.data["Valid"]]
 
+    color_wheel = ColorWheelDict()
     _ = [color_wheel[exp] for exp in experiments]
     sample_colors = [color_wheel[qtable.get_experiment(sample)] for sample in samples]
     figsize = (0.3 + len(samples) * 0.4, 5)
@@ -841,7 +852,7 @@ def cluster_map(
         col_colors=sample_colors,
         cmap="magma",
         yticklabels=False,
-        mask=imputated_values,
+        mask=imputed_values,
         figsize=figsize,
         metric="euclidean",
         method="median",
