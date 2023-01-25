@@ -8,7 +8,7 @@ def write_protein_report(
     protein_table: pd.DataFrame,
     experimental_design: pd.DataFrame,
     outpath: str,
-    config: str = "qtable_proteins.yaml",
+    config: str = "msreport_lfq_protein.yaml",
     special_proteins: Optional[list] = None,
 ) -> None:
     """Writes an excel protein report from an MsReport protein table.
