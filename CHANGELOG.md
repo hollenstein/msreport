@@ -7,18 +7,23 @@
 - `rinterface.package_version()` to return the version of an installed R package
 - Add `plot.expression_clustermap()` for plotting sample expession values as a
   hierarchically-clustered heatmap.
+- Added two additional arguments for `analyze.add_protein_annotation()`
+  - `molecular_weight` and `protein_name`
 
 ### Changed
-- Renamed MQReader to MaxQuantReader
-- Renamed FPReader to FragPipeReader
+- (!) Renamed MQReader to MaxQuantReader
+- (!) Renamed FPReader to FragPipeReader
 - The `rename_columns` argument in MaxQuantReader now renames additional columns:
   - "Intensity" to "Intensity combined"
   - "iBAQ" to "iBAQ intensity combined"
   - "Protein length" to "Molecular weight [kDA]"
 - The `rename_columns` argument in FragPipeReader now renames additional columns:
   - "Description" to "Protein name"
+  - "Gene" to "Gene name"
+  - "Protein Length" to "Protein length"
+  - "Entry Name" to "Protein entry name"
 - Renamed the group comparison column tag "logFC" to "Ratio [log2]". This affects the
-  following functions:
+  output of the following functions:
   - `analyze.two_group_comparison()`
   - `analyze.calculate_multi_group_limma()`
   - `analyze.calculate_two_group_limma()`
@@ -26,6 +31,10 @@
   "iBAQ peptides" entries.
 - "Total" and "Combined", and their lower case variants, are ignored as samples names
   when using `guess_design()`.
+- When using `qtable.set_expression_by_tag()`, only sample names present in the design
+  are considered. In addition.
+- When setting expression columns for a qtable instance, the exact samples present in
+  the design table must be present in the expression columns. 
 - Renamed outdated XlsxReport config file for LFQ protein reports from
   "qtable_proteins.yaml" to "msreport_lfq_protein.yaml"
 - Removed maspy dependency
