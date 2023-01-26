@@ -322,8 +322,9 @@ def replicate_ratios(
     table = qtable.make_sample_table(
         tag, samples_as_columns=True, exclude_invalid=exclude_invalid
     )
+    design = qtable.get_design()
 
-    experiments = qtable.design["Experiment"].unique().tolist()
+    experiments = design["Experiment"].unique().tolist()
     num_experiments = len(experiments)
     max_replicates = max([len(qtable.get_samples(exp)) for exp in experiments])
     max_combinations = len(list(itertools.combinations(range(max_replicates), 2)))
@@ -343,8 +344,8 @@ def replicate_ratios(
     for x_pos, experiment in enumerate(experiments):
         sample_combinations = itertools.combinations(qtable.get_samples(experiment), 2)
         for y_pos, (s1, s2) in enumerate(sample_combinations):
-            s1_label = s1.replace(experiment, "").strip("_")
-            s2_label = s2.replace(experiment, "").strip("_")
+            s1_label = design.loc[(design["Sample"] == s1), "Replicate"].tolist()[0]
+            s2_label = design.loc[(design["Sample"] == s2), "Replicate"].tolist()[0]
             ax = axes[x_pos, y_pos]
             ratios = table[s1] - table[s2]
             ratios = ratios[np.isfinite(ratios)]
@@ -477,6 +478,7 @@ def sample_pca(
     table = qtable.make_sample_table(
         tag, samples_as_columns=True, exclude_invalid=exclude_invalid
     )
+    design = qtable.get_design()
 
     table = table.replace({0: np.nan})
     table = table[np.isfinite(table).sum(axis=1) > 0]
@@ -521,7 +523,7 @@ def sample_pca(
     ax = axes[0]
     for sample, data in components_table.iterrows():
         experiment = qtable.get_experiment(sample)
-        label = sample.replace(experiment, "").strip().strip("_")
+        label = design.loc[(design["Sample"] == sample), "Replicate"].tolist()[0]
         color = color_wheel[experiment]
         ax.scatter(
             data[pc_x],
