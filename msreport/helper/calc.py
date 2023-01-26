@@ -142,13 +142,19 @@ def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
 
 def calculate_monoisotopic_mass(protein_sequence: str) -> float:
     """Calculates the monoisotopic mass of the protein sequence in Dalton.
+
+    Note that there is an opinionated behaviour for non-standard amino acids code. "O"
+    is Pyrrolysine, "U" is Selenocysteine, "B" is treated as "N", "Z" is treated as "Q",
+    and "X" is ignored.
+
     Args:
         protein_sequence: Amino acid sequence of a protein.
 
     Returns:
         Monoisotopic mass in Dalton.
     """
-    return pyteomics.mass.calculate_mass(protein_sequence)
+    sequence = protein_sequence.replace("B", "N").replace("Z", "Q").replace("X", "")
+    return pyteomics.mass.fast_mass(sequence)
 
 
 def make_coverage_mask(

@@ -914,7 +914,9 @@ def add_protein_annotation(
         protein_length: If True, adds a "Protein length" column.
         molecular_weight: If True, adds a "Molecular weight [kDa]" column. The molecular
             weight is calculated as the monoisotopic mass in kilo Dalton, rounded to two
-            decimal places.
+            decimal places. Note that there is an opinionated behaviour for non-standard
+            amino acids code. "O" is Pyrrolysine, "U" is Selenocysteine, "B" is treated
+            as "N", "Z" is treated as "Q", and "X" is ignored.
         fasta_header: If True, adds a "Fasta header" column.
         ibaq_peptides: If True, adds a "iBAQ peptides" columns. The number of iBAQ
             peptides is calculated as the theoretical number of tryptic peptides with
