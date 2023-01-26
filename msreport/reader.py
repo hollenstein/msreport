@@ -527,6 +527,9 @@ class FragPipeReader(ResultReader):
             ("Combined Total Peptides", "Total peptides"),  # From LFQ
             ("Total Peptides", "Total peptides"),  # From TMT
             ("Description", "Protein name"),
+            ("Protein Length", "Protein length"),
+            ("Entry Name", "Protein entry name"),
+            ("Gene", "Gene name"),
         ]
     )
     column_tag_mapping: OrderedDict[str, str] = OrderedDict(
