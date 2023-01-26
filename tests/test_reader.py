@@ -646,9 +646,11 @@ class TestGetAnnotationFunctions:
     def _init_protein_db(self, example_protein_db):
         self.protein_entry = example_protein_db["P60709"]
         self.tryptic_ibaq_peptides = 4
+        self.molecular_weight_kda = 5.14
         self.sequence_length = len(self.protein_entry.sequence)
         self.fasta_header = self.protein_entry.fastaHeader
         self.gene_name = self.protein_entry.headerInfo["gene_id"]
+        self.protein_name = self.protein_entry.headerInfo["name"]
         self.entry_name = self.protein_entry.headerInfo["entry"]
         self.db_origin = self.protein_entry.headerInfo["db"]
         self.default_value = "Default"
@@ -659,6 +661,11 @@ class TestGetAnnotationFunctions:
             self.protein_entry, default_value=None
         )
 
+    def test_get_annotation_molecular_weight(self):
+        assert self.molecular_weight_kda == msreport.reader._get_annotation_molecular_weight(
+            self.protein_entry, default_value=None
+        )
+
     def test_get_annotation_fasta_header(self):
         assert self.fasta_header == msreport.reader._get_annotation_fasta_header(
             self.protein_entry, default_value=None
@@ -666,6 +673,11 @@ class TestGetAnnotationFunctions:
 
     def test_get_annotation_gene_name(self):
         assert self.gene_name == msreport.reader._get_annotation_gene_name(
+            self.protein_entry, default_value=None
+        )
+
+    def test_get_annotation_protein_name(self):
+        assert self.protein_name == msreport.reader._get_annotation_protein_name(
             self.protein_entry, default_value=None
         )
 
@@ -690,8 +702,10 @@ class TestAddProteinAnnotation:
     def test_add_protein_annotation(self, example_protein_db):
         expected_columns = [
             "Gene name",
+            "Protein name",
             "Protein entry name",
             "Protein length",
+            "Molecular weight [kDa]",
             "Fasta header",
             "Database origin",
             "iBAQ peptides",
@@ -702,14 +716,17 @@ class TestAddProteinAnnotation:
             example_protein_db,
             id_column="Representative protein",
             gene_name=True,
+            protein_name=True,
             protein_entry=True,
             protein_length=True,
+            molecular_weight=True,
             fasta_header=True,
             ibaq_peptides=True,
             database_origin=True,
         )
+        protein_table_columns = protein_table.columns.tolist()
         for column in expected_columns:
-            assert column in protein_table.columns
+            assert column in protein_table_columns
 
     def test_proteins_not_in_db_warning(self, example_protein_db):
         with pytest.warns(msreport.errors.ProteinsNotInFastaWarning):

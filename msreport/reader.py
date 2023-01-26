@@ -889,8 +889,10 @@ def add_protein_annotation(
     protein_db: helper.ProteinDatabase,
     id_column: str = "Representative protein",
     gene_name: bool = False,
+    protein_name: bool = False,
     protein_entry: bool = False,
     protein_length: bool = False,
+    molecular_weight: bool = False,
     fasta_header: bool = False,
     ibaq_peptides: bool = False,
     database_origin: bool = False,
@@ -904,8 +906,12 @@ def add_protein_annotation(
         id_column: Column in 'table' that contains protein uniprot IDs, which will be
             used to look up entries in the 'protein_db'.
         gene_name: If True, adds a "Gene name" column.
+        protein_name: If True, adds "Protein name" column.
         protein_entry: If True, adds "Protein entry name" column.
         protein_length: If True, adds a "Protein length" column.
+        molecular_weight: If True, adds a "Molecular weight [kDa]" column. The molecular
+            weight is calculated as the monoisotopic mass in kilo Dalton, rounded to two
+            decimal places.
         fasta_header: If True, adds a "Fasta header" column.
         ibaq_peptides: If True, adds a "iBAQ peptides" columns. The number of iBAQ
             peptides is calculated as the theoretical number of tryptic peptides with
@@ -933,6 +939,10 @@ def add_protein_annotation(
         annotations["Gene name"] = _create_protein_annotations_from_db(
             proteins, protein_db, _get_annotation_gene_name, ""
         )
+    if protein_name:
+        annotations["Protein name"] = _create_protein_annotations_from_db(
+            proteins, protein_db, _get_annotation_protein_name, ""
+        )
     if protein_entry:
         annotations["Protein entry name"] = _create_protein_annotations_from_db(
             proteins, protein_db, _get_annotation_protein_entry_name, ""
@@ -940,6 +950,10 @@ def add_protein_annotation(
     if protein_length:
         annotations["Protein length"] = _create_protein_annotations_from_db(
             proteins, protein_db, _get_annotation_sequence_length, -1
+        )
+    if molecular_weight:
+        annotations["Molecular weight [kDa]"] = _create_protein_annotations_from_db(
+            proteins, protein_db, _get_annotation_molecular_weight, np.nan
         )
     if fasta_header:
         annotations["Fasta header"] = _create_protein_annotations_from_db(
@@ -1522,6 +1536,10 @@ def _get_annotation_gene_name(protein_entry: Protein, default_value: Any) -> Any
     return protein_entry.headerInfo.get("GN", default_value)
 
 
+def _get_annotation_protein_name(protein_entry: Protein, default_value: Any) -> Any:
+    return protein_entry.headerInfo.get("name", default_value)
+
+
 def _get_annotation_protein_entry_name(
     protein_entry: Protein,
     default_value: Any,
@@ -1535,3 +1553,10 @@ def _get_annotation_db_origin(protein_entry: Protein, default_value: Any) -> Any
 
 def _get_annotation_ibaq_peptides(protein_entry: Protein, default_value: Any) -> Any:
     return helper.calculate_tryptic_ibaq_peptides(protein_entry.sequence)
+
+
+def _get_annotation_molecular_weight(protein_entry: Protein, default_value: Any) -> Any:
+    """Returns moleculare weight in kilo Dalton, rounded to two decimal places."""
+    monoisotopic_mass = helper.calculate_monoisotopic_mass(protein_entry.sequence)
+    molecular_weight_kda = round(monoisotopic_mass / 1000, 2)
+    return molecular_weight_kda
