@@ -5,6 +5,7 @@ from .calc import (
     calculate_tryptic_ibaq_peptides,
     make_coverage_mask,
     calculate_sequence_coverage,
+    calculate_monoisotopic_mass,
 )
 from .table import (
     guess_design,

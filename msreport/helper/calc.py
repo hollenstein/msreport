@@ -6,6 +6,7 @@ import pandas as pd
 import scipy.stats
 import scipy.optimize
 
+import pyteomics.mass
 import pyteomics.parser
 
 
@@ -137,6 +138,17 @@ def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
     )
     ibaq_peptides = [sequence for index, sequence in digestion_products]
     return len(ibaq_peptides)
+
+
+def calculate_monoisotopic_mass(protein_sequence: str) -> float:
+    """Calculates the monoisotopic mass of the protein sequence in Dalton.
+    Args:
+        protein_sequence: Amino acid sequence of a protein.
+
+    Returns:
+        Monoisotopic mass in Dalton.
+    """
+    return pyteomics.mass.calculate_mass(protein_sequence)
 
 
 def make_coverage_mask(

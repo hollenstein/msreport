@@ -315,6 +315,13 @@ def test_calculate_tryptic_ibaq_peptides():
     assert ibaq_peptides == expected_ibaq_peptides
 
 
+def test_calculate_monoisotopic_mass():
+    protein_sequence = "MDDDIAALVVDNGSGMCKAGFAGDDAPRAVFPSIVGRPRHQGVMVGMGQK"
+    monoisotopic_mass = 5142.47
+    calculated_mass = msreport.helper.calculate_monoisotopic_mass(protein_sequence)
+    assert round(calculated_mass, 2) == monoisotopic_mass
+
+
 @pytest.mark.parametrize(
     "length, expected_coverage, peptide_positions",
     [
