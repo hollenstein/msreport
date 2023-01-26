@@ -34,7 +34,7 @@
 - When using `qtable.set_expression_by_tag()`, only sample names present in the design
   are considered. In addition.
 - When setting expression columns for a qtable instance, the exact samples present in
-  the design table must be present in the expression columns. 
+  the design table must be present in the expression columns.
 - Renamed outdated XlsxReport config file for LFQ protein reports from
   "qtable_proteins.yaml" to "msreport_lfq_protein.yaml"
 - Removed maspy dependency
@@ -42,6 +42,8 @@
 ### Fixes
 - Calling `reader.add_sequence_coverage()` with protein length as float instead of
   integer values does no longer raise an error.
+- The replicate labels in `plot.replicate_ratios()` and `plot.sample_pca()` were
+  previously extracted from sample names. Now they are read from the qtable.design.
 
 
 ## 0.0.5
