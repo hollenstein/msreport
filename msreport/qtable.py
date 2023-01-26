@@ -232,26 +232,31 @@ class Qtable:
     def set_expression_by_tag(
         self, tag: str, zerotonan: bool = False, log2: bool = False
     ) -> None:
-        """Sets columns that contain the 'tag' as expression columns.
+        """Selects and sets expression columns from those that contain the 'tag'.
 
-        Generates a copy of all identified expression columns and renames them to
-        "Expression sample_name". All columns containing the 'tag' must also contain a
-        sample name that is present in the experimental design. When this method is
-        called, previously generated expression columns and expression features are
-        deleted.
+
+        A copy of all identified expression columns is generated and columns are renamed
+        to "Expression sample_name". Only columns containing a sample name that is
+        present in qtable.design are selected as expression columns. For all samples
+        present inqtable.design an expression column must be present in qtable.data.
+        When this method is called, previously generated expression columns and
+        expression features are deleted.
 
         Args:
-            tag: Identifies columns that contain this substring.
-            zerotonan: If true, zeros in expression columns are replace by NaN
+            tag: Columns that contain 'tag' as a substring are selected as potential
+                expression columns.
+            zerotonan: If true, zeros in expression columns are replace by NaN.
             log2: If true, expression column values are log2 transformed and zeros are
                 replaced by NaN. Evaluates whether intensities are likely to be already
                 in log-space, which prevents another log2 transformation.
         """
         columns = helper.find_columns(self.data, tag, must_be_substring=True)
+        samples_from_design = self.get_samples()
         column_mapping = {}
         for column in columns:
             sample = column.replace(tag, "").strip()
-            column_mapping[column] = sample
+            if sample in samples_from_design:
+                column_mapping[column] = sample
         self._set_expression(column_mapping, zerotonan=zerotonan, log2=log2)
 
     def set_expression_by_column(
@@ -322,7 +327,7 @@ class Qtable:
 
     def _set_expression(
         self,
-        expr_sample_mapping: dict[str, str],
+        columns_to_samples: dict[str, str],
         zerotonan: bool = False,
         log2: bool = False,
     ) -> None:
@@ -332,7 +337,7 @@ class Qtable:
         "Expression sample_name", according to the 'columns_to_samples' mapping.
 
         Args:
-            expr_sample_mapping: Mapping of expression columns to sample names. The keys
+            columns_to_samples: Mapping of expression columns to sample names. The keys
                 of the dictionary must correspond to columns of self.data, the values
                 specify the sample name and must correspond to entries in
                 self.design["Sample"].
@@ -342,8 +347,8 @@ class Qtable:
                 in log-space, which prevents another log2 transformation.
         """
         data_columns = self.data.columns.tolist()
-        expression_columns = list(expr_sample_mapping.keys())
-        samples = list(expr_sample_mapping.values())
+        expression_columns = list(columns_to_samples.keys())
+        samples = list(columns_to_samples.values())
 
         if not expression_columns:
             raise KeyError(f"No expression columns matched in qtable")
@@ -352,10 +357,16 @@ class Qtable:
                 f"Not all specified columns {expression_columns} are present in the"
                 " qtable"
             )
-            raise ValueError(exception_message)
+            raise KeyError(exception_message)
         if not all([s in self.get_samples() for s in samples]):
             exception_message = (
                 f"Not all specified samples {samples} are present in the qtable.design"
+            )
+            raise ValueError(exception_message)
+        if not all([s in samples for s in self.get_samples()]):
+            exception_message = (
+                f"Not all samples from qtable.design are also present in the specified"
+                f"samples."
             )
             raise ValueError(exception_message)
 

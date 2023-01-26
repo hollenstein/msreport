@@ -234,7 +234,7 @@ class TestQtableSetExpression:
             example_data["data"], design=example_data["design"]
         )
 
-    def test_set_expression(self, example_data):
+    def test_correct_setting_of_private_variables(self, example_data):
         self.qtable._set_expression(example_data["intensity_cols_to_samples"])
 
         assert self.qtable._expression_columns == example_data["expression_columns"]
@@ -254,7 +254,7 @@ class TestQtableSetExpression:
         assert num_zero == 1
         assert num_nan == 4
 
-    def test_with_zerotonan(self, example_data):
+    def test_with_zerotonan_true(self, example_data):
         self.qtable._set_expression(
             example_data["intensity_cols_to_samples"], zerotonan=True
         )
@@ -265,7 +265,7 @@ class TestQtableSetExpression:
         assert num_zero == 0
         assert num_nan == 5
 
-    def test_with_log2(self, example_data):
+    def test_with_log2_true(self, example_data):
         self.qtable._set_expression(
             example_data["intensity_cols_to_samples"], log2=True
         )
@@ -277,14 +277,28 @@ class TestQtableSetExpression:
             expr_table.to_numpy(), expected.to_numpy(), equal_nan=True
         )
 
-    def test_raises_value_errors(self, example_data):
-        # Raise error when expression columns are not present in the data table
-        with pytest.raises(ValueError):
-            self.qtable._set_expression({"column_not_present": "Sample_A1"})
+    def test_error_raised_when_column_mapping_empty(self, example_data):
+        column_mapping = {}
+        with pytest.raises(KeyError):
+            self.qtable._set_expression(column_mapping)
 
-        # Raise error when expr_column_mapping samples are not present in the design
+    def test_error_raised_when_expression_columns_not_in_data(self, example_data):
+        column_mapping = example_data["intensity_cols_to_samples"]
+        column_mapping["column_not_present"] = "Sample_A1"
+        with pytest.raises(KeyError):
+            self.qtable._set_expression(column_mapping)
+
+    def test_error_raised_when_samples_from_column_mapping_not_in_design(self, example_data):  # fmt: skip
+        column_mapping = example_data["intensity_cols_to_samples"]
+        column_mapping["Intensity Sample_A1"] = "sample not present"
         with pytest.raises(ValueError):
-            self.qtable._set_expression({"Intensity Sample_A1": "sample not present"})
+            self.qtable._set_expression(column_mapping)
+
+    def test_error_raised_when_not_all_samples_from_design_in_column_mapping(self, example_data):  # fmt: skip
+        column_mapping = example_data["intensity_cols_to_samples"]
+        column_mapping.pop("Intensity Sample_A1")
+        with pytest.raises(ValueError):
+            self.qtable._set_expression(column_mapping)
 
 
 class TestQtableSetExpressionByTag:
