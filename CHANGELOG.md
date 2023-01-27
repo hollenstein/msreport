@@ -1,6 +1,7 @@
 # Changelog
 
-## Unreleased
+
+## 0.0.6
 
 ### Added
 - Qtable.data is now always initiliazed with a "Valid" column with all rows being True.
