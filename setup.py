@@ -24,6 +24,7 @@ setup(
         "seaborn",
         "sklearn",
         "statsmodels",
+        "xlsxreport>=0.0.5",
     ],
     extras_require={
         "test": ["pytest"],
