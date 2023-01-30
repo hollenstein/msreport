@@ -867,3 +867,93 @@ def expression_clustermap(
         spine.set_visible(True)
         spine.set_linewidth(0.75)
     return cluster_grid
+
+
+def pvalue_histogram(
+    qtable: Qtable,
+    pvalue_tag: str = "P-value",
+    comparison_tag: str = " vs ",
+    experiment_pairs: Optional[Iterable[Iterable[str, str]]] = None,
+    exclude_invalid: bool = True,
+) -> (plt.Figure, list[plt.Axes]):
+    """Generates p-value histograms for one or multiple experiment comparisons.
+
+    Histograms are generated with 20 bins of size 0.05. The p-values of each experiment
+    comparison are plotted on a separate subplot.
+
+    Args:
+        qtable: A Qtable instance, which data is used for the p-value histograms.
+        pvalue_tag: TODO
+        comparison_tag: TODO
+        experiment_pairs: Optional, list of experiment pairs that will be used for
+            plotting. For each experiment pair a p-value column must exists that follow
+            the format f"{pvalue_tag} {experiment_1}{comparison_tag}{experiment_2}".
+            If None, all experiment comparisons that are found in qtable.data are used.
+        exclude_invalid: Optional, if True rows are filtered according to the Boolean
+            entries of "Valid"; default True.
+
+    Returns:
+        A matplotlib Figure and a list of Axes objects, containing the p-value plots.
+    """
+    data = qtable.get_data(exclude_invalid=exclude_invalid)
+
+    # Find all experiment pairs
+    if experiment_pairs is None:
+        experiment_pairs = []
+        for exp_1, exp_2 in itertools.permutations(qtable.get_experiments(), 2):
+            comparison_group = f"{pvalue_tag} {exp_1}{comparison_tag}{exp_2}"
+            if comparison_group in data.columns:
+                experiment_pairs.append([exp_1, exp_2])
+
+    num_plots = len(experiment_pairs)
+
+    figwidth = (num_plots * 1.8) + -0.6
+    figheight = 2.5
+    figsize = (figwidth, figheight)
+
+    fig, axes = plt.subplots(1, num_plots, figsize=figsize, sharex=True, sharey=True)
+    axes = axes if isinstance(axes, Iterable) else (axes,)
+    fig.subplots_adjust(wspace=0.5)
+
+    bins = np.arange(0, 1.01, 0.05)
+    for plot_number, (exp_1, exp_2) in enumerate(experiment_pairs):
+        ax = axes[plot_number]
+        column = f"{pvalue_tag} {exp_1}{comparison_tag}{exp_2}"
+        p_values = data[column]
+        sns.histplot(
+            p_values,
+            bins=bins,
+            ax=ax,
+            element="bars",
+            zorder=2,
+            color="#FAB74E",
+            edgecolor="#FFFFFF",
+            linewidth=0.7,
+        )
+
+        # Adjust x- and y-axis
+        ax.set_xlabel(None)
+        ax.set_xticks(np.arange(0, 1.01, 0.5))
+        ax.tick_params(labelsize=9)
+        if plot_number > 0:
+            ax.tick_params(axis="y", color="none")
+
+        # Add second label
+        ax2 = ax.twinx()
+        ax2.set_yticks([])
+        ax2.set_ylabel(f"{exp_1}{comparison_tag}{exp_2}", fontsize=9)
+
+        # Adjust spines
+        sns.despine(top=True, right=True)
+        for spine in ["bottom", "left"]:
+            ax.spines[spine].set_color("#000000")
+            ax.spines[spine].set_linewidth(1)
+
+        # Adjust grid
+        ax.grid(False, axis="x")
+        ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc", zorder=1)
+
+    axes[0].set_ylabel(f"{pvalue_tag} count")
+    ax.set_xlim(-0.05, 1.05)
+
+    return fig, axes
