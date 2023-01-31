@@ -5,6 +5,7 @@ from typing import Optional
 import re
 import warnings
 
+import adjustText
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
@@ -574,8 +575,9 @@ def volcano_ma(
     experiment_pair: list[str, str],
     comparison_tag: str = " vs ",
     pvalue_tag: str = "P-value",
+    special_proteins: Optional[list[str]] = None,
     exclude_invalid: bool = True,
-) -> (plt.Figure, list[plt.Axes]):
+) -> (plt.Figure, list[plt.Axes, plt.Axes]):
     """Generates a volcano and an MA plot for the comparison of two experiments.
 
     Args:
@@ -583,6 +585,11 @@ def volcano_ma(
         experiment_pair: The names of the two experiments that will be compared,
             experiments must be present in qtable.design.
         comparison_tag: TODO
+        pvalue_tag: TODO
+        special_proteins: Optional, allows to specify a list of entries from the
+            "Representative Protein" column to be annotated. Entries are annotated with
+            values from the "Gene Name" column if present, otherwise from the
+            "Representative Protein" column.
         exclude_invalid: Optional, if True rows are filtered according to the Boolean
             entries of "Valid"; default True.
 
@@ -591,15 +598,33 @@ def volcano_ma(
         and the MA plot.
     """
     exp_1, exp_2 = experiment_pair
+    special_proteins = special_proteins if special_proteins is not None else []
     comparison_group = "".join([exp_1, comparison_tag, exp_2])
-    qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
+    data = qtable.get_data(exclude_invalid=exclude_invalid)
+    annotation_column = (
+        "Gene name" if "Gene name" in data.columns else "Representative protein"
+    )
+    scatter_size = 2 / (max(min(data.shape[0], 10000), 1000) / 1000)
+
+    masks = {
+        "highlight": data["Representative protein"].isin(special_proteins),
+        "default": ~data["Representative protein"].isin(special_proteins),
+    }
+    params = {
+        "highlight": {
+            "s": 10,
+            "color": "#FAB74E",
+            "edgecolor": "#000000",
+            "lw": 0.2,
+            "zorder": 3,
+        },
+        "default": {"s": scatter_size, "color": "#A0A0A0", "zorder": 2},
+    }
 
     for column in msreport.helper.find_sample_columns(
-        qtable_data, pvalue_tag, [comparison_group]
+        data, pvalue_tag, [comparison_group]
     ):
-        qtable_data[column] = np.log10(qtable_data[column]) * -1
-
-    scatter_size = 2 / (max(min(qtable_data.shape[0], 10000), 1000) / 1000)
+        data[column] = np.log10(data[column]) * -1
 
     fig, axes = plt.subplots(1, 2, figsize=[8, 4], sharex=True)
     fig.suptitle(comparison_group)
@@ -610,10 +635,22 @@ def volcano_ma(
     ]:
         x_col = " ".join([x_variable, comparison_group])
         y_col = " ".join([y_variable, comparison_group])
-        x_values = qtable_data[x_col]
-        y_values = qtable_data[y_col]
+        x_values = data[x_col]
+        y_values = data[y_col]
         ax.grid(axis="both", linestyle="dotted", linewidth=1)
-        ax.scatter(x_values, y_values, s=scatter_size, color="#606060", zorder=3)
+
+        mask = masks["default"]
+        ax.scatter(x_values[mask], y_values[mask], **params["default"])
+
+        mask = masks["highlight"]
+        _annotated_scatter(
+            x_values=data[x_col][mask],
+            y_values=data[y_col][mask],
+            labels=data[annotation_column][mask],
+            ax=ax,
+            scatter_kws=params["highlight"],
+        )
+
         ax.set_xlabel(x_variable)
         ax.set_ylabel(y_variable)
 
@@ -957,3 +994,27 @@ def pvalue_histogram(
     ax.set_xlim(-0.05, 1.05)
 
     return fig, axes
+
+
+def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None):
+    ax = plt.gca() if ax is None else ax
+    text_params = {
+        "force_text": 0.15,
+        "arrowprops": dict(arrowstyle="-", color="#ebae34", lw=0.75),
+        "lim": 100,
+    }
+    if scatter_kws is None:
+        scatter_kws = {
+            "s": 10,
+            "color": "#FAB74E",
+            "edgecolor": "#000000",
+            "lw": 0.2,
+            "zorder": 3,
+        }
+
+    texts = []
+    for x, y, text in zip(x_values, y_values, labels):
+        texts.append(ax.text(x, y, text, fontdict={"fontsize": 9}))
+
+    adjustText.adjust_text(texts, ax=ax, **text_params)
+    ax.scatter(x_values, y_values, **scatter_kws)
