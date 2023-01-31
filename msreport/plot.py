@@ -352,10 +352,9 @@ def replicate_ratios(
             ratios = ratios[np.isfinite(ratios)]
             ylabel = experiment if y_pos == 0 else ""
             title = f"{s1_label} vs {s2_label}"
+            color = color_wheel[experiment]
 
-            sns.kdeplot(
-                x=ratios, fill=True, ax=ax, zorder=3, color=color_wheel[experiment]
-            )
+            sns.kdeplot(x=ratios, fill=True, ax=ax, zorder=3, color=color, alpha=0.5)
             ax.set_title(title, fontsize=10)
             ax.set_yticklabels("")
             ax.set_ylabel(ylabel, rotation=90, fontsize=10, va="center")
@@ -380,7 +379,7 @@ def replicate_ratios(
 def experiment_ratios(
     qtable: Qtable,
     exclude_invalid: bool = True,
-    ylim: Iterable[float, float] = (-2, 2),
+    ylim: Iterable[float] = (-2, 2),
 ) -> (plt.Figure, list[plt.Axes]):
     """Figure to compare the similarity of expression values between experiments.
 
@@ -427,7 +426,8 @@ def experiment_ratios(
     for exp_pos, experiment in enumerate(experiments):
         ax = axes[exp_pos]
         values = exp_ratios[experiment]
-        sns.kdeplot(y=values, fill=True, ax=ax, zorder=3, color=color_wheel[experiment])
+        color = color_wheel[experiment]
+        sns.kdeplot(y=values, fill=True, ax=ax, zorder=3, color=color, alpha=0.5)
         ax.set_xticklabels("")
         ax.tick_params(axis="both", labelsize=8)
         ax.set_xlabel(experiment, rotation=90)
