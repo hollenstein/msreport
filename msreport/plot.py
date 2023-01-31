@@ -378,6 +378,7 @@ def replicate_ratios(
 
 def experiment_ratios(
     qtable: Qtable,
+    experiments: Optional[str] = None,
     exclude_invalid: bool = True,
     ylim: Iterable[float] = (-2, 2),
 ) -> (plt.Figure, list[plt.Axes]):
@@ -394,6 +395,8 @@ def experiment_ratios(
 
     Args:
         qtable: A Qtable instance, which data is used for plotting.
+        experiments: Optional, list of experiments that will be displayed. If None, all
+            experiments from `qtable.design` will be used.
         exclude_invalid: Optional, if True rows are filtered according to the Boolean
             entries of "Valid"; default True.
         ylim: Optional, specifies the displayed log2 ratio range on the y-axis. Default
@@ -401,8 +404,9 @@ def experiment_ratios(
     """
     tag: str = "Expression"
     qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
+    if experiments is None:
+        experiments = qtable.design["Experiment"].unique().tolist()
 
-    experiments = qtable.design["Experiment"].unique().tolist()
     column_mapping = {f"{tag} {exp}": exp for exp in experiments}
     exp_data = qtable_data[column_mapping.keys()]
     exp_data = exp_data.rename(columns=column_mapping)
@@ -428,6 +432,15 @@ def experiment_ratios(
         values = exp_ratios[experiment]
         color = color_wheel[experiment]
         sns.kdeplot(y=values, fill=True, ax=ax, zorder=3, color=color, alpha=0.5)
+        if exp_pos == 0:
+            ax.text(
+                x=ax.get_xlim()[1] / 20,
+                y=ylim[1] * 0.95,
+                s=f"n={str(len(values))}",
+                va="top",
+                ha="left",
+                fontsize=8,
+            )
         ax.set_xticklabels("")
         ax.tick_params(axis="both", labelsize=8)
         ax.set_xlabel(experiment, rotation=90)
