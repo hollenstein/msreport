@@ -2,7 +2,8 @@
 
 ## Upcoming
 
-...
+### Added
+- `plot.pvalue_histogram()`
 
 
 ## 0.0.6
