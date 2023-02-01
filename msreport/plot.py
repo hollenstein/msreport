@@ -193,12 +193,10 @@ def missing_values_horizontal(
     return fig, ax
 
 
-def contaminants(
-    qtable: Qtable, ibaq_tag: str = "iBAQ intensity"
-) -> (plt.Figure, plt.Axes):
-    """A bar plot that displays relative contaminant amounts (riBAQ) per sample.
+def contaminants(qtable: Qtable, tag: str = "iBAQ intensity") -> (plt.Figure, plt.Axes):
+    """A bar plot that displays relative contaminant amounts (iBAQ) per sample.
 
-    The relative iBAQ (riBAQ) values are calculated as:
+    The relative iBAQ values are calculated as:
     sum of contaminant iBAQ intensities / sum of all iBAQ intensities * 100
 
     Requires "iBAQ intensity" columns for each sample, and a "Potential contaminant"
@@ -206,20 +204,20 @@ def contaminants(
 
     Args:
         qtable: A Qtable instance, which data is used for plotting.
-        ibaq_tag: String used for matching the iBAQ intensity columns; default
+        tag: String used for matching the iBAQ intensity columns; default
             "iBAQ intensity", which corresponds to the MsReport convention.
 
     Returns:
         A matplotlib Figure and Axes object, containing the contaminants plot.
     """
-    data = qtable.make_sample_table(ibaq_tag, samples_as_columns=True)
-    ribaq = data / data.sum() * 100
+    data = qtable.make_sample_table(tag, samples_as_columns=True)
+    relative_intensity = data / data.sum() * 100
     contaminants = qtable["Potential contaminant"]
     samples = data.columns.to_list()
     num_samples = len(samples)
 
-    x_values = range(ribaq.shape[1])
-    bar_values = ribaq[contaminants].sum(axis=0)
+    x_values = range(relative_intensity.shape[1])
+    bar_values = relative_intensity[contaminants].sum(axis=0)
 
     color_wheel = ColorWheelDict()
     colors = [color_wheel[exp] for exp in qtable.get_experiments(samples)]
@@ -233,7 +231,7 @@ def contaminants(
     )
     ax.set_xticks(x_values)
     ax.set_xticklabels(samples, rotation=90)
-    ax.set_ylabel("Sum riBAQ [%]")
+    ax.set_ylabel(f"Sum relative\n{tag} [%]")
 
     ax.set_ylim(0, max(5, ax.get_ylim()[1]))
     sns.despine(top=True, right=True)
