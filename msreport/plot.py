@@ -358,6 +358,7 @@ def replicate_ratios(
             ax.set_ylabel(ylabel, rotation=90, fontsize=10, va="center")
             ax.set_xlabel("")
             ax.tick_params(axis="both", labelsize=8)
+            ax.locator_params(axis="x", nbins=5)
 
     axes[0, 0].set_xlim(xlim)
     for ax in axes.flatten():
