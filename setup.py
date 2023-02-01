@@ -15,6 +15,7 @@ setup(
     author="David M. Hollenstein",
     author_email="hollenstein.david@gmail.com",
     install_requires=[
+        "adjustText",
         "matplotlib",
         "numpy",
         "pandas",

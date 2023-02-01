@@ -533,6 +533,7 @@ def sample_pca(
 
     # Comparison of two principle components
     ax = axes[0]
+    texts = []
     for sample, data in components_table.iterrows():
         experiment = qtable.get_experiment(sample)
         label = design.loc[(design["Sample"] == sample), "Replicate"].tolist()[0]
@@ -546,7 +547,14 @@ def sample_pca(
             s=50,
             label=experiment,
         )
-        ax.annotate(label, (data[pc_x], data[pc_y]))
+        texts.append(ax.text(data[pc_x], data[pc_y], label, fontdict={"fontsize": 9}))
+    adjustText.adjust_text(
+        texts,
+        force_text=0.15,
+        arrowprops=dict(arrowstyle="-", color="#ebae34", lw=0.5),
+        lim=20,
+        ax=ax,
+    )
     ax.tick_params(axis="both", labelsize=9)
     ax.set_xlabel(f"{pc_x} ({variance_lookup[pc_x]:.2f}%)", size=12)
     ax.set_ylabel(f"{pc_y} ({variance_lookup[pc_y]:.2f}%)", size=12)
