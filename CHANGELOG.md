@@ -4,6 +4,8 @@
 
 ### Added
 - `plot.pvalue_histogram()`
+- Add option to annotate pecial proteins in `plot.expression_comparison()` 
+- Add option to annotate pecial proteins in `plot.volcano_ma()` 
 
 
 ## 0.0.6
