@@ -598,8 +598,8 @@ def volcano_ma(
         and the MA plot.
     """
     exp_1, exp_2 = experiment_pair
-    special_proteins = special_proteins if special_proteins is not None else []
     comparison_group = "".join([exp_1, comparison_tag, exp_2])
+    special_proteins = special_proteins if special_proteins is not None else []
     data = qtable.get_data(exclude_invalid=exclude_invalid)
     annotation_column = (
         "Gene name" if "Gene name" in data.columns else "Representative protein"
@@ -663,6 +663,7 @@ def expression_comparison(
     experiment_pair: list[str, str],
     comparison_tag: str = " vs ",
     plot_average_expression: bool = False,
+    special_proteins: Optional[list[str]] = None,
     exclude_invalid: bool = True,
 ) -> (plt.Figure, list[plt.Axes]):
     """Generates an expression comparison plot for two experiments.
@@ -678,6 +679,10 @@ def expression_comparison(
         comparison_tag: TODO
         plot_average_expression: Optional, if True plot average expression instead of
             maxium expression. Default False.
+        special_proteins: Optional, allows to specify a list of entries from the
+            "Representative Protein" column to be annotated. Entries are annotated with
+            values from the "Gene Name" column if present, otherwise from the
+            "Representative Protein" column.
         exclude_invalid: Optional, if True rows are filtered according to the Boolean
             entries of "Valid"; default True.
 
@@ -687,7 +692,21 @@ def expression_comparison(
     """
     exp_1, exp_2 = experiment_pair
     comparison_group = "".join([exp_1, comparison_tag, exp_2])
+    special_proteins = special_proteins if special_proteins is not None else []
     qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
+    annotation_column = (
+        "Gene name" if "Gene name" in qtable_data.columns else "Representative protein"
+    )
+    total_scatter_area = 5000
+    params = {
+        "highlight": {
+            "s": 10,
+            "color": "#FAB74E",
+            "edgecolor": "#000000",
+            "lw": 0.2,
+            "zorder": 3,
+        },
+    }
 
     mask = (qtable_data[f"Events {exp_1}"] + qtable_data[f"Events {exp_2}"]) > 0
     qtable_data = qtable_data[mask]
@@ -711,8 +730,6 @@ def expression_comparison(
             size = 1
         return size
 
-    total_scatter_area = 5000
-
     width_ratios = [1, 5, 1]
     fig, axes = plt.subplots(
         1, 3, figsize=[6, 4], sharey=True, gridspec_kw={"width_ratios": width_ratios}
@@ -731,7 +748,16 @@ def expression_comparison(
     x_values = values[x_col]
     y_values = values[y_col]
     ax.grid(axis="both", linestyle="dotted", linewidth=1)
-    ax.scatter(x_values, y_values, s=s, alpha=0.75, color="#606060", zorder=3)
+    ax.scatter(x_values, y_values, s=s, alpha=0.75, color="#A0A0A0", zorder=2)
+    highlight_mask = values["Representative protein"].isin(special_proteins)
+    _annotated_scatter(
+        x_values=x_values[highlight_mask],
+        y_values=y_values[highlight_mask],
+        labels=values[annotation_column][highlight_mask],
+        ax=ax,
+        scatter_kws=params["highlight"],
+    )
+
     ax.set_xlabel(x_variable, fontsize=9)
     ax.set_title(comparison_group, fontsize=12)
     ax.set_ylabel(y_variable)
@@ -749,7 +775,7 @@ def expression_comparison(
                     size=np.sqrt(s * 2),
                     marker="o",
                     alpha=0.75,
-                    color="#606060",
+                    color="#A0A0A0",
                     edgecolor="none",
                     ax=ax,
                 )
@@ -762,11 +788,21 @@ def expression_comparison(
                     size=np.sqrt(s * 2),
                     marker="o",
                     alpha=0.75,
-                    color="#606060",
+                    color="#A0A0A0",
                     edgecolor="none",
                     ax=ax,
                 )
                 ax.set_xlim(-0.2, 0.2)
+            finally:
+                highlight_mask = values["Representative protein"].isin(special_proteins)
+                offsets = ax.collections[0].get_offsets()[highlight_mask]
+                _annotated_scatter(
+                    x_values=offsets[:, 0],
+                    y_values=offsets[:, 1],
+                    labels=values[annotation_column][highlight_mask],
+                    ax=ax,
+                )
+
         ax.grid(axis="y", linestyle="dotted", linewidth=1)
         ax.set_ylabel(y_variable)
     axes[0].set_title(f"Absent in\n{exp_1}", fontsize=9)
