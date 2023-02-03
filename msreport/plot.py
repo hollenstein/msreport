@@ -389,8 +389,10 @@ def experiment_ratios(
     values are calculated as the average intensity values of all experiments. Only rows
     with quantitative values in all experiment are considered.
 
-    Requires that average experiment expression values are calculated. Which can be done
-    by calling msreport.analyze.calculate_experiment_means(qtable: Qtable).
+    Requires "Events experiment" columns and that average experiment expression values
+    are calculated. This can be achieved by calling
+    `msreport.analyze.analyze_missingness(qtable: Qtable)` and
+    `msreport.analyze.calculate_experiment_means(qtable: Qtable)`.
 
     Args:
         qtable: A Qtable instance, which data is used for plotting.

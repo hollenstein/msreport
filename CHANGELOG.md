@@ -5,13 +5,15 @@
 ### Added
 - Added new plot `plot.pvalue_histogram()`.
 - Added option to annotate and highlight special proteins in 
-  `plot.expression_comparison()`.
-- Added option to annotate and highlight special proteins in `plot.volcano_ma()`.
-- Added option to specify which experiments are used in `plot.experiment_ratios()`.
+  `plot.expression_comparison()` by using the `special_proteins` argument.
+- Added option to annotate and highlight special proteins in `plot.volcano_ma()` by
+  using the `special_proteins` argument.
+- Added option to specify which experiments are used in `plot.experiment_ratios()` by
+  using the `experiments` argument.
 
 ### Changed:
-- Decreased the transparency of density distributions in `plot.experiment_ratios()` and
-  `plot.replicate_ratios()`.
+- Decreased the transparency of the density distributions in `plot.experiment_ratios()`
+  and `plot.replicate_ratios()`.
 - The first subplot from `plot.experiment_ratios()` now displays the number of data
   points used for generating the distribution as "n = xxxx".
 - Overlapping replicate annotations in `plot.sample_pca()` are now automatically
@@ -21,6 +23,9 @@
 ### Fixes:
 - Fixed `plot.replicate_ratios()` displaying no or too few gridlines.
 - Fixed `plot.contaminants()` y-axis label not being adjusted to the specified tag.
+- Fixed wrong p-value calculation of multi group LIMMA when the sample order in
+  `qtable.data` and `qtable.design` was different.
+- Corrected docstring typos and added missing descriptions.
 
 
 ## 0.0.6

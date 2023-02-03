@@ -25,7 +25,7 @@ class Qtable:
     def __init__(self, data: pd.DataFrame, design: Optional[pd.DataFrame] = None):
         """Initializes the Qtable.
 
-        If data does not vontain a "Valid" column, this column is added and all its row
+        If data does not contain a "Valid" column, this column is added and all its row
         values are set to True.
 
         Args:
