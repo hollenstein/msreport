@@ -3,9 +3,24 @@
 ## Upcoming
 
 ### Added
-- `plot.pvalue_histogram()`
-- Add option to annotate pecial proteins in `plot.expression_comparison()` 
-- Add option to annotate pecial proteins in `plot.volcano_ma()` 
+- Added new plot `plot.pvalue_histogram()`.
+- Added option to annotate and highlight special proteins in 
+  `plot.expression_comparison()`.
+- Added option to annotate and highlight special proteins in `plot.volcano_ma()`.
+- Added option to specify which experiments are used in `plot.experiment_ratios()`.
+
+### Changed:
+- Decreased the transparency of density distributions in `plot.experiment_ratios()` and
+  `plot.replicate_ratios()`.
+- The first subplot from `plot.experiment_ratios()` now displays the number of data
+  points used for generating the distribution as "n = xxxx".
+- Overlapping replicate annotations in `plot.sample_pca()` are now automatically
+  adjusted.
+- Added the python package "adjustText" to the msreport requirements.
+
+### Fixes:
+- Fixed `plot.replicate_ratios()` displaying no or too few gridlines.
+- Fixed `plot.contaminants()` y-axis label not being adjusted to the specified tag.
 
 
 ## 0.0.6
