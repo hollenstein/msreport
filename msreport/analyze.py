@@ -351,7 +351,7 @@ def calculate_multi_group_limma(
 
     # Exchange experiment names with names that are guaranteed to be valid in R
     experiment_to_r = {}
-    for i, experiment in enumerate(design["Experiment"]):
+    for i, experiment in enumerate(design["Experiment"].unique()):
         experiment_to_r[experiment] = f".EXPERIMENT__{i:04d}"
     r_to_experiment = {v: k for k, v in experiment_to_r.items()}
 

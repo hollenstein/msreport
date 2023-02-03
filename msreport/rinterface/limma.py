@@ -19,10 +19,11 @@ def multi_group_limma(
     """Use limma to calculate differential expression analysis of multiple groups.
 
     Args:
-        table: Contains quantitative data for differential expression analysis.
+        table: Contains quantitative data for differential expression analysis. Column
+            names must correspond to entries from `design["Sample"]`.
         design: Dataframe describing the experimental design of the 'table', where each
-            row must correspond to a column in 'table'. The 'Design' must at least
-            contain a column "Experiment". If batch correction should be applied,
+            row must correspond to a column in 'table'. The 'Design' must contain the
+            columns "Sample" and "Experiment". If batch correction should be applied,
             batches must be described in the "Batch" column. Names must be valid R
             names, for reference see the R function make.names.
         comparison_groups: A list containing experiment pairs for which the results of
@@ -55,6 +56,9 @@ def multi_group_limma(
         "adj.P.Val": "Adjusted p-value",
     }
     columns_to_keep = column_mapping.keys()
+
+    # `R_multi_group_limma` expects that the sample order in table and design are equal
+    table = table[design["Sample"]]
 
     group_results = {}
     with localconverter(
