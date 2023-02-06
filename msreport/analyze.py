@@ -389,7 +389,7 @@ def calculate_two_group_limma(
     experiment_pair: list[str, str],
     exclude_invalid: bool = True,
     limma_trend: bool = True,
-) -> pd.DataFrame:
+) -> None:
     """Uses limma to perform a differential expression analysis of two experiments.
 
     Adds new columns "P-value Experiment_1 vs Experiment_2",
@@ -411,11 +411,6 @@ def calculate_two_group_limma(
             used for the differential expression analysis; default True.
         limma_trend: If true, an intensity-dependent trend is fitted to the prior
             variances; default True.
-
-    Returns:
-        A dataframe containing "Ratio [log2]", "P-value", "Adjusted p-value" and
-        "Average expression". The Ratio [log2] is calculated as the mean intensity of
-        experiment 2 - experiment 1.
     """
     # TODO: not tested #
     expression_table = qtable.make_expression_table(

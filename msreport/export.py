@@ -111,6 +111,9 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
     Args:
         table: A dataframe containing experimental data. Requires that column names
             follow the MsReport conventions.
+
+    Returns:
+        A dataframe which columns are in the amica data table format.
     """
     filter_columns = ["Valid", "Potential contaminant"]
     amica_column_mapping = {
@@ -180,6 +183,9 @@ def _amica_design_from(qtable: Qtable) -> pd.DataFrame:
 
     Args:
         design: A dataframe that must contain the columns "Sample" and "Experiment".
+
+    Returns:
+        A dataframe which columns are in the amica design table format.
     """
     design = qtable.get_design()
     amica_design_columns = {"Sample": "samples", "Experiment": "groups"}

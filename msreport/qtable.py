@@ -207,16 +207,16 @@ class Qtable:
         """Returns a new dataframe containing the expression columns.
 
         Args:
-            features: A list of additional columns that will be added from qtable.data
-                to the newly generated datarame.
             samples_as_columns: If true, replaces expression column names with
                 sample names. Requires that the experimental design is set.
+            features: A list of additional columns that will be added from qtable.data
+                to the newly generated datarame.
             exclude_invalid: Optional, if true the returned dataframe is filtered by
                 the "Valid" column. Default false.
 
         Returns:
-            A copied dataframe that contains only the specified columns from the
-            quantitative proteomics data.
+            A copy of tbhe qtable.data dataframe that only contains expression columns
+            and additionally specified columns.
         """
         columns = []
         columns.extend(self._expression_columns)

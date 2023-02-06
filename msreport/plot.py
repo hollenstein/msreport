@@ -316,6 +316,9 @@ def replicate_ratios(
             entries of "Valid"; default True.
         xlim: Optional, specifies the displayed log2 ratio range on the x-axis. Default
             is from -2 to 2.
+
+    Returns:
+        A matplotlib Figure and a list of Axes objects, containing the comparison plots.
     """
     tag: str = "Expression"
     table = qtable.make_sample_table(
@@ -402,6 +405,9 @@ def experiment_ratios(
             entries of "Valid"; default True.
         ylim: Optional, specifies the displayed log2 ratio range on the y-axis. Default
             is from -2 to 2.
+
+    Returns:
+        A matplotlib Figure and a list of Axes objects, containing the comparison plots.
     """
     tag: str = "Expression"
     qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
@@ -594,12 +600,12 @@ def sample_pca(
 
 def volcano_ma(
     qtable: Qtable,
-    experiment_pair: list[str, str],
+    experiment_pair: list[str],
     comparison_tag: str = " vs ",
     pvalue_tag: str = "P-value",
     special_proteins: Optional[list[str]] = None,
     exclude_invalid: bool = True,
-) -> (plt.Figure, list[plt.Axes, plt.Axes]):
+) -> (plt.Figure, list[plt.Axes]):
     """Generates a volcano and an MA plot for the comparison of two experiments.
 
     Args:
@@ -684,7 +690,7 @@ def volcano_ma(
 
 def expression_comparison(
     qtable: Qtable,
-    experiment_pair: list[str, str],
+    experiment_pair: list[str],
     comparison_tag: str = " vs ",
     plot_average_expression: bool = False,
     special_proteins: Optional[list[str]] = None,
@@ -1061,7 +1067,7 @@ def pvalue_histogram(
     return fig, axes
 
 
-def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None):
+def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None) -> None:
     ax = plt.gca() if ax is None else ax
     text_params = {
         "force_text": 0.15,

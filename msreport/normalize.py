@@ -318,7 +318,9 @@ class LowessNormalizer(ValueDependentNormalizer):
         super(LowessNormalizer, self).__init__(fit_function=_value_dependent_fit_lowess)
 
 
-def confirm_is_fitted(normalizer: BaseSampleNormalizer, msg: Optional[str] = None):
+def confirm_is_fitted(
+    normalizer: BaseSampleNormalizer, msg: Optional[str] = None
+) -> None:
     """Perform is_fitted validation for normalizer instances.
 
     Checks if the normalizer is fitted by verifying the presence of fitted attributes
