@@ -1,6 +1,6 @@
 # Changelog
 
-## Upcoming
+## 0.0.7
 
 ### Added
 - Added new plot `plot.pvalue_histogram()`.
@@ -21,6 +21,8 @@
 - Added the python package "adjustText" to the msreport requirements.
 - Added missing docstring descriptions.
 - Removed return value from `analyze.calculate_two_group_limma()`
+- Switched from `setup.py` to `pyproject.toml` for specifying build instructions and
+  package meta data.
 
 ### Fixes:
 - Fixed `plot.replicate_ratios()` displaying no or too few gridlines.
