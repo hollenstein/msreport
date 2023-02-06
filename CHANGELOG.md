@@ -1,5 +1,7 @@
 # Changelog
 
+----------------------------------------------------------------------------------------
+
 ## 0.0.7
 
 ### Added
@@ -32,6 +34,7 @@
 - Corrected wrong type hints for arguments and return values.
 - Corrected docstring typos.
 
+----------------------------------------------------------------------------------------
 
 ## 0.0.6
 
@@ -78,6 +81,7 @@
 - The replicate labels in `plot.replicate_ratios()` and `plot.sample_pca()` were
   previously extracted from sample names. Now they are read from the qtable.design.
 
+----------------------------------------------------------------------------------------
 
 ## 0.0.5
 
@@ -101,6 +105,7 @@
   - `reader.add_peptide_positions`, now requires a protein database instead of a fasta
     path.
 
+----------------------------------------------------------------------------------------
 
 ## 0.0.4
 
@@ -127,6 +132,7 @@
   - Added arguments to add_protein_annotations() for specifying whether "Protein length"
     and "iBAQ peptides" should be added or not.
 
+----------------------------------------------------------------------------------------
 
 ## 0.0.3
 
@@ -157,6 +163,7 @@
     plot.expression_comparison().
   - Fixed issue with exported amica tables being incompatible with amica.
 
+----------------------------------------------------------------------------------------
 
 ## 0.0.2
 
@@ -179,6 +186,7 @@
   - Added a excel protein report script that uses the XlsxReport library to write a
     formatted excel protein report from a Qtable.
 
+----------------------------------------------------------------------------------------
 
 ## 0.0.1
 
