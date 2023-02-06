@@ -435,11 +435,11 @@ def calculate_two_group_limma(
     not_nan = table.isna().sum(axis=1) == 0
 
     mask = np.all([valid, not_nan], axis=0)
-    column_groups = list(samples_to_experiment.values())
+    experiments = list(samples_to_experiment.values())
 
     # Note that the order of experiments for calling limma is reversed
     limma_result = msreport.rinterface.two_group_limma(
-        table[mask], column_groups, experiment_pair[1], experiment_pair[0], limma_trend
+        table[mask], experiments, experiment_pair[1], experiment_pair[0], limma_trend
     )
 
     # For adding expression features to the qtable it is necessary that the

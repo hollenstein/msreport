@@ -75,14 +75,14 @@ def multi_group_limma(
 
 
 def two_group_limma(
-    table: pd.DataFrame, column_groups: list[str], group1: str, group2: str, trend: bool
+    table: pd.DataFrame, groups: list[str], group1: str, group2: str, trend: bool
 ) -> pd.DataFrame:
     """Use limma to calculate differential expression analysis of two groups.
 
     Args:
         table: Contains quantitative data for differential expression analysis.
-        column_groups: A list that contains a group name for each column.
-            Group names must correspond either to 'group1' or 'group2'.
+        groups: A list that contains a group name for each column. List entries must
+            be equal to 'group1' or 'group2'.
         group1: Experimental group 1
         group2: Experimental group 2, used as the coefficient
         trend: If true an intensity-dependent trend is fitted to the prior variance
@@ -99,7 +99,7 @@ def two_group_limma(
     R_two_group_limma = robjects.globalenv[".two_group_limma"]
 
     with localconverter(robjects.default_converter + pandas2ri.converter):
-        limma_result = R_two_group_limma(table, column_groups, group1, group2, trend)
+        limma_result = R_two_group_limma(table, groups, group1, group2, trend)
 
     column_mapping = {
         "AveExpr": "Average expression",

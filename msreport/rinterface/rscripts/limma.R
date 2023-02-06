@@ -80,8 +80,8 @@ library(limma)
 #'
 #' @param data_frame A matrix-like data object containing log-expression values
 #'    for a series of samples.
-#' @param column_groups A list that contains a group name for each column.
-#'    Group names must correspond either to 'group1' or 'group2'.
+#' @param groups: A list that contains a group name for each column. List entries must
+#'    be equal to 'group1' or 'group2'.
 #' @param group1: Experimental group 1
 #' @param group2: Experimental group 2, used as the coefficient
 #' @param trend Logical, if true an intensity-dependent trend is fitted to the
