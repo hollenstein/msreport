@@ -299,7 +299,7 @@ def sample_intensities(
 def replicate_ratios(
     qtable: Qtable,
     exclude_invalid: bool = True,
-    xlim: Iterable[float, float] = (-2, 2),
+    xlim: Iterable[float] = (-2, 2),
 ) -> (plt.Figure, list[plt.Axes]):
     """Figure to compare the similarity of expression values between replicates.
 
@@ -977,7 +977,7 @@ def pvalue_histogram(
     qtable: Qtable,
     pvalue_tag: str = "P-value",
     comparison_tag: str = " vs ",
-    experiment_pairs: Optional[Iterable[Iterable[str, str]]] = None,
+    experiment_pairs: Optional[Iterable[Iterable[str]]] = None,
     exclude_invalid: bool = True,
 ) -> (plt.Figure, list[plt.Axes]):
     """Generates p-value histograms for one or multiple experiment comparisons.
