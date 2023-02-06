@@ -606,8 +606,10 @@ def volcano_ma(
         qtable: A Qtable instance, which data is used for plotting.
         experiment_pair: The names of the two experiments that will be compared,
             experiments must be present in qtable.design.
-        comparison_tag: TODO
-        pvalue_tag: TODO
+        comparison_tag: String used in comparison columns to separate a pair of
+            experiments; default " vs ", which corresponds to the MsReport convention.
+        pvalue_tag: String used for matching the pvalue columns; default "P-value",
+            which corresponds to the MsReport convention.
         special_proteins: Optional, allows to specify a list of entries from the
             "Representative Protein" column to be annotated. Entries are annotated with
             values from the "Gene Name" column if present, otherwise from the
@@ -698,7 +700,8 @@ def expression_comparison(
         qtable: A Qtable instance, which data is used for the PCA analysis.
         experiment_pair: The names of the two experiments that will be compared,
             experiments must be present in qtable.design.
-        comparison_tag: TODO
+        comparison_tag: String used in comparison columns to separate a pair of
+            experiments; default " vs ", which corresponds to the MsReport convention.
         plot_average_expression: Optional, if True plot average expression instead of
             maxium expression. Default False.
         special_proteins: Optional, allows to specify a list of entries from the
@@ -978,8 +981,10 @@ def pvalue_histogram(
 
     Args:
         qtable: A Qtable instance, which data is used for the p-value histograms.
-        pvalue_tag: TODO
-        comparison_tag: TODO
+        pvalue_tag: String used for matching the pvalue columns; default "P-value",
+            which corresponds to the MsReport convention.
+        comparison_tag: String used in comparison columns to separate a pair of
+            experiments; default " vs ", which corresponds to the MsReport convention.
         experiment_pairs: Optional, list of experiment pairs that will be used for
             plotting. For each experiment pair a p-value column must exists that follows
             the format f"{pvalue_tag} {experiment_1}{comparison_tag}{experiment_2}".

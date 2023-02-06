@@ -19,13 +19,14 @@
 - Overlapping replicate annotations in `plot.sample_pca()` are now automatically
   adjusted.
 - Added the python package "adjustText" to the msreport requirements.
+- Added missing docstring descriptions.
 
 ### Fixes:
 - Fixed `plot.replicate_ratios()` displaying no or too few gridlines.
 - Fixed `plot.contaminants()` y-axis label not being adjusted to the specified tag.
 - Fixed wrong p-value calculation of multi group LIMMA when the sample order in
   `qtable.data` and `qtable.design` was different.
-- Corrected docstring typos and added missing descriptions.
+- Corrected docstring typos.
 
 
 ## 0.0.6
