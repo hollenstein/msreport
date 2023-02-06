@@ -65,12 +65,11 @@ Alternatively, you can also get Python from the
 [Python homepage](https://www.python.org/downloads/windows). MsReport requires Python
 version 3.9 or higher.
 
-You can use pip to install MsReport from the distribution folder. Navigate to the folder
-containing the MsReport installation package and enter the following command (don't
-forget to add the dot after install):
+You can use pip to install MsReport from the distribution file with the following
+command:
 
 ```
-pip install .
+pip install msreport-X.Y.Z-py3-none-any.whl
 ```
 
 To uninstall the MsReport library type:
