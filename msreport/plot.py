@@ -619,8 +619,8 @@ def volcano_ma(
         A matplotlib Figure object and a list of two Axes objects containing the volcano
         and the MA plot.
     """
-    exp_1, exp_2 = experiment_pair
-    comparison_group = "".join([exp_1, comparison_tag, exp_2])
+    comparison_group = comparison_tag.join(experiment_pair)
+
     special_proteins = special_proteins if special_proteins is not None else []
     data = qtable.get_data(exclude_invalid=exclude_invalid)
     annotation_column = (
@@ -713,7 +713,7 @@ def expression_comparison(
         expression comparison plots.
     """
     exp_1, exp_2 = experiment_pair
-    comparison_group = "".join([exp_1, comparison_tag, exp_2])
+    comparison_group = comparison_tag.join(experiment_pair)
     special_proteins = special_proteins if special_proteins is not None else []
     qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
     annotation_column = (
@@ -981,7 +981,7 @@ def pvalue_histogram(
         pvalue_tag: TODO
         comparison_tag: TODO
         experiment_pairs: Optional, list of experiment pairs that will be used for
-            plotting. For each experiment pair a p-value column must exists that follow
+            plotting. For each experiment pair a p-value column must exists that follows
             the format f"{pvalue_tag} {experiment_1}{comparison_tag}{experiment_2}".
             If None, all experiment comparisons that are found in qtable.data are used.
         exclude_invalid: Optional, if True rows are filtered according to the Boolean
@@ -995,10 +995,11 @@ def pvalue_histogram(
     # Find all experiment pairs
     if experiment_pairs is None:
         experiment_pairs = []
-        for exp_1, exp_2 in itertools.permutations(qtable.get_experiments(), 2):
-            comparison_group = f"{pvalue_tag} {exp_1}{comparison_tag}{exp_2}"
-            if comparison_group in data.columns:
-                experiment_pairs.append([exp_1, exp_2])
+        for experiment_pair in itertools.permutations(qtable.get_experiments(), 2):
+            comparison_group = comparison_tag.join(experiment_pair)
+            comparison_column = f"{pvalue_tag} {comparison_group}"
+            if comparison_column in data.columns:
+                experiment_pairs.append(experiment_pair)
 
     num_plots = len(experiment_pairs)
 
@@ -1011,10 +1012,11 @@ def pvalue_histogram(
     fig.subplots_adjust(wspace=0.5)
 
     bins = np.arange(0, 1.01, 0.05)
-    for plot_number, (exp_1, exp_2) in enumerate(experiment_pairs):
+    for plot_number, experiment_pair in enumerate(experiment_pairs):
         ax = axes[plot_number]
-        column = f"{pvalue_tag} {exp_1}{comparison_tag}{exp_2}"
-        p_values = data[column]
+        comparison_group = comparison_tag.join(experiment_pair)
+        comparison_column = f"{pvalue_tag} {comparison_group}"
+        p_values = data[comparison_column]
         sns.histplot(
             p_values,
             bins=bins,
@@ -1036,7 +1038,7 @@ def pvalue_histogram(
         # Add second label
         ax2 = ax.twinx()
         ax2.set_yticks([])
-        ax2.set_ylabel(f"{exp_1}{comparison_tag}{exp_2}", fontsize=9)
+        ax2.set_ylabel(comparison_group, fontsize=9)
 
         # Adjust spines
         sns.despine(top=True, right=True)

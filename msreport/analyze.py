@@ -262,7 +262,8 @@ def two_group_comparison(
     """
     # TODO: not tested #
     table = qtable.make_expression_table(samples_as_columns=True)
-    comparison_tag = f"{experiment_pair[0]} vs {experiment_pair[1]}"
+    comparison_tag = " vs "
+    comparison_group = comparison_tag.join(experiment_pair)
 
     if exclude_invalid:
         invalid = np.invert(qtable["Valid"].to_numpy())
@@ -280,8 +281,8 @@ def two_group_comparison(
 
     comparison_table = pd.DataFrame(
         {
-            f"Average expression {comparison_tag}": average_expressions,
-            f"Ratio [log2] {comparison_tag}": ratios,
+            f"Average expression {comparison_group}": average_expressions,
+            f"Ratio [log2] {comparison_group}": ratios,
         }
     )
     comparison_table[invalid] = np.nan
@@ -290,14 +291,14 @@ def two_group_comparison(
 
 def calculate_multi_group_limma(
     qtable: Qtable,
-    comparison_groups: list[list[str, str]],
+    experiment_pairs: list[list[str, str]],
     exclude_invalid: bool = True,
     batch: bool = False,
     limma_trend: bool = True,
 ) -> None:
     """Uses limma to perform a differential expression analysis of multiple experiments.
 
-    For each experiment pair specified in 'comparison_groups' the following new columns
+    For each experiment pair specified in 'experiment_pairs' the following new columns
     are added to the qtable:
     - "P-value Experiment_1 vs Experiment_2"
     - "Adjusted p-value Experiment_1 vs Experiment_2"
@@ -312,7 +313,7 @@ def calculate_multi_group_limma(
     Args:
         qtable: Qtable instance that contains expression values for differential
             expression analysis.
-        comparison_groups: A list containing lists of experiment pairs for which the
+        experiment_pairs: A list containing lists of experiment pairs for which the
             results of the differential expression analysis should be reported. The
             specified experiment pairs must correspond to entries from
             qtable.design["Experiment"].
@@ -341,6 +342,7 @@ def calculate_multi_group_limma(
         samples_as_columns=True, features=["Representative protein"]
     )
     table = table.set_index("Representative protein")
+    comparison_tag = " vs "
 
     if exclude_invalid:
         valid = qtable["Valid"]
@@ -355,20 +357,20 @@ def calculate_multi_group_limma(
         experiment_to_r[experiment] = f".EXPERIMENT__{i:04d}"
     r_to_experiment = {v: k for k, v in experiment_to_r.items()}
 
-    r_comparison_groups = []
-    for exp1, exp2 in comparison_groups:
-        r_comparison_groups.append(f"{experiment_to_r[exp1]}-{experiment_to_r[exp2]}")
+    r_experiment_pairs = []
+    for exp1, exp2 in experiment_pairs:
+        r_experiment_pairs.append(f"{experiment_to_r[exp1]}-{experiment_to_r[exp2]}")
 
     design["Experiment"].replace(experiment_to_r, inplace=True)
 
     # Run limma and join results for all comparison groups
     limma_results = msreport.rinterface.multi_group_limma(
-        table[mask], design, r_comparison_groups, batch, limma_trend
+        table[mask], design, r_experiment_pairs, batch, limma_trend
     )
     for r_comparison_group, limma_result in limma_results.items():
-        exp1, exp2 = [r_to_experiment[s] for s in r_comparison_group.split("-")]
-        comparison_tag = f"{exp1} vs {exp2}"
-        mapping = {col: f"{col} {comparison_tag}" for col in limma_result.columns}
+        experiment_pair = [r_to_experiment[s] for s in r_comparison_group.split("-")]
+        comparison_group = comparison_tag.join(experiment_pair)
+        mapping = {col: f"{col} {comparison_group}" for col in limma_result.columns}
         limma_result.rename(columns=mapping, inplace=True)
 
     limma_table = pd.DataFrame(index=table.index)
@@ -378,8 +380,8 @@ def calculate_multi_group_limma(
 
     # Average expression from limma is the whole row mean, overwrite with the average
     # expression of the experiment group
-    for comparison_group in comparison_groups:
-        two_group_comparison(qtable, comparison_group, exclude_invalid=exclude_invalid)
+    for experiment_pair in experiment_pairs:
+        two_group_comparison(qtable, experiment_pair, exclude_invalid=exclude_invalid)
 
 
 def calculate_two_group_limma(
@@ -419,6 +421,7 @@ def calculate_two_group_limma(
     expression_table = qtable.make_expression_table(
         samples_as_columns=True, features=["Representative protein"]
     )
+    comparison_tag = " vs "
 
     if exclude_invalid:
         valid = qtable["Valid"]
@@ -450,8 +453,8 @@ def calculate_two_group_limma(
     limma_table[mask] = limma_result
     limma_table.fillna(np.nan, inplace=True)
 
-    comparison_tag = f"{experiment_pair[0]} vs {experiment_pair[1]}"
-    mapping = {col: f"{col} {comparison_tag}" for col in limma_table.columns}
+    comparison_group = comparison_tag.join(experiment_pair)
+    mapping = {col: f"{col} {comparison_group}" for col in limma_table.columns}
     limma_table.rename(columns=mapping, inplace=True)
     qtable.add_expression_features(limma_table)
 
