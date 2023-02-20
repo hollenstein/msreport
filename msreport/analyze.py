@@ -190,6 +190,7 @@ def impute_missing_values(
     std_width: float = 0.3,
     column_wise: bool = True,
     seed: Optional[float] = None,
+    exclude_invalid: bool = True,
 ) -> None:
     """Imputes missing expression values.
 
@@ -215,12 +216,22 @@ def impute_missing_values(
             generator. Using the same seed for the same input qtable will generate the
             same set of imputed values each time. Default is None, which results in
             different imputed values being generated each time.
+        exclude_invalid: If true, the column "Valid" is used to determine for which rows
+            imputation is performed; default True.
     """
-    table = qtable.make_expression_table()
-    imputed = helper.gaussian_imputation(
-        table, median_downshift, std_width, column_wise, seed
+    table = qtable.make_expression_table(features=["Valid"])
+    expr_cols = table.columns.drop("Valid")
+    if exclude_invalid:
+        imputation_mask = table["Valid"]
+    else:
+        imputation_mask = np.ones_like(table["Valid"], dtype=bool)
+
+    raw_data = table.loc[imputation_mask, expr_cols]
+
+    imputed_data = helper.gaussian_imputation(
+        raw_data, median_downshift, std_width, column_wise, seed
     )
-    qtable[table.columns] = imputed[table.columns]
+    qtable.data.loc[imputation_mask, expr_cols] = imputed_data[expr_cols]
 
 
 def calculate_experiment_means(qtable: Qtable) -> None:

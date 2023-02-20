@@ -55,7 +55,8 @@ class TestValidateProteins:
     def _init_qtable(self, example_qtable):
         self.qtable = example_qtable
 
-    def test_validate_proteins(self):
+    def test_valid_column_is_added(self):
+        self.qtable.data = self.qtable.data.drop(columns="Valid")
         msreport.analyze.validate_proteins(self.qtable, remove_contaminants=False)
         data_columns = self.qtable.data.columns.to_list()
         assert "Valid" in data_columns
@@ -63,19 +64,51 @@ class TestValidateProteins:
     @pytest.mark.parametrize(
         "min_peptides, expected_valid", [(0, 3), (1, 3), (2, 2), (3, 0)]
     )
-    def test_with_min_peptides(self, min_peptides, expected_valid):
+    def test_validate_with_min_peptides(self, min_peptides, expected_valid):
         msreport.analyze.validate_proteins(
             self.qtable, remove_contaminants=False, min_peptides=min_peptides
         )
         assert expected_valid == self.qtable.data["Valid"].sum()
 
 
-def test_impute_missing_values(example_qtable):
-    msreport.analyze.impute_missing_values(example_qtable)
+class TestImputeMissingValues:
+    def test_all_entries_are_imputed_with_exclude_invalid_false(self, example_qtable):
+        invalid_mask = example_qtable.data["Representative protein"] == "C"
+        example_qtable.data.loc[invalid_mask, "Valid"] = False
 
-    expr_table = example_qtable.make_expression_table()
-    number_missing_values = expr_table.isna().sum().sum()
-    assert number_missing_values == 0
+        msreport.analyze.impute_missing_values(example_qtable, exclude_invalid=False)
+
+        expr_table = example_qtable.make_expression_table()
+        number_missing_values = expr_table.isna().sum().sum()
+        assert number_missing_values == 0
+
+    def test_valid_are_imputed_with_exclude_invalid_true(self, example_qtable):
+        invalid_mask = example_qtable.data["Representative protein"] == "C"
+        example_qtable.data.loc[invalid_mask, "Valid"] = False
+
+        msreport.analyze.impute_missing_values(example_qtable, exclude_invalid=False)
+        expr_table = example_qtable.make_expression_table(exclude_invalid=True)
+
+        number_missing_values = expr_table.isna().sum().sum()
+        assert number_missing_values == 0
+
+    def test_invalid_are_not_imputed_with_exclude_invalid_true(self, example_qtable):
+        invalid_mask = example_qtable.data["Representative protein"] == "C"
+        example_qtable.data.loc[invalid_mask, "Valid"] = False
+
+        table_before = example_qtable.make_expression_table(features=["Valid"])
+        number_missing_values_of_invalid_before_imputation = (
+            table_before[invalid_mask].isna().sum().sum()
+        )
+        assert number_missing_values_of_invalid_before_imputation > 0
+
+        msreport.analyze.impute_missing_values(example_qtable, exclude_invalid=True)
+        table_after = example_qtable.make_expression_table(features=["Valid"])
+
+        expr_cols = table_before.columns.drop("Valid")
+        invalid_before_imputation = table_before.loc[~table_before["Valid"], expr_cols]
+        invalid_after_imputation = table_after.loc[~table_after["Valid"], expr_cols]
+        assert invalid_after_imputation.equals(invalid_before_imputation)
 
 
 def test_calculate_experiment_means(example_data, example_qtable):
