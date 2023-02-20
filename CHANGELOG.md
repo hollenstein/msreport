@@ -2,7 +2,7 @@
 
 ----------------------------------------------------------------------------------------
 
-## 0.0.8 (Upcoming)
+## 0.0.8
 
 ### Added
 - Added `exclude_invalid` parameter to `analyze.impute_missing_values()`.
