@@ -2,6 +2,17 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.8 (Upcoming)
+
+### Added
+- Added `exclude_invalid` parameter to `analyze.impute_missing_values()`.
+
+### Changed
+- By default, `analyze.impute_missing_values()` does not impute missing values for
+  invalid rows anymore.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.7
 
 ### Added
@@ -13,7 +24,7 @@
 - Added option to specify which experiments are used in `plot.experiment_ratios()` by
   using the `experiments` argument.
 
-### Changed:
+### Changed
 - Decreased the transparency of the density distributions in `plot.experiment_ratios()`
   and `plot.replicate_ratios()`.
 - The first subplot from `plot.experiment_ratios()` now displays the number of data
@@ -26,7 +37,7 @@
 - Switched from `setup.py` to `pyproject.toml` for specifying build instructions and
   package meta data.
 
-### Fixes:
+### Fixes
 - Fixed `plot.replicate_ratios()` displaying no or too few gridlines.
 - Fixed `plot.contaminants()` y-axis label not being adjusted to the specified tag.
 - Fixed wrong p-value calculation of multi group LIMMA when the sample order in
