@@ -18,8 +18,8 @@ Required test data
 """
 
 import itertools
+from typing import Iterable, Optional
 import warnings
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -255,8 +255,58 @@ def calculate_experiment_means(qtable: Qtable) -> None:
     qtable.add_expression_features(pd.DataFrame(experiment_means))
 
 
+def calculate_multi_group_comparison(
+    qtable: Qtable,
+    experiment_pairs: Iterable[Iterable[str]],
+    exclude_invalid: bool = True,
+) -> None:
+    """Calculates average expression and ratios for multiple comparison groups.
+
+    For each experiment pair, adds new columns
+    "Average expression Experiment_1 vs Experiment_2" and
+    "Ratio [log2] Experiment_1 vs Experiment_2" to the qtable. Expression values must be
+    log transformed.
+
+    Args:
+        qtable: Qtable instance that contains expression values for calculating group
+            comparisons.
+        experiment_pairs: A list containing one or multiple experiment pairs for which
+            the group comparison should be calculated. The specified experiments must
+            correspond to entries from qtable.design["Experiment"].
+        exclude_invalid: If true, the column "Valid" is used to determine which rows are
+            used for calculating the group comparisons; default True.
+    """
+    table = qtable.make_expression_table(samples_as_columns=True, features=["Valid"])
+    comparison_tag = " vs "
+
+    if exclude_invalid:
+        invalid = np.invert(table["Valid"].to_numpy())
+    else:
+        invalid = np.zeros(table.shape[0], dtype=bool)
+
+    for experiment_pair in experiment_pairs:
+        comparison_group = comparison_tag.join(experiment_pair)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            group_expressions = []
+            for experiment in experiment_pair:
+                samples = qtable.get_samples(experiment)
+                group_expressions.append(np.nanmean(table[samples], axis=1))
+            ratios = group_expressions[0] - group_expressions[1]
+            average_expressions = np.nanmean(group_expressions, axis=0)
+
+        comparison_table = pd.DataFrame(
+            {
+                f"Average expression {comparison_group}": average_expressions,
+                f"Ratio [log2] {comparison_group}": ratios,
+            }
+        )
+        comparison_table[invalid] = np.nan
+        qtable.add_expression_features(comparison_table)
+
+
 def two_group_comparison(
-    qtable: Qtable, experiment_pair: list[str, str], exclude_invalid: bool = False
+    qtable: Qtable, experiment_pair: Iterable[str], exclude_invalid: bool = True
 ) -> None:
     """Calculates comparison values for two experiments.
 
@@ -271,33 +321,9 @@ def two_group_comparison(
         exclude_invalid: If true, the column "Valid" is used to determine for which rows
             comparison values are calculated.
     """
-    # TODO: not tested #
-    table = qtable.make_expression_table(samples_as_columns=True)
-    comparison_tag = " vs "
-    comparison_group = comparison_tag.join(experiment_pair)
-
-    if exclude_invalid:
-        invalid = np.invert(qtable["Valid"].to_numpy())
-    else:
-        invalid = np.zeros(table.shape[0], dtype=bool)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-        group_expressions = []
-        for experiment in experiment_pair:
-            samples = qtable.get_samples(experiment)
-            group_expressions.append(np.nanmean(table[samples], axis=1))
-        ratios = group_expressions[0] - group_expressions[1]
-        average_expressions = np.nanmean(group_expressions, axis=0)
-
-    comparison_table = pd.DataFrame(
-        {
-            f"Average expression {comparison_group}": average_expressions,
-            f"Ratio [log2] {comparison_group}": ratios,
-        }
+    calculate_multi_group_comparison(
+        qtable, experiment_pairs=[experiment_pair], exclude_invalid=exclude_invalid
     )
-    comparison_table[invalid] = np.nan
-    qtable.add_expression_features(comparison_table)
 
 
 def calculate_multi_group_limma(

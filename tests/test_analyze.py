@@ -127,6 +127,24 @@ def test_calculate_experiment_means(example_data, example_qtable):
     )
 
 
+class TestCalculateMultiGroupComparison:
+    def test_with_one_group(self, example_data, example_qtable):
+        experiment_pairs = [("Experiment_A", "Experiment_B")]
+        msreport.analyze.calculate_multi_group_comparison(
+            example_qtable, experiment_pairs, exclude_invalid=False
+        )
+
+        exp1, exp2 = experiment_pairs[0]
+        qtable_columns = example_qtable.data.columns.to_list()
+        for column_tag in ["Average expression", "Ratio [log2]"]:
+            assert f"{column_tag} {exp1} vs {exp2}" in qtable_columns
+            assert np.allclose(
+                example_qtable.data[f"{column_tag} {exp1} vs {exp2}"],
+                example_data["data"][column_tag],
+                equal_nan=True,
+            )
+
+
 def test_two_group_comparison(example_data, example_qtable):
     experiment_pair = ["Experiment_A", "Experiment_B"]
     exp1, exp2 = experiment_pair

@@ -6,10 +6,14 @@
 
 ### Added
 - Added `exclude_invalid` parameter to `analyze.impute_missing_values()`.
+- Added `analyze.calculate_multi_group_comparison()` for calculation of ratios and 
+  average expression for multiple pair wise experiment comparisons.
 
 ### Changed
-- By default, `analyze.impute_missing_values()` does not impute missing values for
-  invalid rows anymore.
+- Default behavior of `analyze.impute_missing_values()` is now to impute missing values
+  only for valid rows.
+- Default behavior of `analyze.two_group_comparison()` is now to calculate values only
+  for valid rows.
 
 ----------------------------------------------------------------------------------------
 
