@@ -1,29 +1,9 @@
-"""The analyze module contains methods for analysing quantification results.
-
-
-Required test data
-------------------
-
-* for filtering
-    - 'Total peptides'
-    - Missing values per group / Num values per group
-    - entries with "contam_" tag
-* for calculating the number of missing values
-    - rows with and without missing values
-* for imputation
-    - rows with and without missing values
-* for Limma
-    - ???
-
-"""
-
-import itertools
+""" The analyze module contains methods for analysing quantification results. """
 from typing import Iterable, Optional
 import warnings
 
 import numpy as np
 import pandas as pd
-from statsmodels.nonparametric.smoothers_lowess import lowess
 
 import msreport.helper as helper
 import msreport.normalize
