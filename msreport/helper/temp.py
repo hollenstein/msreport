@@ -1,5 +1,6 @@
 from typing import Iterable, Union
 import re
+import warnings
 
 import pathlib
 import pyteomics.fasta
@@ -69,15 +70,35 @@ def parse_fasta(fasta_path):
         yield header, sequence
 
 
-def importProteinDatabase(
+def import_protein_database(
     fasta_path: Union[str, pathlib.Path, Iterable[Union[str, pathlib.Path]]],
 ) -> ProteinDatabase:
-    """Generates a protein database from one or a list of fasta files."""
+    """Generates a protein database from one or a list of fasta files.
+
+    Args:
+        fasta_path: Path to a fasta file, or a list of paths. The path can be either a
+            string or a pathlib.Path instance.
+
+    Returns:
+        A protein database containing entries from the parsed fasta files.
+    """
     database = ProteinDatabase()
     paths = [fasta_path] if isinstance(fasta_path, (str, pathlib.Path)) else fasta_path
     for path in paths:
         database.add_fasta(path)
     return database
+
+
+def importProteinDatabase(
+    fasta_path: Union[str, pathlib.Path, Iterable[Union[str, pathlib.Path]]],
+) -> ProteinDatabase:
+    """Generates a protein database from one or a list of fasta files."""
+    warnings.warn(
+        "This function is deprecated, use import_protein_database instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return import_protein_database(fasta_path)
 
 
 def extract_modifications(

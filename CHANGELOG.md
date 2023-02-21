@@ -2,6 +2,16 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.9 (Upcoming)
+
+### Added
+- Added `helper.import_protein_database()` to replace `helper.importProteinDatabase()`.
+
+### Deprecated
+- `helper.importProteinDatabase()` will be deprecated.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.8
 
 ### Added
