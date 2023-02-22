@@ -1,3 +1,4 @@
+from collections import defaultdict
 import re
 from typing import Iterable, Union
 
@@ -64,6 +65,46 @@ def intensities_in_logspace(data: Union[pd.DataFrame, np.ndarray, Iterable]) -> 
     data = np.array(data, dtype=float)
     mask = np.isfinite(data)
     return np.all(data[mask].flatten() <= 64)
+
+
+def rename_sample_columns(table: pd.DataFrame, mapping: dict[str, str]) -> pd.DataFrame:
+    """Renames sample names according to the mapping in a cautious way.
+
+    Keys from mapping are ordered and sequentially used to rename columns. This prevents
+    wrong replacement with keys that are substrings of other keys. As long as none of
+    the values from mapping is a substring of another value and none of the keys are
+    substrings of other columns, the renaming will be perforemd correctly.
+
+    Args:
+        table: Dataframe which columns will be renamed.
+        mapping: A mapping of old to new sample names that will be used to replace
+            matching substrings in the columns from table.
+
+    Returns:
+        A copy of the table with renamed columns.
+    """
+    co_occurence_counts = defaultdict(list)
+    old_names = mapping.keys()
+
+    for name_query in old_names:
+        counter = 0
+        for sample_name in old_names:
+            if name_query != sample_name and name_query in sample_name:
+                counter += 1
+        co_occurence_counts[counter].append(name_query)
+
+    table_columns = table.columns.tolist()
+    for counts, sample_names in sorted(co_occurence_counts.items(), reverse=False):
+        updated_columns = []
+        for column in table_columns:
+            for sample_name in sample_names:
+                column = column.replace(sample_name, mapping[sample_name])
+            updated_columns.append(column)
+        table_columns = updated_columns
+
+    renamed_table = table.copy()
+    renamed_table.columns = table_columns
+    return renamed_table
 
 
 def rename_mq_reporter_channels(table: pd.DataFrame, channel_names: list[str]) -> None:

@@ -12,6 +12,7 @@ from .table import (
     intensities_in_logspace,
     find_columns,
     find_sample_columns,
+    rename_sample_columns,
     rename_mq_reporter_channels,
 )
 from .temp import (

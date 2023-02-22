@@ -99,6 +99,25 @@ def test_rename_mq_reporter_channels_with_count_and_corrected():
     assert table.columns.tolist() == expected_columns
 
 
+def test_rename_sample_columns():
+    mapping = {
+        "tes": "another name",
+        "test": "reference",
+        "test_1": "ctrl_1",
+        "test_2": "ctrl_2",
+        "treatment_test_1": "treatment_1",
+        "treatment_test_2": "treatment_2",
+    }
+    tag = "Intensity"
+    expected_renamed_columns = [f"{tag} {mapping[k]}" for k in mapping.keys()]
+
+    table = pd.DataFrame(columns=[f"{tag} {k}" for k in mapping.keys()])
+    renamed_table = msreport.helper.rename_sample_columns(table, mapping)
+    observed_renamed_columns = renamed_table.columns.tolist()
+
+    assert observed_renamed_columns == expected_renamed_columns
+
+
 def test_extract_modifications():
     modified_sequence = "(Acetyl (Protein N-term))ADSRDPASDQM(Oxidation (M))QHWK"
     expected_modifications = [(0, "Acetyl (Protein N-term)"), (11, "Oxidation (M)")]
