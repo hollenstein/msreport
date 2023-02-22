@@ -794,6 +794,186 @@ class FragPipeReader(ResultReader):
         return new_df
 
 
+class SpectronautReader(ResultReader):
+    protected_columns: list[str] = []
+    column_mapping: dict[str, str] = dict(
+        [
+            ("PG.Cscore", "Protein cscore"),
+            ("PG.NrOfStrippedSequencesIdentified (Experiment-wide)", "Total peptides"),
+            ("PG.NrOfPrecursorsIdentified (Experiment-wide)", "Total ions"),
+            ("PG.Cscore", "Cscore"),
+        ]
+    )
+    sample_column_tags: list[str] = [
+        ".PG.NrOfPrecursorsIdentified",
+        ".PG.IBAQ",
+        ".PG.Quantity",
+        ".PG.NrOfPrecursorsUsedForQuantification",
+        ".PG.NrOfStrippedSequencesUsedForQuantification",
+    ]
+    column_tag_mapping: OrderedDict[str, str] = OrderedDict(
+        [
+            (".PG.NrOfPrecursorsIdentified", " Ion count"),
+            (".PG.IBAQ", " iBAQ intensity"),
+            (".PG.Quantity", " Intensity"),
+            (".PG.NrOfPrecursorsUsedForQuantification", " Quantified ion count"),
+            (
+                ".PG.NrOfStrippedSequencesUsedForQuantification",
+                " Total quantified peptides",
+            ),
+        ]
+    )
+    protein_info_columns: list[str] = [
+        "PG.ProteinGroups",
+        "PG.ProteinAccessions",
+        "PG.Genes",
+        "PG.Organisms",
+        "PG.ProteinDescriptions",
+        "PG.UniProtIds",
+        "PG.ProteinNames",
+        "PG.FastaHeaders",
+        "PG.OrganismId",
+        "PG.MolecularWeight",
+    ]
+    protein_info_tags: list[str] = []
+
+    def __init__(self, directory: str, contaminant_tag: str = "contam_") -> None:
+        """Initializes the SpectronautReader.
+
+        Args:
+            directory: Location of the Spectronaut result folder.
+            contaminant_tag: Prefix of Protein ID entries to identify contaminants;
+                default "contam_".
+        """
+        self.data_directory = directory
+        self.filetags: dict[str, str] = defaultdict(lambda: "report")
+        self.filenames = {}
+        self._contaminant_tag: str = contaminant_tag
+
+    def import_proteins(
+        self,
+        filename: Optional[str] = None,
+        filetag: Optional[str] = None,
+        rename_columns: bool = True,
+        prefix_column_tags: bool = True,
+        sort_proteins: bool = True,
+        drop_protein_info: bool = True,
+        special_proteins: list[str] = [],
+    ) -> pd.DataFrame:
+        """Reads a Spectronaut protein report file and returns a processed DataFrame.
+
+        Adds four protein entry columns to comply with the MsReport conventions:
+        "Protein reported by software", "Leading proteins", "Representative protein",
+        "Potential contaminant".
+
+        ---- #TODO update ----
+        "Protein reported by software" contains the first entry from the
+        "PG.ProteinAccessions" column. "Leading proteins" contains all entries from the
+        "PG.ProteinAccessions" column, multiple entries are separated by ";".
+        "Representative protein" contains the first entry form "Leading proteins".
+
+        Several columns in the Spectronaut report file contain information specific for
+        the protein entry of the "Protein" column. When leading proteins will be
+        re-sorted later, it is therefore recommended to remove all columns containing
+        protein specific information by enabling 'drop_protein_info'.
+
+        Args:
+            filename: #TODO
+            filetag: #TODO
+            rename_columns: If True, columns are renamed according to the MsReport
+                conventions; default True.
+            prefix_column_tags: If True, column tags such as "Intensity" are added
+                in front of the sample names, e.g. "Intensity sample_name". If False,
+                column tags are added afterwards, e.g. "Sample_name Intensity"; default
+                True.
+            drop_protein_info: If True, columns containing protein specific information,
+                such as "Gene" or "Protein Length". See
+                SpectronautReader.protein_info_columns and
+                SpectronautReader.protein_info_tags for a full list of columns that will
+                be removed. Default False.
+
+        Returns:
+            A dataframe containing the processed protein table.
+        """
+        # Find report filename
+        filetag = self.filetags["proteins"] if filetag is None else filetag
+        filenames = _find_matching_files(
+            self.data_directory,
+            filename=filename,
+            filetag=filetag,
+            extensions=["xls", "tsv", "csv"],
+        )
+        if len(filenames) == 0:
+            raise FileNotFoundError("No report file found.")
+        elif len(filenames) > 1:
+            exception_message_lines = [
+                f"Multiple report files found in: {self.data_directory}",
+                "One of the report filenames must be specified manually:",
+            ]
+            exception_message_lines.extend(filenames)
+            exception_message = "\n".join(exception_message_lines)
+            raise ValueError(exception_message)
+        else:
+            filename = filenames[0]
+
+        df = self._read_file(filename)
+        df = self._tidy_up_sample_columns(df)
+        df = self._add_protein_entries(df)
+        if drop_protein_info:
+            df = self._drop_columns(df, self.protein_info_columns)
+            for tag in self.protein_info_tags:
+                df = self._drop_columns_by_tag(df, tag)
+        if rename_columns:
+            df = self._rename_columns(df, prefix_column_tags)
+        return df
+
+    def _tidy_up_sample_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Removes leading brackets, such as "[1]", from columns."""
+        tidy_df = df.copy()
+        tidy_df.columns = tidy_df.columns.str.replace(r"^\[[0-9]+\] ", "", regex=True)
+        return tidy_df
+
+    def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Adds standardized protein entry columns to the data frame.
+
+        Adds new columns to comply with the MsReport conventions. "Protein reported by
+        software" contains the protein ID extracted from the "Protein" column. "Leading
+        proteins" contains the combined protein IDs extracted from the "Protein" and
+        "Indistinguishable Proteins" columns, multiple entries are separated by ";".
+        "Representative protein" contains the first entry form "Leading proteins".
+        "Potential contaminant" contains Boolean values.
+
+        Args:
+            df: Dataframe containing a FragPipe result table.
+
+        Returns:
+            A copy of the input dataframe with updated columns.
+        """
+        leading_protein_entries = self._collect_leading_protein_entries(df)
+        protein_entry_table = _process_protein_entries(
+            leading_protein_entries, self._contaminant_tag
+        )
+        for key in protein_entry_table:
+            df[key] = protein_entry_table[key]
+        return df
+
+    def _collect_leading_protein_entries(self, df: pd.DataFrame) -> list[list[str]]:
+        """Generates a list of leading protein entries.
+
+        Each entry in the list contains a list of protein entries extracted by splitting
+        the values from the "PG.ProteinAccessions" column on ";".
+
+        Args:
+            df: Dataframe containing a protein table.
+
+        Returns:
+            A list of the same length as the input dataframe. Each position contains a
+            list of leading protein entries, which a minimum of one entry.
+        """
+        leading_protein_entries = df["PG.ProteinAccessions"].str.split(";").tolist()
+        return leading_protein_entries
+
+
 def sort_leading_proteins(
     table: pd.DataFrame,
     alphanumeric: bool = True,
@@ -1313,6 +1493,48 @@ def _add_potential_contaminants(df: pd.DataFrame, contaminant_tag: str) -> pd.Da
         contaminant_tag
     )
     return df
+
+
+def _find_matching_files(
+    directory: str,
+    filename: Optional[str] = None,
+    filetag: Optional[str] = None,
+    extensions: Optional[list[str]] = None,
+) -> list[str]:
+    """Returns all filenames matching the specified pattern.
+
+    Either filename or filetag must be specified. If filename is specified, it is only
+    checked if this specific file exists. When a filetag but no filename is specified,
+    alls files containing
+
+    Args:
+        directory: Files from this directory are used for matching.
+        filename: Optional, #TODO
+        filetag: Optional, #TODO
+        extensions: Optional, if a list of extensions is specified, matched filenames
+            must end with one of the extensions.
+
+    Returns:
+        A list of matched filenames. If no files could be matched, an empty list is
+        returned.
+    """
+    if filename is not None:
+        filepath = os.path.join(directory, filename)
+        if not os.path.isfile(filepath):
+            raise FileNotFoundError(f"File not found: {filepath}")
+        else:
+            matched_filenames = [filename]
+    else:
+        if extensions is not None:
+            potential_files = set()
+            for current_filename in os.listdir(directory):
+                for extension in extensions:
+                    if current_filename.lower().endswith(f".{extension}"):
+                        potential_files.add(current_filename)
+        else:
+            potential_files = set(os.listdir(directory))
+        matched_filenames = [fn for fn in potential_files if filetag in fn.lower()]
+    return matched_filenames
 
 
 def _process_protein_entries(
