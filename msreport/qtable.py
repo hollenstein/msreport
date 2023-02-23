@@ -70,7 +70,7 @@ class Qtable:
                 columns of the table.
         """
         columns = design.columns.tolist()
-        required_columns = ["Experiment", "Sample"]
+        required_columns = ["Experiment", "Sample", "Replicate"]
         if not all([c in columns for c in required_columns]):
             exception_message = "".join(
                 [
