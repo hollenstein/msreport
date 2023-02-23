@@ -7,8 +7,19 @@
 ### Added
 - Added `helper.import_protein_database()` to replace `helper.importProteinDatabase()`.
 
+### Changes
+- Made the "Replicate" column mandatory in the `Qtable` experimental design.
+
+### Fixes
+- Default `tag` parameter in `plot.sample_pca()` should have been "Expression" and not
+  "Intensity".
+- Unequal bar size in several plots when a different number of samples or experiments
+  were plotted.
+- X-limits in `plot.expression_comparison()` were displaced when adding special protein
+  annotation.
+
 ### Deprecated
-- `helper.importProteinDatabase()` will be deprecated.
+- `helper.importProteinDatabase()` will be removed in the future.
 
 ----------------------------------------------------------------------------------------
 
