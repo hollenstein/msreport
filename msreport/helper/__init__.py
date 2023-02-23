@@ -17,6 +17,7 @@ from .table import (
 from .temp import (
     ProteinDatabase,
     importProteinDatabase,
+    import_protein_database,
     extract_modifications,
     modify_peptide,
 )
