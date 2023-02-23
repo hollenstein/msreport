@@ -82,7 +82,7 @@ class Qtable:
                 ]
             )
             raise ValueError(exception_message)
-        self.design = design
+        self.design = design.copy()
 
     def get_data(self, exclude_invalid: bool = False) -> pd.DataFrame:
         """Returns a copy of the data table.
