@@ -468,7 +468,7 @@ def experiment_ratios(
 
 def sample_pca(
     qtable: Qtable,
-    tag: str = "Intensity",
+    tag: str = "Expression",
     pc_x: str = "PC1",
     pc_y: str = "PC2",
     exclude_invalid: bool = True,
@@ -481,9 +481,9 @@ def sample_pca(
 
     Args:
         qtable: A Qtable instance, which data is used for the PCA analysis.
-        tag: String used for matching the intensity columns. Intensity values are
-            evaluated whether they are likely to be in log-space, and if not are log2
-            transformed for the PCA analysis.
+        tag: String used for matching the intensity columns, default "Expression".
+            Intensity values are evaluated whether they are likely to be in log-space,
+            and if not are log2 transformed for the PCA analysis.
         pc_x: Principle component to plot on x-axis of the scatter plot, default "PC1".
             The number of calculated principal components is equal to the number of
             samples.
