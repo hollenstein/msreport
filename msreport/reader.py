@@ -57,7 +57,7 @@ class ResultReader:
         else:
             filename = which
         filepath = os.path.join(self.data_directory, filename)
-        df = pd.read_csv(filepath, sep=sep)
+        df = pd.read_csv(filepath, sep=sep, low_memory=False)
         str_cols = df.select_dtypes(include=["object"]).columns
         df.loc[:, str_cols] = df.loc[:, str_cols].fillna("")
         return df
