@@ -10,12 +10,12 @@ import msreport.analyze
 def example_data():
     design = pd.DataFrame(
         [
-            ("Sample_A1", "Experiment_A"),
-            ("Sample_A2", "Experiment_A"),
-            ("Sample_B1", "Experiment_B"),
-            ("Sample_B2", "Experiment_B"),
+            ("Sample_A1", "Experiment_A", "1"),
+            ("Sample_A2", "Experiment_A", "1"),
+            ("Sample_B1", "Experiment_B", "1"),
+            ("Sample_B2", "Experiment_B", "1"),
         ],
-        columns=["Sample", "Experiment"],
+        columns=["Sample", "Experiment", "Replicate"],
     )
     data = pd.DataFrame(
         {
