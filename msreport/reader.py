@@ -1007,6 +1007,12 @@ class SpectronautReader(ResultReader):
             df = self._rename_columns(df, prefix_column_tags)
         return df
 
+    def import_peptides(self) -> None:
+        raise NotImplementedError
+
+    def import_ions(self) -> None:
+        raise NotImplementedError
+
     def _tidy_up_sample_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Removes leading brackets, such as "[1]", from columns."""
         tidy_df = df.copy()
