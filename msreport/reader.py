@@ -1,5 +1,5 @@
-"""Module for reading result tables from various MS analysis tools and converting them
-to a standardized format following the MsReport conventions.
+""" Module for reading result tables from various MS analysis tools and converting them
+to a standardized format following the MsReport convention.
 
 Currently MaxQuant and FragPipe protein tables are fully supported, and ion and peptide
 tables are partly supported.
@@ -123,11 +123,11 @@ class MaxQuantReader(ResultReader):
 
     Methods:
         import_proteins: Reads a "proteinGroups.txt" file and returns a processed
-            dataframe, conforming to the MsReport naming conventions.
+            dataframe, conforming to the MsReport naming convention.
         import_peptides: Reads a "peptides.txt" file and returns a processed
-            DataFrame, conforming to the MsReport naming conventions.
-        import_ions: Reads an "evidence.xt" file and returns a processed DataFrame,
-            conforming to the MsReport naming conventions.
+            dataframe, conforming to the MsReport naming convention.
+        import_ions: Reads an "evidence.xt" file and returns a processed dataframe,
+            conforming to the MsReport naming convention.
 
     Attributes:
         default_filenames: (class attribute) Look up of filenames for the result files
@@ -217,7 +217,7 @@ class MaxQuantReader(ResultReader):
     ) -> pd.DataFrame:
         """Reads a "proteinGroups.txt" file and returns a processed dataframe.
 
-        Adds three new protein entry columns to comply with the MsReport conventions:
+        Adds three new protein entry columns to comply with the MsReport convention:
         "Protein reported by software", "Leading proteins", "Representative protein".
 
         "Protein reported by software" contains the first protein ID from the "Majority
@@ -227,15 +227,15 @@ class MaxQuantReader(ResultReader):
         ";". "Representative protein" contains the first entry form "Leading proteins".
 
         Several columns in the "combined_protein.tsv" file contain information specific
-        for the protein entry of the "Protein" column. When leading proteins will be
-        re-sorted later, it is therefore recommended to remove all columns containing
-        protein specific information by enabling 'drop_protein_info'.
+        for the protein entry of the "Protein" column. If leading proteins will be
+        re-sorted later, it is recommended to remove columns containing protein specific
+        information by setting 'drop_protein_info=True'.
 
         Args:
             filename: allows specifying an alternative filename, otherwise the default
                 filename is used.
             rename_columns: If True, columns are renamed according to the MsReport
-                conventions; default True.
+                convention; default True.
             prefix_column_tags: If True, column tags such as "Intensity" are added
                 in front of the sample names, e.g. "Intensity sample_name". If False,
                 column tags are added afterwards, e.g. "Sample_name Intensity"; default
@@ -277,7 +277,7 @@ class MaxQuantReader(ResultReader):
     ) -> pd.DataFrame:
         """Reads a "peptides.txt" file and returns a processed dataframe.
 
-        Adds new columns to comply with the MsReport conventions:
+        Adds new columns to comply with the MsReport convention:
         "Protein reported by software" and "Representative protein", both contain the
         first entry from "Leading razor protein".
 
@@ -285,7 +285,7 @@ class MaxQuantReader(ResultReader):
             filename: allows specifying an alternative filename, otherwise the default
                 filename is used.
             rename_columns: If True, columns are renamed according to the MsReport
-                conventions; default True.
+                convention; default True.
             prefix_column_tags: If True, column tags such as "Intensity" are added
                 in front of the sample names, e.g. "Intensity sample_name". If False,
                 column tags are added afterwards, e.g. "Sample_name Intensity"; default
@@ -319,7 +319,7 @@ class MaxQuantReader(ResultReader):
     ) -> pd.DataFrame:
         """Reads an "evidence.txt" file and returns a processed dataframe.
 
-        Adds new columns to comply with the MsReport conventions. "Modified sequence"
+        Adds new columns to comply with the MsReport convention. "Modified sequence"
         and "Modifications columns". "Protein reported by software" and "Representative
         protein", both contain the first entry from "Leading razor protein".
 
@@ -336,7 +336,7 @@ class MaxQuantReader(ResultReader):
             filename: Allows specifying an alternative filename, otherwise the default
                 filename is used.
             rename_columns: If True, columns are renamed according to the MsReport
-                conventions; default True.
+                convention; default True.
             rewrite_modifications: If True, the peptide format in "Modified sequence" is
                 changed according to the MsReport convention, and a "Modifications" is
                 added to contains the amino acid position for all modifications.
@@ -366,7 +366,7 @@ class MaxQuantReader(ResultReader):
     def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
         """Adds standardized protein entry columns to the data frame.
 
-        Adds new columns to comply with the MsReport conventions. "Protein reported by
+        Adds new columns to comply with the MsReport convention. "Protein reported by
         software" contains the first protein ID from the "Majority protein IDs" column.
         "Leading proteins" contain all entries from the "Majority protein IDs" column
         that have the same and highest number of mapped peptides in the "Peptide counts
@@ -468,12 +468,12 @@ class FragPipeReader(ResultReader):
     Methods:
         import_proteins: Reads a "combined_protein.tsv" or "protein.tsv" file and
             returns a processed dataframe, conforming to the MsReport naming
-            conventions.
+            convention.
         import_peptides: Reads a "combined_peptide.tsv" or "peptide.tsv" file and
             returns a processed dataframe, conforming to the MsReport naming
-            conventions.
+            convention.
         import_ions: Reads a "combined_ion.tsv" or "ion.tsv" file and returns a
-            processed dataframe, conforming to the MsReport naming conventions.
+            processed dataframe, conforming to the MsReport naming convention.
 
     Attributes:
         default_filenames: (class attribute) Look up of default filenames of the result
@@ -583,7 +583,7 @@ class FragPipeReader(ResultReader):
         """Reads a "combined_protein.tsv" or "protein.tsv" file and returns a processed
         dataframe.
 
-        Adds four protein entry columns to comply with the MsReport conventions:
+        Adds four protein entry columns to comply with the MsReport convention:
         "Protein reported by software", "Leading proteins", "Representative protein",
         "Potential contaminant".
 
@@ -594,15 +594,15 @@ class FragPipeReader(ResultReader):
         "Leading proteins".
 
         Several columns in the "combined_protein.tsv" file contain information specific
-        for the protein entry of the "Protein" column. When leading proteins will be
-        re-sorted later, it is therefore recommended to remove all columns containing
-        protein specific information by enabling 'drop_protein_info'.
+        for the protein entry of the "Protein" column. If leading proteins will be
+        re-sorted later, it is recommended to remove columns containing protein specific
+        information by setting 'drop_protein_info=True'..
 
         Args:
             filename: Allows specifying an alternative filename, otherwise the default
                 filename is used.
             rename_columns: If True, columns are renamed according to the MsReport
-                conventions; default True.
+                convention; default True.
             prefix_column_tags: If True, column tags such as "Intensity" are added
                 in front of the sample names, e.g. "Intensity sample_name". If False,
                 column tags are added afterwards, e.g. "Sample_name Intensity"; default
@@ -633,14 +633,14 @@ class FragPipeReader(ResultReader):
     ) -> pd.DataFrame:
         """Reads a "combined_peptides.txt" file and returns a processed dataframe.
 
-        Adds a new column to comply with the MsReport conventions:
+        Adds a new column to comply with the MsReport convention:
         "Protein reported by software"
 
         Args:
             filename: allows specifying an alternative filename, otherwise the default
                 filename is used.
             rename_columns: If True, columns are renamed according to the MsReport
-                conventions; default True.
+                convention; default True.
             prefix_column_tags: If True, column tags such as "Intensity" are added
                 in front of the sample names, e.g. "Intensity sample_name". If False,
                 column tags are added afterwards, e.g. "Sample_name Intensity"; default
@@ -669,7 +669,7 @@ class FragPipeReader(ResultReader):
         """Reads a "combined_ion.tsv" or "ion.tsv" file and returns a processed
         dataframe.
 
-        Adds new columns to comply with the MsReport conventions. "Modified sequence"
+        Adds new columns to comply with the MsReport convention. "Modified sequence"
         and "Modifications columns". "Protein reported by software" and "Representative
         protein", both contain the first entry from "Leading razor protein".
 
@@ -686,7 +686,7 @@ class FragPipeReader(ResultReader):
             filename: Allows specifying an alternative filename, otherwise the default
                 filename is used.
             rename_columns: If True, columns are renamed according to the MsReport
-                conventions; default True.
+                convention; default True.
             rewrite_modifications: If True, the peptide format in "Modified sequence" is
                 changed according to the MsReport convention, and a "Modifications" is
                 added to contains the amino acid position for all modifications.
@@ -715,7 +715,7 @@ class FragPipeReader(ResultReader):
     def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
         """Adds standardized protein entry columns to the data frame.
 
-        Adds new columns to comply with the MsReport conventions. "Protein reported by
+        Adds new columns to comply with the MsReport convention. "Protein reported by
         software" contains the protein ID extracted from the "Protein" column. "Leading
         proteins" contains the combined protein IDs extracted from the "Protein" and
         "Indistinguishable Proteins" columns, multiple entries are separated by ";".
@@ -799,7 +799,7 @@ class SpectronautReader(ResultReader):
 
     Methods:
         import_proteins: Reads a LFQ protein report file and returns a processed
-            dataframe, conforming to the MsReport naming conventions.
+            dataframe, conforming to the MsReport naming convention.
         import_design: Reads a ConditionSetup file and returns a processed dataframe,
             containing the default columns of an MsReport experimental design table.
 
@@ -820,8 +820,8 @@ class SpectronautReader(ResultReader):
             contain information specific to the leading protein.
         data_directory (str): Location of the folder containing Spectronaut result
             files.
-        filenames (dict[str, str]): Look up of Spectronaut result filenames used for
-            importing protein or other tables.
+        filetags (dict[str, str]): Look up of file tags used for matching files during
+            the import of protein or other tables.
         contamination_tag (str): Substring present in protein IDs to identify them as
             potential contaminants.
     """
@@ -888,11 +888,27 @@ class SpectronautReader(ResultReader):
     def import_design(
         self, filename: Optional[str] = None, filetag: Optional[str] = None
     ) -> pd.DataFrame:
-        """Reads a ConditionSetup file and returns a experimental design table.
+        """Reads a ConditionSetup file and returns an experimental design table.
+
+        The following columns from the Spectronaut ConditionSetup file will be imported
+        to the design table and renamed:
+            Replicate -> Replicate
+            Condition -> Experiment
+            File Name -> Filename
+            Run Label -> Run label
+
+        In addition, a "Sample" is added containing values from the Experiment and
+        Replicate columns, separated by an underscore.
+
+        If neither filename nor filetag is specified, the default file tag
+        "conditionsetup" is used to select a file from the data directory. If no file
+        or multiple files match, an exception is thrown. The check for the presence of
+        the file tag is not case sensitive.
 
         Args:
-            filename: #TODO
-            filetag: #TODO
+            filename: Optional, allows specifying a specific file that will be imported.
+            filetag: Optional, can be used to select a file that contains the filetag as
+                a substring, instead of specifying a filename.
 
         Returns:
             A dataframe containing the processed design table.
@@ -924,7 +940,7 @@ class SpectronautReader(ResultReader):
                 "Sample": df["Sample"],
                 "Replicate": df["Replicate"].astype(str),
                 "Experiment": df["Condition"],
-                "File name": df["File Name"],
+                "Filename": df["File Name"],
                 "Run label": df["Run Label"],
             }
         )
@@ -936,32 +952,30 @@ class SpectronautReader(ResultReader):
         filetag: Optional[str] = None,
         rename_columns: bool = True,
         prefix_column_tags: bool = True,
-        sort_proteins: bool = True,
         drop_protein_info: bool = True,
-        special_proteins: list[str] = [],
     ) -> pd.DataFrame:
         """Reads a Spectronaut protein report file and returns a processed DataFrame.
 
-        Adds four protein entry columns to comply with the MsReport conventions:
+        Adds four protein entry columns to comply with the MsReport convention:
         "Protein reported by software", "Leading proteins", "Representative protein",
         "Potential contaminant".
 
-        ---- #TODO update ----
-        "Protein reported by software" contains the first entry from the
-        "PG.ProteinAccessions" column. "Leading proteins" contains all entries from the
-        "PG.ProteinAccessions" column, multiple entries are separated by ";".
-        "Representative protein" contains the first entry form "Leading proteins".
+        "Protein reported by software" and "Representative protein" contain the first
+        entry from the "PG.ProteinAccessions" column, and "Leading proteins" contains
+        all entries from this column. Multiple leading protein entries are separated by
+        ";".
 
-        Several columns in the Spectronaut report file contain information specific for
-        the protein entry of the "Protein" column. When leading proteins will be
-        re-sorted later, it is therefore recommended to remove all columns containing
-        protein specific information by enabling 'drop_protein_info'.
+        Several columns in the Spectronaut report file can contain information specific
+        for the leading protein entry. If leading proteins will be re-sorted later, it
+        is recommended to remove columns containing protein specific information by
+        setting 'drop_protein_info=True'.
 
         Args:
-            filename: #TODO
-            filetag: #TODO
+            filename: Optional, allows specifying a specific file that will be imported.
+            filetag: Optional, can be used to select a file that contains the filetag as
+                a substring, instead of specifying a filename.
             rename_columns: If True, columns are renamed according to the MsReport
-                conventions; default True.
+                convention; default True.
             prefix_column_tags: If True, column tags such as "Intensity" are added
                 in front of the sample names, e.g. "Intensity sample_name". If False,
                 column tags are added afterwards, e.g. "Sample_name Intensity"; default
@@ -975,7 +989,6 @@ class SpectronautReader(ResultReader):
         Returns:
             A dataframe containing the processed protein table.
         """
-        # Find report filename
         filetag = self.filetags["proteins"] if filetag is None else filetag
         filenames = _find_matching_files(
             self.data_directory,
@@ -1022,7 +1035,7 @@ class SpectronautReader(ResultReader):
     def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
         """Adds standardized protein entry columns to the data frame.
 
-        Adds new columns to comply with the MsReport conventions. "Protein reported by
+        Adds new columns to comply with the MsReport convention. "Protein reported by
         software" contains the protein ID extracted from the "Protein" column. "Leading
         proteins" contains the combined protein IDs extracted from the "Protein" and
         "Indistinguishable Proteins" columns, multiple entries are separated by ";".
@@ -1591,13 +1604,14 @@ def _find_matching_files(
 
     Either filename or filetag must be specified. If filename is specified, it is only
     checked if this specific file exists. When a filetag but no filename is specified,
-    all files containing the filetag are selected. Note that checking for the presence
-    of the filetag is not case senstitive.
+    all files containing the filetag are selected. The check for the presence of the
+    file tag is not case sensitive.
 
     Args:
         directory: Files from this directory are used for matching.
-        filename: Optional, #TODO
-        filetag: Optional, #TODO
+        filename: Optional, allows specifying a specific filename.
+        filetag: Optional, can be used to select files containing the filetag as a
+            substring, instead of specifying a filename.
         extensions: Optional, if a list of extensions is specified, matched filenames
             must end with one of the extensions.
 
