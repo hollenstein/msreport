@@ -905,10 +905,10 @@ class SpectronautReader(ResultReader):
             extensions=["xls", "tsv", "csv"],
         )
         if len(filenames) == 0:
-            raise FileNotFoundError("No report file found.")
+            raise FileNotFoundError("No matching file found.")
         elif len(filenames) > 1:
             exception_message_lines = [
-                f"Multiple report files found in: {self.data_directory}",
+                f"Multiple matching files found in: {self.data_directory}",
                 "One of the report filenames must be specified manually:",
             ]
             exception_message_lines.extend(filenames)
@@ -984,10 +984,10 @@ class SpectronautReader(ResultReader):
             extensions=["xls", "tsv", "csv"],
         )
         if len(filenames) == 0:
-            raise FileNotFoundError("No report file found.")
+            raise FileNotFoundError("No matching file found.")
         elif len(filenames) > 1:
             exception_message_lines = [
-                f"Multiple report files found in: {self.data_directory}",
+                f"Multiple matching files found in: {self.data_directory}",
                 "One of the report filenames must be specified manually:",
             ]
             exception_message_lines.extend(filenames)
@@ -1591,7 +1591,8 @@ def _find_matching_files(
 
     Either filename or filetag must be specified. If filename is specified, it is only
     checked if this specific file exists. When a filetag but no filename is specified,
-    alls files containing
+    all files containing the filetag are selected. Note that checking for the presence
+    of the filetag is not case senstitive.
 
     Args:
         directory: Files from this directory are used for matching.
@@ -1610,7 +1611,7 @@ def _find_matching_files(
             raise FileNotFoundError(f"File not found: {filepath}")
         else:
             matched_filenames = [filename]
-    else:
+    elif filetag is not None:
         if extensions is not None:
             potential_files = set()
             for current_filename in os.listdir(directory):
@@ -1619,7 +1620,11 @@ def _find_matching_files(
                         potential_files.add(current_filename)
         else:
             potential_files = set(os.listdir(directory))
-        matched_filenames = [fn for fn in potential_files if filetag in fn.lower()]
+        matched_filenames = [
+            fn for fn in potential_files if filetag.lower() in fn.lower()
+        ]
+    else:
+        raise ValueError("Either a filename or a filetag must be specified.")
     return matched_filenames
 
 
