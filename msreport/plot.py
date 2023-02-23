@@ -222,7 +222,10 @@ def contaminants(qtable: Qtable, tag: str = "iBAQ intensity") -> (plt.Figure, pl
     color_wheel = ColorWheelDict()
     colors = [color_wheel[exp] for exp in qtable.get_experiments(samples)]
     width = 0.8
-    figwidth = (num_samples * 0.25) + 0.75
+    xlim_pad = 0.5
+    xlim = ((width / 2 + xlim_pad) * -1, (num_samples - 1 + width / 2 + xlim_pad))
+    min_upper_ylim = 5
+    figwidth = (num_samples * 0.25) + 1.05
     figsize = (figwidth, 3)
 
     fig, ax = plt.subplots(figsize=figsize)
@@ -233,7 +236,8 @@ def contaminants(qtable: Qtable, tag: str = "iBAQ intensity") -> (plt.Figure, pl
     ax.set_xticklabels(samples, rotation=90)
     ax.set_ylabel(f"Sum relative\n{tag} [%]")
 
-    ax.set_ylim(0, max(5, ax.get_ylim()[1]))
+    ax.set_ylim(0, max(min_upper_ylim, ax.get_ylim()[1]))
+    ax.set_xlim(xlim)
     sns.despine(top=True, right=True)
     for spine in ["bottom", "left"]:
         ax.spines[spine].set_color("#000000")
@@ -331,7 +335,7 @@ def replicate_ratios(
     max_replicates = max([len(qtable.get_samples(exp)) for exp in experiments])
     max_combinations = len(list(itertools.combinations(range(max_replicates), 2)))
 
-    figheight = (num_experiments * 0.85) + 0.6
+    figheight = (num_experiments * 0.85) + 0.64
     figwidth = (max_combinations * 1.5) + 0.75
     figsize = (figwidth, figheight)
 
@@ -427,7 +431,7 @@ def experiment_ratios(
 
     color_wheel = ColorWheelDict()
     num_experiments = len(experiments)
-    figwidth = (num_experiments * 0.75) + 0.75
+    figwidth = (num_experiments * 0.75) + 0.82
     figheight = 2.5
     figsize = (figwidth, figheight)
 
@@ -825,6 +829,7 @@ def expression_comparison(
                 )
                 ax.set_xlim(-0.2, 0.2)
             finally:
+                xlim = ax.get_xlim()
                 highlight_mask = values["Representative protein"].isin(special_proteins)
                 offsets = ax.collections[0].get_offsets()[highlight_mask]
                 _annotated_scatter(
@@ -833,6 +838,7 @@ def expression_comparison(
                     labels=values[annotation_column][highlight_mask],
                     ax=ax,
                 )
+                ax.set_xlim(xlim)
 
         ax.grid(axis="y", linestyle="dotted", linewidth=1)
         ax.set_ylabel(y_variable)
@@ -879,7 +885,7 @@ def box_and_bars(
     x_values = range(num_samples)
     width = 0.8
     xlim = (-1 + 0.15, num_samples - 0.15)
-    figwidth = (num_samples * 0.25) + 1.1
+    figwidth = (num_samples * 0.25) + 1.2
     figsize = (figwidth, 6)
 
     sns.set_style("whitegrid")
