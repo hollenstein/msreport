@@ -1,4 +1,4 @@
-from typing import Optional, Callable
+from typing import Callable, Iterable, Optional
 
 import pandas as pd
 import xlsxreport
@@ -10,6 +10,7 @@ def write_protein_report(
     outpath: str,
     config: str = "msreport_lfq_protein.yaml",
     special_proteins: Optional[list] = None,
+    sort_by: Optional[str] = None,
 ) -> None:
     """Writes an excel protein report from an MsReport protein table.
 
@@ -20,18 +21,27 @@ def write_protein_report(
             will be written to the excel sheet "Info".
         outpath: Output path of the generated files.
         config: Path of an XlsxReport config file. If the config file is present in the
-            default XlsxReport app directory, it is enough to specify the filename.
+            default XlsxReport app directory, it is sufficient to specify the filename.
         special_proteins: Optional, allows specifying a list of entries in the
             "Representative protein" column from the 'protein_table', which will be
             sorted to the top.
+        sort_by: Optional, allows specifying a column for sorting of the protein table.
     """
+    sorting_columns = []
+    if special_proteins is not None:
+        special_protein_sorter = _create_protein_sorter(special_proteins)
+        sorting_columns.append("Representative protein")
+    else:
+        special_protein_sorter = None
+    if sort_by is not None:
+        sorting_columns.append(sort_by)
+
     design = experimental_design.copy()
     table = protein_table.copy()
-    special_proteins = special_proteins if special_proteins is not None else []
     table.sort_values(
-        ["Representative protein", "Spectral count Combined"],
-        key=_create_protein_sorter(special_proteins),
-        ascending=[False, False],
+        sorting_columns,
+        key=special_protein_sorter,
+        ascending=False,
         na_position="last",
         inplace=True,
     )
@@ -50,7 +60,7 @@ def _write_design(reportbook: xlsxreport.Reportbook, design: pd.DataFrame) -> No
             Workbook file.
         design: Dataframe that will be written to the "Info" excel sheet.
     """
-    design_columns = ["Raw files", "Sample", "Experiment"]
+    design_columns = ["Filename", "Sample", "Experiment"]
     for column in design_columns:
         if column not in design.columns:
             design[column] = ""
