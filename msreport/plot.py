@@ -801,7 +801,16 @@ def expression_comparison(
     for ax, mask, exp in [(axes[2], only_exp_1, exp_1), (axes[0], only_exp_2, exp_2)]:
         y_variable = f"Expression {exp}"
         values = qtable_data[mask]
+        highlight_mask = values["Representative protein"].isin(special_proteins)
         s = scattersize(values, total_scatter_area)
+
+        ax.grid(axis="y", linestyle="dotted", linewidth=1)
+        ax.set_ylabel(y_variable)
+        ax.tick_params(axis="x", bottom=False, labelbottom=False)
+
+        if len(values) == 0:
+            continue
+
         with warnings.catch_warnings():
             warnings.simplefilter("error", category=UserWarning)
             try:
@@ -830,7 +839,6 @@ def expression_comparison(
                 ax.set_xlim(-0.2, 0.2)
             finally:
                 xlim = ax.get_xlim()
-                highlight_mask = values["Representative protein"].isin(special_proteins)
                 offsets = ax.collections[0].get_offsets()[highlight_mask]
                 _annotated_scatter(
                     x_values=offsets[:, 0],
@@ -840,8 +848,6 @@ def expression_comparison(
                 )
                 ax.set_xlim(xlim)
 
-        ax.grid(axis="y", linestyle="dotted", linewidth=1)
-        ax.set_ylabel(y_variable)
     axes[0].set_title(f"Absent in\n{exp_1}", fontsize=9)
     axes[2].set_title(f"Absent in\n{exp_2}", fontsize=9)
 
