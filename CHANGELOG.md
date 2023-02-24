@@ -2,7 +2,7 @@
 
 ----------------------------------------------------------------------------------------
 
-## 0.0.9 (Upcoming) - SpectronautReader for LFQ protein reports
+## 0.0.9 - SpectronautReader for LFQ protein reports
 
 ### Added
 - A prototype reader for Spectronaut has been added. The `reader.SpectronautReader`
