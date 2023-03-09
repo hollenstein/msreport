@@ -825,7 +825,8 @@ def expression_comparison(
                 )
                 fig.canvas.draw()
             except UserWarning:
-                ax.cla()
+                ax.clear()
+                ax.set_ylabel(y_variable)
                 sns.stripplot(
                     y=values[y_variable],
                     jitter=True,
