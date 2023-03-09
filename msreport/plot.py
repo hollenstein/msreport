@@ -1099,5 +1099,6 @@ def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None) ->
     for x, y, text in zip(x_values, y_values, labels):
         texts.append(ax.text(x, y, text, fontdict={"fontsize": 9}))
 
-    adjustText.adjust_text(texts, ax=ax, **text_params)
-    ax.scatter(x_values, y_values, **scatter_kws)
+    if texts:
+        adjustText.adjust_text(texts, ax=ax, **text_params)
+        ax.scatter(x_values, y_values, **scatter_kws)
