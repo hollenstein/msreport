@@ -2,6 +2,19 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.10 - Fix annotated scatter plot issues
+
+### Changes
+- Added minimal version for seaborn library (>= 0.12.0)
+
+### Fixes
+- Error that might occur when using `plot.expression_comparison()` and for any suplot
+  no special protein is specified for annotation.
+- Add missing y-label in the expression comparison plot
+- Annotation of wrong data points in scatter plots when using seaborn version < 0.12.0 
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.9 - SpectronautReader for LFQ protein reports
 
 ### Added
