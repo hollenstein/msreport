@@ -84,9 +84,9 @@ def to_amica(
 ) -> None:
     """Writes amica input and design tables from a qtable.
 
-    As amica requires the same number of columns for each intensity group (LFQIntensity,
-    ImputedIntensity, iBAQ), experiment intensity columns are removed and only sample
-    intensity columns are written to the output.
+    As amica requires the same number of columns for each intensity group (Intensity,
+    LFQIntensity, ImputedIntensity, iBAQ), experiment intensity columns are removed and
+    only sample intensity columns are written to the output.
 
     Args:
         qtable: A Qtable instance.
@@ -123,6 +123,7 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
         "Potential contaminant": "Potential.contaminant",
     }
     amica_column_tags = {
+        "Intensity ": "Intensity_",
         "LFQ intensity ": "LFQIntensity_",
         "Expression ": "ImputedIntensity_",
         "Spectral count ": "razorUniqueCount_",

@@ -2,6 +2,13 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.11 (Upcoming)
+
+### Fixes
+- Add missing "Intensity" columns to amica tables exported from qtable
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.10 - Fix annotated scatter plot issues
 
 ### Changes
