@@ -34,8 +34,8 @@ class TestFixedValueImputer:
         for pos, col in self.imputed_positions:
             assert imputed_table.loc[pos, col] == 1
 
-    def test_impute_with_below_strategy_and_local(self):
-        imputer = msreport.impute.FixedValueImputer(strategy="below", local=True)
+    def test_impute_with_below_strategy_and_column_wise(self):
+        imputer = msreport.impute.FixedValueImputer(strategy="below", column_wise=True)
         imputer.fit(self.table)
         imputed_table = imputer.transform_table(self.table)
 
@@ -44,8 +44,8 @@ class TestFixedValueImputer:
             minimal_column_value = self.table[col].min()
             assert imputed_table.loc[pos, col] < minimal_column_value
 
-    def test_impute_with_below_strategy_and_not_local(self):
-        imputer = msreport.impute.FixedValueImputer(strategy="below", local=False)
+    def test_impute_with_below_strategy_and_not_column_wise(self):
+        imputer = msreport.impute.FixedValueImputer(strategy="below", column_wise=False)
         imputer.fit(self.table)
         imputed_table = imputer.transform_table(self.table)
 

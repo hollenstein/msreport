@@ -16,7 +16,10 @@ class FixedValueImputer:
     """
 
     def __init__(
-        self, strategy: str, fill_value: Optional[float] = None, local: bool = True
+        self,
+        strategy: str,
+        fill_value: Optional[float] = None,
+        column_wise: bool = True,
     ):
         """Initializes the FixedValueImputer.
 
@@ -25,16 +28,17 @@ class FixedValueImputer:
                 - If "constant", replace missing values with 'fill_value'.
                 - If "below", replace missing values with an integer that is smaller
                   than the minimal value of the fitted dataframe. Minimal values are
-                  calculated per column if 'local' is True, otherwise the minimal value
-                  is calculated for all columns.
+                  calculated per column if 'column_wise' is True, otherwise the minimal
+                  value is calculated for all columns.
             fill_value: When strategy is "constant", 'fill_value' is used to replace all
                 occurrences of missing_values.
-            local: If True, imputation is performed independently per column, otherwise
-                the whole dataframe is imputed togeter. Default True.
+            column_wise: If True, imputation is performed independently for each column,
+                otherwise the whole dataframe is imputed togeter. Default True.
+
         """
         self.strategy = strategy
         self.fill_value = fill_value
-        self.local = local
+        self.column_wise = column_wise
         self._sample_fill_values: dict[str, float] = {}
 
     def fit(self, table: pd.DataFrame) -> FixedValueImputer:
@@ -51,7 +55,7 @@ class FixedValueImputer:
             #     raise Excpetion()
             fill_values = {column: self.fill_value for column in table.columns}
         elif self.strategy == "below":
-            if self.local:
+            if self.column_wise:
                 fill_values = {}
                 for column in table:
                     fill_values[column] = _calculate_integer_below_min(table[column])
