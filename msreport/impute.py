@@ -159,6 +159,97 @@ class GaussianImputer:
         return _table
 
 
+class PerseusImputer:
+    """Imputer for completing missing values as implemented in Perseus.
+
+    Perseus-style imputation replaces missing values by random numbers drawn from a
+    normal distribution. Sigma and mu of this distribution are calculated from the
+    standard deviation and median of the observed values.
+    """
+
+    def __init__(
+        self,
+        median_downshift: float,
+        std_width: float,
+        column_wise: bool = True,
+        seed: Optional[int] = None,
+    ):
+        """Initializes the GaussianImputer.
+
+        Args:
+            median_downshift: Times of standard deviations the observed median is
+                downshifted for calulating mu of the normal distribution.
+            std_width: Factor for adjusting the standard deviation of the observed
+                values to obtain sigma of the normal distribution.
+            column_wise: If True, imputation is performed independently for each column,
+                otherwise the whole dataframe is imputed togeter. Default True.
+            seed: Optional, allows specifying a number for initializing the random
+                number generator. Using the same seed for the same input table will
+                generate the same set of imputed values each time. Default is None,
+                which results in different imputed values being generated each time.
+
+        """
+        self.median_downshift = median_downshift
+        self.std_width = std_width
+        self.column_wise = column_wise
+        self.seed = seed
+        self._column_params: dict[str, dict] = {}
+
+    def fit(self, table: pd.DataFrame) -> PerseusImputer:
+        """Fits the PerseusImputer.
+
+        Args:
+            table: Input Dataframe for calculating mu and sigma of the gaussian
+                distribution.
+
+        Returns:
+            Returns the fitted PerseusImputer instance.
+        """
+        for column in table.columns:
+            if self.column_wise:
+                median = np.nanmedian(table[column])
+                std = np.nanstd(table[column])
+            else:
+                median = np.nanmedian(table)
+                std = np.nanstd(table)
+
+            mu = median - (std * self.median_downshift)
+            sigma = std * self.std_width
+
+            self._column_params[column] = {"mu": mu, "sigma": sigma}
+        return self
+
+    def is_fitted(self) -> bool:
+        """Returns True if the PerseusImputer has been fitted."""
+        return len(self._column_params) != 0
+
+    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Impute all missing values in 'table'.
+
+        Args:
+            table: A dataframe of numeric values that will be completed. Each column
+                name must correspond to a column name from the table that was used for
+                the fitting.
+
+        Returns:
+            'table' with imputed missing values.
+        """
+        confirm_is_fitted(self)
+        np.random.seed(self.seed)
+
+        _table = table.copy()
+        for column in table.columns:
+            column_data = np.array(_table[column], dtype=float)
+            mask = ~np.isfinite(column_data)
+            column_data[mask] = np.random.normal(
+                loc=self._column_params[column]["mu"],
+                scale=self._column_params[column]["sigma"],
+                size=mask.sum(),
+            )
+            _table[column] = column_data
+        return _table
+
+
 def confirm_is_fitted(imputer: any, msg: Optional[str] = None) -> None:
     """Perform is_fitted validation for imputer instances.
 

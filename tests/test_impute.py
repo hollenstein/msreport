@@ -5,6 +5,11 @@ import pytest
 import msreport.impute
 
 
+def _all_values_imputed(table: pd.DataFrame) -> bool:
+    number_missing_values = table.isnull().to_numpy().sum()
+    return number_missing_values == 0
+
+
 class TestFixedValueImputer:
     @pytest.fixture(autouse=True)
     def _init_table(self):
@@ -92,6 +97,27 @@ class TestGaussianImputer:
         assert not imputed_table_1.equals(imputed_table_2)
 
 
-def _all_values_imputed(table: pd.DataFrame) -> bool:
-    number_missing_values = table.isnull().to_numpy().sum()
-    return number_missing_values == 0
+class TestPerseusImputer:
+    @pytest.fixture(autouse=True)
+    def _init_table(self):
+        self.table = pd.DataFrame(
+            {
+                "A": [10, 7.5, 5, np.nan],
+                "B": [5, np.nan, 5, np.nan],
+                "C": [3, 3, 3, 3],
+            }
+        )
+        self.imputed_positions = [(3, "A"), (1, "B"), (3, "B")]
+
+    def test_all_values_are_imputed(self):
+        median_downshift, std_width, column_wise, seed = 0, 1, True, 0
+        imputer = msreport.impute.PerseusImputer(
+            median_downshift=median_downshift,
+            std_width=std_width,
+            column_wise=column_wise,
+            seed=seed,
+        )
+        imputer.fit(self.table)
+        imputed_table = imputer.transform_table(self.table)
+
+        assert _all_values_imputed(imputed_table)
