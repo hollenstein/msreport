@@ -173,8 +173,8 @@ class PerseusImputer:
 
     def __init__(
         self,
-        median_downshift: float,
-        std_width: float,
+        median_downshift: float = 1.8,
+        std_width: float = 0.3,
         column_wise: bool = True,
         seed: Optional[int] = None,
     ):
@@ -182,9 +182,9 @@ class PerseusImputer:
 
         Args:
             median_downshift: Times of standard deviations the observed median is
-                downshifted for calulating mu of the normal distribution.
+                downshifted for calulating mu of the normal distribution. Default is 1.8
             std_width: Factor for adjusting the standard deviation of the observed
-                values to obtain sigma of the normal distribution.
+                values to obtain sigma of the normal distribution. Default is 0.3
             column_wise: If True, imputation is performed independently for each column,
                 otherwise the whole dataframe is imputed togeter. Default True.
             seed: Optional, allows specifying a number for initializing the random
