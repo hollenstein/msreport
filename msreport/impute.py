@@ -32,7 +32,6 @@ class FixedValueImputer:
             local: If True, imputation is performed independently per column, otherwise
                 the whole dataframe is imputed togeter. Default True.
         """
-
         self.strategy = strategy
         self.fill_value = fill_value
         self.local = local
@@ -99,6 +98,64 @@ class FixedValueImputer:
         _table = table.copy()
         for sample in table.columns:
             _table[sample] = self.transform(sample, _table[sample])
+        return _table
+
+
+class GaussianImputer:
+    """Imputer for completing missing values by drawing from a gaussian distribution."""
+
+    def __init__(self, mu: float, sigma: float, seed: Optional[int] = None):
+        """Initializes the GaussianImputer.
+
+        Args:
+            mu: Mean of the gaussian distribution.
+            sigma: Standard deviation of the gaussian distribution, must be positive.
+            seed: Optional, allows specifying a number for initializing the random
+                number generator. Using the same seed for the same input table will
+                generate the same set of imputed values each time. Default is None,
+                which results in different imputed values being generated each time.
+        """
+        self.mu = mu
+        self.sigma = sigma
+        self.seed = seed
+
+    def fit(self, table: pd.DataFrame) -> GaussianImputer:
+        """Fits the GaussianImputer, altough this is not necessary.
+
+        Args:
+            table: Input Dataframe for fitting.
+
+        Returns:
+            Returns the fitted GaussianImputer instance.
+        """
+        return self
+
+    def is_fitted(self) -> bool:
+        """Returns always True, as the GaussianImputer does not need to be fitted."""
+        return True
+
+    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Impute all missing values in 'table'.
+
+        Args:
+            table: A dataframe of numeric values that will be completed. Each column
+                name must correspond to a column name from the table that was used for
+                the fitting.
+
+        Returns:
+            'table' with imputed missing values.
+        """
+        confirm_is_fitted(self)
+        np.random.seed(self.seed)
+
+        _table = table.copy()
+        for column in table.columns:
+            column_data = np.array(_table[column], dtype=float)
+            mask = ~np.isfinite(column_data)
+            column_data[mask] = np.random.normal(
+                loc=self.mu, scale=self.sigma, size=mask.sum()
+            )
+            _table[column] = column_data
         return _table
 
 

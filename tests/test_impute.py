@@ -17,10 +17,6 @@ class TestFixedValueImputer:
         )
         self.imputed_positions = [(3, "A"), (1, "B"), (3, "B")]
 
-    def are_all_values_imputed(self, table: pd.DataFrame) -> bool:
-        number_missing_values = table.isnull().to_numpy().sum()
-        return number_missing_values == 0
-
     def test_impute_with_constant_strategy(self):
         fill_value = 1
         imputer = msreport.impute.FixedValueImputer(
@@ -29,7 +25,7 @@ class TestFixedValueImputer:
         imputer.fit(self.table)
         imputed_table = imputer.transform_table(self.table)
 
-        assert self.are_all_values_imputed(imputed_table)
+        assert _all_values_imputed(imputed_table)
         for pos, col in self.imputed_positions:
             assert imputed_table.loc[pos, col] == 1
 
@@ -38,7 +34,7 @@ class TestFixedValueImputer:
         imputer.fit(self.table)
         imputed_table = imputer.transform_table(self.table)
 
-        assert self.are_all_values_imputed(imputed_table)
+        assert _all_values_imputed(imputed_table)
         for pos, col in self.imputed_positions:
             minimal_column_value = self.table[col].min()
             assert imputed_table.loc[pos, col] < minimal_column_value
@@ -48,7 +44,54 @@ class TestFixedValueImputer:
         imputer.fit(self.table)
         imputed_table = imputer.transform_table(self.table)
 
-        assert self.are_all_values_imputed(imputed_table)
+        assert _all_values_imputed(imputed_table)
         minimal_array_value = np.nanmin(self.table.to_numpy().flatten())
         for pos, col in self.imputed_positions:
             assert imputed_table.loc[pos, col] < minimal_array_value
+
+
+class TestGaussianImputer:
+    @pytest.fixture(autouse=True)
+    def _init_table(self):
+        self.table = pd.DataFrame(
+            {
+                "A": [10, 10, 10, np.nan],
+                "B": [5, np.nan, 5, np.nan],
+                "C": [3, 3, 3, 3],
+            }
+        )
+        self.imputed_positions = [(3, "A"), (1, "B"), (3, "B")]
+
+    def test_correct_imputation_with_a_seed_value(self):
+        mu, sigma, seed = 0, 1, 0
+        np.random.seed(seed)
+        expected_random_values = np.random.normal(mu, sigma, 3)
+        imputer = msreport.impute.GaussianImputer(mu=mu, sigma=sigma, seed=seed)
+        imputer.fit(self.table)
+        imputed_table = imputer.transform_table(self.table)
+
+        assert _all_values_imputed(imputed_table)
+        for expected, (pos, col) in zip(expected_random_values, self.imputed_positions):
+            observed = imputed_table.loc[pos, col]
+            assert observed == expected
+
+    def test_imputing_twice_with_a_seed_value_is_identical(self):
+        mu, sigma, seed = 0, 1, 0
+        imputer = msreport.impute.GaussianImputer(mu=mu, sigma=sigma, seed=seed)
+        imputer.fit(self.table)
+        imputed_table_1 = imputer.transform_table(self.table)
+        imputed_table_2 = imputer.transform_table(self.table)
+        assert imputed_table_1.equals(imputed_table_2)
+
+    def test_imputing_twice_with_no_seed_value_is_different(self):
+        mu, sigma, seed = 0, 1, None
+        imputer = msreport.impute.GaussianImputer(mu=mu, sigma=sigma, seed=seed)
+        imputer.fit(self.table)
+        imputed_table_1 = imputer.transform_table(self.table)
+        imputed_table_2 = imputer.transform_table(self.table)
+        assert not imputed_table_1.equals(imputed_table_2)
+
+
+def _all_values_imputed(table: pd.DataFrame) -> bool:
+    number_missing_values = table.isnull().to_numpy().sum()
+    return number_missing_values == 0
