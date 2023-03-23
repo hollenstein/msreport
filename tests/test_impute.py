@@ -28,7 +28,7 @@ class TestFixedValueImputer:
             strategy="constant", fill_value=fill_value
         )
         imputer.fit(self.table)
-        imputed_table = imputer.transform_table(self.table)
+        imputed_table = imputer.transform(self.table)
 
         assert _all_values_imputed(imputed_table)
         for pos, col in self.imputed_positions:
@@ -37,7 +37,7 @@ class TestFixedValueImputer:
     def test_impute_with_below_strategy_and_column_wise(self):
         imputer = msreport.impute.FixedValueImputer(strategy="below", column_wise=True)
         imputer.fit(self.table)
-        imputed_table = imputer.transform_table(self.table)
+        imputed_table = imputer.transform(self.table)
 
         assert _all_values_imputed(imputed_table)
         for pos, col in self.imputed_positions:
@@ -47,7 +47,7 @@ class TestFixedValueImputer:
     def test_impute_with_below_strategy_and_not_column_wise(self):
         imputer = msreport.impute.FixedValueImputer(strategy="below", column_wise=False)
         imputer.fit(self.table)
-        imputed_table = imputer.transform_table(self.table)
+        imputed_table = imputer.transform(self.table)
 
         assert _all_values_imputed(imputed_table)
         minimal_array_value = np.nanmin(self.table.to_numpy().flatten())
@@ -73,7 +73,7 @@ class TestGaussianImputer:
         expected_random_values = np.random.normal(mu, sigma, 3)
         imputer = msreport.impute.GaussianImputer(mu=mu, sigma=sigma, seed=seed)
         imputer.fit(self.table)
-        imputed_table = imputer.transform_table(self.table)
+        imputed_table = imputer.transform(self.table)
 
         assert _all_values_imputed(imputed_table)
         for expected, (pos, col) in zip(expected_random_values, self.imputed_positions):
@@ -84,16 +84,16 @@ class TestGaussianImputer:
         mu, sigma, seed = 0, 1, 0
         imputer = msreport.impute.GaussianImputer(mu=mu, sigma=sigma, seed=seed)
         imputer.fit(self.table)
-        imputed_table_1 = imputer.transform_table(self.table)
-        imputed_table_2 = imputer.transform_table(self.table)
+        imputed_table_1 = imputer.transform(self.table)
+        imputed_table_2 = imputer.transform(self.table)
         assert imputed_table_1.equals(imputed_table_2)
 
     def test_imputing_twice_with_no_seed_value_is_different(self):
         mu, sigma, seed = 0, 1, None
         imputer = msreport.impute.GaussianImputer(mu=mu, sigma=sigma, seed=seed)
         imputer.fit(self.table)
-        imputed_table_1 = imputer.transform_table(self.table)
-        imputed_table_2 = imputer.transform_table(self.table)
+        imputed_table_1 = imputer.transform(self.table)
+        imputed_table_2 = imputer.transform(self.table)
         assert not imputed_table_1.equals(imputed_table_2)
 
 
@@ -118,6 +118,6 @@ class TestPerseusImputer:
             seed=seed,
         )
         imputer.fit(self.table)
-        imputed_table = imputer.transform_table(self.table)
+        imputed_table = imputer.transform(self.table)
 
         assert _all_values_imputed(imputed_table)

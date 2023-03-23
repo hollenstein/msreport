@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Iterable, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -69,26 +69,7 @@ class FixedValueImputer:
         """Returns True if the FixedValueImputer has been fitted."""
         return len(self._sample_fill_values) != 0
 
-    def transform(self, sample: str, values: Iterable[float]) -> np.ndarray:
-        """Impute all missing values in 'values'.
-
-        Args:
-            sample: Use the imputation value calculated for the specified 'sample'.
-                Must correspond to one of the column names from the table that was used
-                for the fitting.
-            values: Iterable of numeric values that will be completed.
-
-        Returns:
-            A numpy array with the length of 'values' with imputed missing values.
-        """
-        confirm_is_fitted(self)
-
-        data = np.array(values, dtype=float)
-        mask = ~np.isfinite(data)
-        data[mask] = self._sample_fill_values[sample]
-        return data
-
-    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
         """Impute all missing values in 'table'.
 
         Args:
@@ -99,9 +80,14 @@ class FixedValueImputer:
         Returns:
             'table' with imputed missing values.
         """
+        confirm_is_fitted(self)
+
         _table = table.copy()
-        for sample in table.columns:
-            _table[sample] = self.transform(sample, _table[sample])
+        for column in _table.columns:
+            column_data = np.array(_table[column], dtype=float)
+            mask = ~np.isfinite(column_data)
+            column_data[mask] = self._sample_fill_values[column]
+            _table[column] = column_data
         return _table
 
 
@@ -138,7 +124,7 @@ class GaussianImputer:
         """Returns always True, as the GaussianImputer does not need to be fitted."""
         return True
 
-    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
         """Impute all missing values in 'table'.
 
         Args:
@@ -153,7 +139,7 @@ class GaussianImputer:
         np.random.seed(self.seed)
 
         _table = table.copy()
-        for column in table.columns:
+        for column in _table.columns:
             column_data = np.array(_table[column], dtype=float)
             mask = ~np.isfinite(column_data)
             column_data[mask] = np.random.normal(
@@ -227,7 +213,7 @@ class PerseusImputer:
         """Returns True if the PerseusImputer has been fitted."""
         return len(self._column_params) != 0
 
-    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
         """Impute all missing values in 'table'.
 
         Args:
@@ -242,7 +228,7 @@ class PerseusImputer:
         np.random.seed(self.seed)
 
         _table = table.copy()
-        for column in table.columns:
+        for column in _table.columns:
             column_data = np.array(_table[column], dtype=float)
             mask = ~np.isfinite(column_data)
             column_data[mask] = np.random.normal(

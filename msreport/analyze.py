@@ -19,7 +19,7 @@ class Transformer(Protocol):
     def is_fitted(self) -> bool:
         """Returns True if the Transformer has been fitted."""
 
-    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
         """Transform values in 'table'."""
 
 
@@ -208,7 +208,7 @@ def impute_missing_values(
     if not imputer.is_fitted():
         imputer = imputer.fit(raw_data)
 
-    imputed_data = imputer.transform_table(raw_data)
+    imputed_data = imputer.transform(raw_data)
     imputed_data.rename(
         columns=dict(zip(sample_columns, expression_columns)), inplace=True
     )

@@ -57,7 +57,7 @@ class MockImputer:
     def is_fitted(self):
         return True
 
-    def transform_table(self, table: pd.DataFrame):
+    def transform(self, table: pd.DataFrame):
         _table = table.copy()
         for column in table.columns:
             column_data = np.array(_table[column], dtype=float)
