@@ -125,54 +125,42 @@ def validate_proteins(
 
 def normalize_expression(
     qtable: Qtable,
-    method: Optional[str] = None,
-    normalizer: Optional[msreport.normalize.BaseSampleNormalizer] = None,
-) -> msreport.normalize.BaseSampleNormalizer:
-    """Normalizes expression values and returns a fitted Normalizer instance.
+    normalizer: Transformer,
+    exclude_invalid: bool = True,
+) -> None:
+    """Normalizes expression values in qtable.
 
-    If a column "Valid" is present, only valid entries are used for fitting the
-    normalizer. The expression values of all rows, including non-valid ones, are
-    corrected.
+    Normalizes values present in the qtable expression columns, requires that expression
+    columns are defined. The normalizer will be fit with the expression values if it has
+    not been fitted already.
 
     Args:
         qtable: A Qtable instance, which expression values will be normalized.
-        method: Normalization method "median", "mode" or "lowess".
-        normalizer: Optional, if specified an already fitted normalizer can be used for
-            normalization of expression values and the 'method' argument is ignored.
-
-    Returns:
-        The fitted normalizer instance.
+        normalizer: A Normalizer instance from the msreport.normalize module. Note that
+            if an already fitted normalizer is passed, it has to be fitted with a
+            dataframe which column names correspond to the sample names present in
+            qtable.design. A not fitted normalizer is fitted with the expression values
+            present in the qtable.
+        exclude_invalid: If true, the column "Valid" is used to filter which expression
+            rows are used for fitting a not fitted normalizer; default True. Independent
+            of if exclude_invalid is True or False, all expression values will be
+            normalized.
     """
-    # TODO not tested #
-    default_normalizers = {
-        "median": msreport.normalize.MedianNormalizer(),
-        "mode": msreport.normalize.ModeNormalizer(),
-        "lowess": msreport.normalize.LowessNormalizer(),
-    }
+    table = qtable.make_expression_table(samples_as_columns=True, features=["Valid"])
+    sample_columns = table.columns.drop("Valid")
+    expression_columns = [qtable.get_expression_column(s) for s in sample_columns]
 
-    if method is None and normalizer is None:
-        raise ValueError("Either the argument 'method' or 'normalizer' must be set.")
-    elif method is not None and method not in default_normalizers:
-        raise ValueError(
-            f"'method' = '{method}' is not allowed, "
-            f"it must be one of {(*default_normalizers,)}."
-        )
-
-    expression_table = qtable.make_expression_table(samples_as_columns=True)
-
-    if normalizer is None:
-        if "Valid" in qtable:
-            fitting_mask = qtable["Valid"].to_numpy()
+    raw_data = table[sample_columns]
+    if not normalizer.is_fitted():
+        if exclude_invalid:
+            valid_mask = table["Valid"]
         else:
-            fitting_mask = np.ones(expression_table.shape[0], dtype=bool)
+            valid_mask = np.ones_like(table["Valid"], dtype=bool)
+        fit_data = raw_data[valid_mask]
+        normalizer = normalizer.fit(fit_data)
 
-        normalizer = default_normalizers[method]
-        normalizer.fit(expression_table[fitting_mask])
-
-    samples = expression_table.columns.tolist()
-    columns = [qtable.get_expression_column(s) for s in samples]
-    qtable[columns] = normalizer.transform_table(expression_table)
-    return normalizer
+    transformed_data = normalizer.transform(raw_data)
+    qtable[expression_columns] = transformed_data[sample_columns]
 
 
 def impute_missing_values(

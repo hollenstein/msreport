@@ -59,9 +59,31 @@ class MockImputer:
 
     def transform(self, table: pd.DataFrame):
         _table = table.copy()
-        for column in table.columns:
+        for column in _table.columns:
             column_data = np.array(_table[column], dtype=float)
             column_data[~np.isfinite(column_data)] = 1
+            _table[column] = column_data
+        return _table
+
+
+class MockNormalizer:
+    def __init__(self):
+        self._is_fitted = False
+        self.shift = 0
+
+    def fit(self, table: pd.DataFrame):
+        self._is_fitted = True
+        self.shift = np.nanmean(table)
+        return self
+
+    def is_fitted(self):
+        return self._is_fitted
+
+    def transform(self, table: pd.DataFrame):
+        _table = table.copy()
+        for column in _table.columns:
+            column_data = np.array(_table[column], dtype=float)
+            column_data[np.isfinite(column_data)] += self.shift
             _table[column] = column_data
         return _table
 
@@ -85,6 +107,49 @@ class TestValidateProteins:
             self.qtable, remove_contaminants=False, min_peptides=min_peptides
         )
         assert expected_valid == self.qtable.data["Valid"].sum()
+
+
+class TestNormalizeExpression:
+    def test_normalization_with_fitted_normalizer(self, example_qtable):
+        shift = 1
+        normalizer = MockNormalizer().fit(example_qtable.make_expression_table())
+        normalizer.shift = shift
+
+        expr_before = example_qtable.make_expression_table()
+
+        msreport.analyze.normalize_expression(
+            example_qtable, normalizer, exclude_invalid=False
+        )
+        expr_after = example_qtable.make_expression_table()
+        np.testing.assert_array_equal(expr_after, expr_before + shift)
+
+    def test_correct_fitting_with_not_fitted_normalizer_and_exclude_invalid_false(
+        self, example_qtable
+    ):
+        invalid_mask = example_qtable.data["Representative protein"] == "C"
+        example_qtable.data.loc[invalid_mask, "Valid"] = False
+
+        expr_table = example_qtable.make_expression_table()
+        normalizer = MockNormalizer()
+        msreport.analyze.normalize_expression(
+            example_qtable, normalizer, exclude_invalid=False
+        )
+
+        assert normalizer.shift == np.nanmean(expr_table)
+
+    def test_correct_fitting_with_not_fitted_normalizer_and_exclude_invalid_True(
+        self, example_qtable
+    ):
+        invalid_mask = example_qtable.data["Representative protein"] == "C"
+        example_qtable.data.loc[invalid_mask, "Valid"] = False
+
+        expr_table = example_qtable.make_expression_table()
+        normalizer = MockNormalizer()
+        msreport.analyze.normalize_expression(
+            example_qtable, normalizer, exclude_invalid=True
+        )
+
+        assert normalizer.shift == np.nanmean(expr_table[example_qtable["Valid"]])
 
 
 class TestImputeMissingValues:
