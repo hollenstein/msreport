@@ -4,9 +4,32 @@
 
 ## 0.0.11 (Upcoming)
 
+### Added
+- Added new module `msreport.imputer`, which includes a number of classes for various
+  imputation strategies. To apply a particular imputation strategy, an `Imputer` object
+  can be passed to `msreport.analyze.impute_missing_values()` together with a qtable.
+- Added `msreport.imputer.FixedValueImputer`. The `FixedValueImputer` can be used with
+  on of two different imputation strategies: either to replace missing values with a
+  user defined fixed value (strategy="constant") or to replace missing values with a
+  value that is smaller than the lowest observed value (strategy="below").
+- Added `msreport.imputer.GaussianImputer`, which allows replacing missing values by
+  drawing values from a gaussian distribution with specified mu and sigma.
+- Added `msreport.imputer.PerseusImputer`, which is an implementation of the
+  Perseus-style imputation. Missing values are replaced by drawing values from a
+  gaussian distribution, which parameters are calculated using the standard deviation
+  and median of the observed values.
+
+### Changes
+- (!) Changed the interface of `msreport.analyze.impute_missing_values`. Instead of
+  performing a Perseus-style imputation, `impute_missing_values()` now takes an
+  `Imputer` object as input, which specifies the imputation strategy that is used to
+  replace missing values. The new interface allows to add new imputation strategies by
+  creating additional `Imputer` classes, without requiring additional changes to the
+  `impute_missing_values()` interface.
+
 ### Fixes
-- Add missing "Intensity" columns to amica tables exported from qtable
-- Fix negative iBAQ intensities, which were caused by calculation of iBAQ intensities
+- Added missing "Intensity" columns to amica tables exported from qtable.
+- Fixed negative iBAQ intensities, which were caused by calculation of iBAQ intensities
   with negative iBAQ peptides. Negative or zero iBAQ peptides now results in iBAQ
   intensities being reported as NaN.
 
