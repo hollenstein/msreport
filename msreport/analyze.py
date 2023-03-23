@@ -6,7 +6,6 @@ import warnings
 import numpy as np
 import pandas as pd
 
-import msreport.helper as helper
 import msreport.normalize
 import msreport.rinterface
 from msreport.qtable import Qtable

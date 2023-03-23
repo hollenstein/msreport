@@ -1,63 +1,12 @@
 import itertools
-from typing import Iterable, Optional
+from typing import Iterable
 
 import numpy as np
-import pandas as pd
 import scipy.stats
 import scipy.optimize
 
 import pyteomics.mass
 import pyteomics.parser
-
-
-def gaussian_imputation(
-    table: pd.DataFrame,
-    median_downshift: float,
-    std_width: float,
-    column_wise: bool,
-    seed: Optional[float] = None,
-) -> pd.DataFrame:
-    """Imputes missing values in a table by drawing values from a normal distribution.
-
-    Missing values are imputed by drawing random numbers for a gaussian distribution.
-    Sigma and mu of this distribution are calculated by adjusting the standard deviation
-    and median of the observed values.
-
-    Args:
-        table: Table containing missing values that will be imputed.
-        median_downshift: Times of standard deviations the observed median is
-            downshifted for calulating mu of the normal distribution.
-        std_width: Factor for adjusting the standard deviation of the observed values
-            to obtain sigma of the normal distribution.
-        column_wise: Specifies whether imputation is performed for each column
-            separately or on the whole table together. Also affects if mu and sigma are
-            calculated for each column separately or for the whole table.
-        seed: Optional, allows specifying a number for initializing the random number
-            generator. Using the same seed for the same input table will generate the
-            same set of imputed values each time. Default is None, which results in
-            different imputed values being generated each time.
-
-    Returns:
-        Copy of the table containing imputed values.
-    """
-    np.random.seed(seed)
-    imputed_table = table.copy()
-    if not column_wise:
-        median = np.nanmedian(imputed_table)
-        std = np.nanstd(imputed_table)
-    for column in imputed_table:
-        if column_wise:
-            median = np.nanmedian(imputed_table[column])
-            std = np.nanstd(imputed_table[column])
-
-        mu = median - (std * median_downshift)
-        sigma = std * std_width
-        missing_values = imputed_table[column].isnull()
-        num_missing_values = missing_values.sum()
-        imputed_values = np.random.normal(mu, sigma, num_missing_values)
-
-        imputed_table.loc[missing_values, column] = imputed_values
-    return imputed_table
 
 
 def solve_ratio_matrix(matrix: np.ndarray) -> np.ndarray:
