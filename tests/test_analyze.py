@@ -50,6 +50,22 @@ def example_qtable(example_data):
     return qtable
 
 
+class MockImputer:
+    def fit(self, table: pd.DataFrame):
+        return self
+
+    def is_fitted(self):
+        return True
+
+    def transform_table(self, table: pd.DataFrame):
+        _table = table.copy()
+        for column in table.columns:
+            column_data = np.array(_table[column], dtype=float)
+            column_data[~np.isfinite(column_data)] = 1
+            _table[column] = column_data
+        return _table
+
+
 class TestValidateProteins:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_qtable):
@@ -72,11 +88,17 @@ class TestValidateProteins:
 
 
 class TestImputeMissingValues:
+    @pytest.fixture(autouse=True)
+    def _init_imputer(self, example_qtable):
+        self.imputer = MockImputer()
+
     def test_all_entries_are_imputed_with_exclude_invalid_false(self, example_qtable):
         invalid_mask = example_qtable.data["Representative protein"] == "C"
         example_qtable.data.loc[invalid_mask, "Valid"] = False
 
-        msreport.analyze.impute_missing_values(example_qtable, exclude_invalid=False)
+        msreport.analyze.impute_missing_values(
+            example_qtable, self.imputer, exclude_invalid=False
+        )
 
         expr_table = example_qtable.make_expression_table()
         number_missing_values = expr_table.isna().sum().sum()
@@ -86,7 +108,9 @@ class TestImputeMissingValues:
         invalid_mask = example_qtable.data["Representative protein"] == "C"
         example_qtable.data.loc[invalid_mask, "Valid"] = False
 
-        msreport.analyze.impute_missing_values(example_qtable, exclude_invalid=False)
+        msreport.analyze.impute_missing_values(
+            example_qtable, self.imputer, exclude_invalid=False
+        )
         expr_table = example_qtable.make_expression_table(exclude_invalid=True)
 
         number_missing_values = expr_table.isna().sum().sum()
@@ -102,7 +126,9 @@ class TestImputeMissingValues:
         )
         assert number_missing_values_of_invalid_before_imputation > 0
 
-        msreport.analyze.impute_missing_values(example_qtable, exclude_invalid=True)
+        msreport.analyze.impute_missing_values(
+            example_qtable, self.imputer, exclude_invalid=True
+        )
         table_after = example_qtable.make_expression_table(features=["Valid"])
 
         expr_cols = table_before.columns.drop("Valid")

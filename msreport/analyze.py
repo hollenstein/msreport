@@ -1,5 +1,6 @@
 """ The analyze module contains methods for analysing quantification results. """
-from typing import Iterable, Optional
+from __future__ import annotations
+from typing import Iterable, Optional, Protocol
 import warnings
 
 import numpy as np
@@ -9,6 +10,17 @@ import msreport.helper as helper
 import msreport.normalize
 import msreport.rinterface
 from msreport.qtable import Qtable
+
+
+class Transformer(Protocol):
+    def fit(self, table: pd.DataFrame) -> Transformer:
+        """Fits the Transformer and returns a fitted Transformer instance."""
+
+    def is_fitted(self) -> bool:
+        """Returns True if the Transformer has been fitted."""
+
+    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Transform values in 'table'."""
 
 
 def analyze_missingness(qtable: Qtable) -> None:
@@ -166,52 +178,41 @@ def normalize_expression(
 
 def impute_missing_values(
     qtable: Qtable,
-    median_downshift: float = 1.8,
-    std_width: float = 0.3,
-    column_wise: bool = True,
-    seed: Optional[float] = None,
+    imputer: Transformer,
     exclude_invalid: bool = True,
 ) -> None:
-    """Imputes missing expression values.
+    """Imputes missing expression values in qtable.
 
-    Missing values are imputed by drawing random values from a gaussian distribution.
-    The parameters of the normal distribution are calculated from the observed values.
-    Mu is the observed median downshifted by the standard deviations times
-    'median_downshift'. Sigma is the observed standard deviation multiplied by
-    'std_width'.
-
-    Imputes missing values (nan) present in the expression columns, requires that
-    expression columns are defined.
+    Imputes missing values (nan) present in the qtable expression columns, requires
+    that expression columns are defined. The imputer will be fit with the
+    expression values if it has not been fitted already.
 
     Args:
         qtable: A Qtable instance, which missing expression values will be imputed.
-        median_downshift: Times of standard deviations the observed median is
-            downshifted for calculating mu of the normal distribution.
-        std_width: Factor for adjusting the standard deviation of the observed values
-            to obtain sigma of the normal distribution.
-        column_wise: Specifies whether imputation is performed for each column
-            separately or on the whole table together. Also affects if mu and sigma are
-            calculated for each column separately or for the whole table.
-        seed: Optional, allows specifying a number for initializing the random number
-            generator. Using the same seed for the same input qtable will generate the
-            same set of imputed values each time. Default is None, which results in
-            different imputed values being generated each time.
+        imputer: An Imputer instance from the msreport.impute module. Note that if an
+            already fitted imputer is passed, it has to be fitted with a dataframe which
+            column names correspond to the sample names present in qtable.design. A not
+            fitted imputer is fitted with the expression values present in the qtable.
         exclude_invalid: If true, the column "Valid" is used to determine for which rows
             imputation is performed; default True.
     """
-    table = qtable.make_expression_table(features=["Valid"])
-    expr_cols = table.columns.drop("Valid")
+    table = qtable.make_expression_table(samples_as_columns=True, features=["Valid"])
+    sample_columns = table.columns.drop("Valid")
+    expression_columns = [qtable.get_expression_column(s) for s in sample_columns]
     if exclude_invalid:
-        imputation_mask = table["Valid"]
+        valid_mask = table["Valid"]
     else:
-        imputation_mask = np.ones_like(table["Valid"], dtype=bool)
+        valid_mask = np.ones_like(table["Valid"], dtype=bool)
 
-    raw_data = table.loc[imputation_mask, expr_cols]
+    raw_data = table.loc[valid_mask, sample_columns]
+    if not imputer.is_fitted():
+        imputer = imputer.fit(raw_data)
 
-    imputed_data = helper.gaussian_imputation(
-        raw_data, median_downshift, std_width, column_wise, seed
+    imputed_data = imputer.transform_table(raw_data)
+    imputed_data.rename(
+        columns=dict(zip(sample_columns, expression_columns)), inplace=True
     )
-    qtable.data.loc[imputation_mask, expr_cols] = imputed_data[expr_cols]
+    qtable.data.loc[valid_mask, expression_columns] = imputed_data
 
 
 def calculate_experiment_means(qtable: Qtable) -> None:
