@@ -6,6 +6,9 @@
 
 ### Fixes
 - Add missing "Intensity" columns to amica tables exported from qtable
+- Fix negative iBAQ intensities, which were caused by calculation of iBAQ intensities
+  with negative iBAQ peptides. Negative or zero iBAQ peptides now results in iBAQ
+  intensities being reported as NaN.
 
 ----------------------------------------------------------------------------------------
 
