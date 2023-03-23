@@ -304,7 +304,9 @@ class TestAddIbaqIntensities:
             ([150, 150], True),
         ],
     )
-    def test_correct_ibaq_intensities(self, expected_ibaq, normalize_intensity):
+    def test_correct_calculation_of_ibaq_intensities(
+        self, expected_ibaq, normalize_intensity
+    ):
         msreport.reader.add_ibaq_intensities(
             self.table,
             normalize=normalize_intensity,
@@ -312,7 +314,32 @@ class TestAddIbaqIntensities:
             intensity_tag="intensity",
             ibaq_tag="ibaq",
         )
-        assert np.all(np.equal(self.table["ibaq"], expected_ibaq))
+        np.testing.assert_array_equal(self.table["ibaq"], np.array(expected_ibaq))
+
+    @pytest.mark.parametrize(
+        "expected_ibaq, normalize_intensity",
+        [
+            ([50, 50, np.nan, np.nan], False),
+            ([150, 150, np.nan, np.nan], True),
+        ],
+    )
+    def test_calculation_with_invalid_ibaq_peptides(
+        self, expected_ibaq, normalize_intensity
+    ):
+        table = pd.DataFrame(
+            {
+                "ibaq_petides": [2, 4, 0, -1],
+                "intensity": [100.0, 200.0, 50.0, 50.0],
+            }
+        )
+        msreport.reader.add_ibaq_intensities(
+            table,
+            normalize=normalize_intensity,
+            ibaq_peptide_column="ibaq_petides",
+            intensity_tag="intensity",
+            ibaq_tag="ibaq",
+        )
+        np.testing.assert_array_equal(table["ibaq"], np.array(expected_ibaq))
 
 
 class TestResultReader:

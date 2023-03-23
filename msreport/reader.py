@@ -1407,6 +1407,8 @@ def add_ibaq_intensities(
         normalize: Scales iBAQ intensities per sample so that the sum of all iBAQ
             intensities is equal to the sum of all Intensities.
         ibaq_peptide_column: Column in 'table' containing the number of iBAQ peptides.
+            No iBAQ intensity is calculated for rows with negative values or zero in the
+            ibaq_peptide_column.
         intensity_tag: Substring used to identify intensity columns from the 'table'
             that are used to calculate iBAQ intensities.
         ibaq_tag: Substring used for naming the new 'table' columns containing the
@@ -1415,11 +1417,18 @@ def add_ibaq_intensities(
     """
     for intensity_column in helper.find_columns(table, intensity_tag):
         ibaq_column = intensity_column.replace(intensity_tag, ibaq_tag)
-        table[ibaq_column] = table[intensity_column] / table[ibaq_peptide_column]
+        valid = table[ibaq_peptide_column] > 0
+
+        table[ibaq_column] = np.nan
+        table.loc[valid, ibaq_column] = (
+            table.loc[valid, intensity_column] / table.loc[valid, ibaq_peptide_column]
+        )
 
         if normalize:
-            factor = table[intensity_column].sum() / table[ibaq_column].sum()
-            table[ibaq_column] = table[ibaq_column] * factor
+            total_intensity = table.loc[valid, intensity_column].sum()
+            total_ibaq = table.loc[valid, ibaq_column].sum()
+            factor = total_intensity / total_ibaq
+            table.loc[valid, ibaq_column] = table.loc[valid, ibaq_column] * factor
 
 
 def add_peptide_positions(
