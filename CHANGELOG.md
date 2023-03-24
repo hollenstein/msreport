@@ -18,6 +18,8 @@
   Perseus-style imputation. Missing values are replaced by drawing values from a
   gaussian distribution, which parameters are calculated using the standard deviation
   and median of the observed values.
+- Added `msreport.helper.apply_intensity_cutoff()` function for replacing intensity
+  values below a specified threshold with NaN.
 - Made relevant msreport submodules available by importing `msreport`, so they don't
   need to be imported separately: `reader`, `normalize`, `impute`, `analyze`, `plot`,
   and `export`
