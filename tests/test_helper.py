@@ -118,6 +118,30 @@ def test_rename_sample_columns():
     assert observed_renamed_columns == expected_renamed_columns
 
 
+class TestApplyIntensityCutoff:
+    @pytest.fixture(autouse=True)
+    def _init_table(self):
+        self.table = pd.DataFrame(
+            {
+                "No tag": [2, 1, 2],
+                "Tag Sample_A1": [9.9, 10.9, 11.9],
+                "Tag Sample_A2": [12, 12, 12],
+            }
+        )
+
+    @pytest.mark.parametrize("threshold", [9, 10, 11, 12])
+    def test_correct_application_of_cutoff(self, threshold):
+        expected_nan = (self.table["Tag Sample_A1"] < threshold).sum()
+        msreport.helper.apply_intensity_cutoff(self.table, "Tag", threshold=threshold)
+        observed_nan = self.table["Tag Sample_A1"].isna().sum()
+        assert expected_nan == observed_nan
+
+    def test_columns_without_tag_are_not_modified(self):
+        no_tag_data = self.table["No tag"].tolist()
+        msreport.helper.apply_intensity_cutoff(self.table, "Tag", threshold=99)
+        np.testing.assert_array_equal(no_tag_data, self.table["No tag"])
+
+
 def test_extract_modifications():
     modified_sequence = "(Acetyl (Protein N-term))ADSRDPASDQM(Oxidation (M))QHWK"
     expected_modifications = [(0, "Acetyl (Protein N-term)"), (11, "Oxidation (M)")]

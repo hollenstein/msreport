@@ -132,6 +132,21 @@ def rename_mq_reporter_channels(table: pd.DataFrame, channel_names: list[str]) -
     table.rename(columns=column_mapping, inplace=True)
 
 
+def apply_intensity_cutoff(
+    table: pd.DataFrame, column_tag: str, threshold: float
+) -> None:
+    """Sets values below the threshold to NA.
+
+    Args:
+        table: Dataframe to which the protein annotations are added.
+        column_tag: Substring used to identify intensity columns from the 'table' to
+            which the intensity cutoff is applied.
+        threshold: Values below the treshold will be set to NA.
+    """
+    for column in find_columns(table, column_tag):
+        table.loc[table[column] < threshold, column] = np.nan
+
+
 def find_columns(
     df: pd.DataFrame, substring: str, must_be_substring: bool = False
 ) -> list[str]:

@@ -7,6 +7,7 @@ from .calc import (
     calculate_monoisotopic_mass,
 )
 from .table import (
+    apply_intensity_cutoff,
     guess_design,
     intensities_in_logspace,
     find_columns,
