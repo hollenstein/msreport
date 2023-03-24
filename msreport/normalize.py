@@ -27,11 +27,7 @@ class BaseSampleNormalizer(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def transform(self, sample: str, values: Iterable) -> Iterable:
-        ...
-
-    @abc.abstractmethod
-    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
         ...
 
 
@@ -89,26 +85,7 @@ class FixedValueNormalizer(BaseSampleNormalizer):
         """Returns a dictionary containing the fitted center values per sample."""
         return self._sample_fits.copy()
 
-    def transform(self, sample: str, values: Iterable) -> np.ndarray:
-        """Applies a fixed value normalization to the 'values'.
-
-        Args:
-            sample: Use the normalization value calculated for the specified 'sample'.
-                Must correspond to one of the column names from the table that was used
-                for the fitting.
-            values: The data to normalize.
-
-        Returns:
-            Transformed array.
-        """
-        confirm_is_fitted(self)
-
-        data = np.array(values, dtype=float)
-        mask = np.isfinite(data)
-        data[mask] = data[mask] - self._sample_fits[sample]
-        return data
-
-    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
         """Applies a fixed value normalization to each column of the table.
 
         Args:
@@ -118,9 +95,15 @@ class FixedValueNormalizer(BaseSampleNormalizer):
         Returns:
             Transformed dataframe.
         """
+        confirm_is_fitted(self)
+
         _table = table.copy()
-        for sample in table.columns:
-            _table[sample] = self.transform(sample, _table[sample])
+        for column in _table.columns:
+            column_data = np.array(_table[column], dtype=float)
+            mask = np.isfinite(column_data)
+            column_data[mask] = column_data[mask] - self._sample_fits[column]
+
+            _table[column] = column_data
         return _table
 
     def _fit_with_paired_samples(self, table: pd.DataFrame) -> None:
@@ -212,29 +195,7 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
         """
         return self._sample_fits.copy()
 
-    def transform(self, sample: str, values: Iterable) -> np.ndarray:
-        """Applies a value dependent normalization to the 'values'.
-
-        Args:
-            sample: Use the normalization arrays calculated for the specified 'sample'.
-                Must correspond to one of the column names from the table that was used
-                for the fitting.
-            values: The data to normalize.
-
-        Returns:
-            Transformed array.
-        """
-        confirm_is_fitted(self)
-
-        data = np.array(values, dtype=float)
-        mask = np.isfinite(data)
-
-        sample_fit = self._sample_fits[sample]
-        fit_values, fit_deviations = [np.array(i) for i in zip(*sample_fit)]
-        data[mask] = data[mask] - np.interp(data[mask], fit_values, fit_deviations)
-        return data
-
-    def transform_table(self, table: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
         """Applies a value dependent normalization to each column of the table.
 
         Args:
@@ -244,9 +205,20 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
         Returns:
             Transformed dataframe.
         """
+        confirm_is_fitted(self)
+
         _table = table.copy()
-        for sample in table.columns:
-            _table[sample] = self.transform(sample, _table[sample])
+        for column in _table.columns:
+            column_data = np.array(_table[column], dtype=float)
+            mask = np.isfinite(column_data)
+
+            sample_fit = self._sample_fits[column]
+            fit_values, fit_deviations = [np.array(i) for i in zip(*sample_fit)]
+            column_data[mask] = column_data[mask] - np.interp(
+                column_data[mask], fit_values, fit_deviations
+            )
+
+            _table[column] = column_data
         return _table
 
     def _fit_with_pseudo_reference(self, table: pd.DataFrame) -> None:
@@ -276,9 +248,8 @@ class MedianNormalizer(FixedValueNormalizer):
     """A FixedValueNormalizer that uses the median as the fitting function.
 
     Use MedianNormalizer.fit(table: pd.DataFrame) to fit the normalizer, and then
-    MedianNormalizer.transform(sample: str, values: Iterable) or
-    MedianNormalizer.transform_table(table: pd.DataFrame) with the fitted normalizer
-    to apply the normalization.
+    MedianNormalizer.transform(table: pd.DataFrame) with the fitted normalizer to apply
+    the normalization.
     """
 
     def __init__(self):
@@ -292,9 +263,8 @@ class ModeNormalizer(FixedValueNormalizer):
     """A FixedValueNormalizer that uses the mode as the fitting function.
 
     Use ModeNormalizer.fit(table: pd.DataFrame) to fit the normalizer, and then
-    ModeNormalizer.transform(sample: str, values: Iterable) or
-    ModeNormalizer.transform_table(table: pd.DataFrame) with the fitted normalizer
-    to apply the normalization.
+    ModeNormalizer.transform(table: pd.DataFrame) with the fitted normalizer to apply
+    the normalization.
     """
 
     def __init__(self):
@@ -308,9 +278,8 @@ class LowessNormalizer(ValueDependentNormalizer):
     """A ValueDependentNormalizer that uses lowess as the fitting function.
 
     Use LowessNormalizer.fit(table: pd.DataFrame) to fit the normalizer, and then
-    LowessNormalizer.transform(sample: str, values: Iterable) or
-    LowessNormalizer.transform_table(table: pd.DataFrame) with the fitted normalizer
-    to apply the normalization.
+    LowessNormalizer.transform(table: pd.DataFrame) with the fitted normalizer to apply
+    the normalization.
     """
 
     def __init__(self):

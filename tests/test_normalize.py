@@ -5,6 +5,13 @@ import pytest
 import msreport.normalize
 
 
+# Missing tests:
+# Test fit with pseudo reference -> fit()
+# Test fit with paired samples -> fit()
+# Test is_fitted True or False -> is_fitted()
+# Test get_fits -> get_fits()
+
+
 class TestFixedValueNormalizer:
     @pytest.fixture(autouse=True)
     def _init_table(self):
@@ -22,22 +29,9 @@ class TestFixedValueNormalizer:
         )
         # Normalize all columns to column "B"
         normalizer._sample_fits = {"A": 5, "B": 0, "C": -2}
-        normalized_table = normalizer.transform_table(self.table)
+        normalized_table = normalizer.transform(self.table)
         for column in normalized_table.columns:
             np.testing.assert_array_equal(normalized_table[column], self.table["B"])
-
-
-# Test fit with pseudo reference
-
-# Test fit with paired samples
-
-# Test is_fitted True or False
-
-# Test get_fits
-
-# fit
-# is_fitted
-# get_fits
 
 
 class TestValueDependentNormalizer:
@@ -59,5 +53,5 @@ class TestValueDependentNormalizer:
             "B": ([4, 4], [6, 6]),
             "C": ([2, 2], [4, 4]),
         }
-        normalized_table = normalizer.transform_table(self.table)
+        normalized_table = normalizer.transform(self.table)
         np.testing.assert_array_equal(normalized_table, self.table - self.table)
