@@ -18,6 +18,11 @@
   Perseus-style imputation. Missing values are replaced by drawing values from a
   gaussian distribution, which parameters are calculated using the standard deviation
   and median of the observed values.
+- Made relevant msreport submodules available by importing `msreport`, so they don't
+  need to be imported separately: `reader`, `normalize`, `impute`, `analyze`, `plot`,
+  and `export`
+- The `msreport.reader.SpectronautReader` can now also be accessed via
+  `msreport.SpectronautReader`, similar as for the other reader classes.
 
 ### Changed
 - (!) Changed the interface of `msreport.analyze.impute_missing_values()`. Instead of
