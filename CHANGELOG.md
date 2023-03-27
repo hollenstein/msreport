@@ -44,6 +44,9 @@
 - Fixed negative iBAQ intensities, which were caused by calculation of iBAQ intensities
   with negative iBAQ peptides. Negative or zero iBAQ peptides now results in iBAQ
   intensities being reported as NaN.
+  - This also fixes the issue of all iBAQ intensities being zero when calling
+    `add_ibaq_intensities` with `normlize=True` in the presence of negative iBAQ peptide
+    entries.
 
 ----------------------------------------------------------------------------------------
 
