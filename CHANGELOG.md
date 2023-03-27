@@ -47,6 +47,9 @@
   - This also fixes the issue of all iBAQ intensities being zero when calling
     `add_ibaq_intensities` with `normlize=True` in the presence of negative iBAQ peptide
     entries.
+- The scitkit learn requirement was wrongly specified as sklearn, and was now replaced
+  with Replaced wrong "sklearn" requirement with "scikit-learn>=1.0.0"
+
 
 ----------------------------------------------------------------------------------------
 
