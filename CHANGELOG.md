@@ -2,7 +2,7 @@
 
 ----------------------------------------------------------------------------------------
 
-## 0.0.11 (Upcoming)
+## 0.0.11 - New imputation and normalization interface
 
 ### Added
 - Added new module `msreport.imputer`, which includes a number of classes for various
@@ -20,7 +20,7 @@
   and median of the observed values.
 - Added `msreport.helper.apply_intensity_cutoff()` function for replacing intensity
   values below a specified threshold with NaN.
-- Made relevant msreport submodules available by importing `msreport`, so they don't
+- Made relevant msreport submodules available when importing `msreport`, so they don't
   need to be imported separately: `reader`, `normalize`, `impute`, `analyze`, `plot`,
   and `export`
 - The `msreport.reader.SpectronautReader` can now also be accessed via
