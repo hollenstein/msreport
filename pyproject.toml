@@ -27,7 +27,7 @@ dependencies = [
   "rpy2>=3.5.3",
   "scipy",
   "seaborn>=0.12.0",
-  "sklearn",
+  "scikit-learn>=1.0.0",
   "statsmodels",
   "xlsxreport>=0.0.5",
 ]
