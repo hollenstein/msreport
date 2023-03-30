@@ -16,18 +16,6 @@ def unique_values(
     return pd.DataFrame(data).set_index(group_by)
 
 
-def _aggfunc_join_unique_str(array: np.ndarray, sep: str = ";") -> str:
-    """Returns a joined string of unique sorted values from the array."""
-    return sep.join(sorted([str(i) for i in set(array.flatten())]))
-
-
-def _aggfunc_join_unique_str_per_column(
-    array: np.ndarray, sep: str = ";"
-) -> np.ndarray:
-    """Returns for each column a joined strings of unique sorted values."""
-    return np.array([_aggfunc_join_unique_str(i) for i in array.transpose()])
-
-
 def _apply_aggregation_to_unique_groups(
     table: pd.DataFrame,
     group_by: str,
@@ -83,3 +71,97 @@ def _prepare_grouping_indices(
         table[group_by], return_counts=True, return_index=True
     )
     return group_start_indices, group_names, table
+
+
+def _aggfunc_join_str(array: np.ndarray, sep: str = ";") -> str:
+    """Returns a joined string of sorted values from the array."""
+    return sep.join(sorted([str(i) for i in array.flatten()]))
+
+
+def _aggfunc_join_str_per_column(array: np.ndarray, sep: str = ";") -> str:
+    """Returns for each column a joined string of sorted values."""
+    return np.array([_aggfunc_join_str(i) for i in array.transpose()])
+
+
+def _aggfunc_join_unique_str(array: np.ndarray, sep: str = ";") -> str:
+    """Returns a joined string of unique sorted values from the array."""
+    return sep.join(sorted([str(i) for i in set(array.flatten())]))
+
+
+def _aggfunc_join_unique_str_per_column(
+    array: np.ndarray, sep: str = ";"
+) -> np.ndarray:
+    """Returns for each column a joined strings of unique sorted values."""
+    return np.array([_aggfunc_join_unique_str(i) for i in array.transpose()])
+
+
+def _aggfunc_sum(array: np.ndarray) -> float:
+    """Returns sum of values from one or multiple columns.
+
+    Note that if no finite values are present in the array np.nan is returned.
+    """
+    array = array.flatten()
+    if np.isfinite(array).any():
+        return np.nansum(array)
+    else:
+        return np.nan
+
+
+def _aggfunc_sum_per_column(array: np.ndarray) -> np.ndarray:
+    """Returns for each column the sum of values.
+
+    Note that if no finite values are present in a column np.nan is returned.
+    """
+    return np.array([_aggfunc_sum(i) for i in array.transpose()])
+
+
+def _aggfunc_max(array: np.ndarray) -> float:
+    """Returns the highest finitevalue from one or multiple columns."""
+    array = array.flatten()
+    if np.isfinite(array).any():
+        return np.nanmax(array)
+    else:
+        return np.nan
+
+
+def _aggfunc_max_per_column(array: np.ndarray) -> int:
+    """Returns for each column the highest finite value."""
+    return np.array([_aggfunc_max(i) for i in array.transpose()])
+
+
+def _aggfunc_min(array: np.ndarray) -> int:
+    """Returns the lowest finite value from one or multiple columns."""
+    array = array.flatten()
+    if np.isfinite(array).any():
+        return np.nanmin(array)
+    else:
+        return np.nan
+
+
+def _aggfunc_min_per_column(array: np.ndarray) -> int:
+    """Returns for each column the lowest finite value."""
+    return np.array([_aggfunc_min(i) for i in array.transpose()])
+
+
+def _aggfunc_count_unique(array):
+    """Returns the number of unique values from one or multiple columns.
+
+    Note that empty strings or np.nan are not counted as unique values.
+    """
+    unique_elements = {
+        x for x in array.flatten() if not (isinstance(x, float) and np.isnan(x))
+    }
+    unique_elements.discard("")
+
+    return len(unique_elements)
+
+
+def _aggfunc_count_unique_per_column(array: np.ndarray) -> np.ndarray:
+    """Returns for each column the number of unique values.
+
+    Note that empty strings or np.nan are not counted as unique values.
+    """
+    if array.size > 0:
+        return np.array([_aggfunc_count_unique(i) for i in array.transpose()])
+    else:
+        return np.full(array.shape[0], 0)
