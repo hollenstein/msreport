@@ -2,94 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import msreport.aggregate
-
-
-class TestUniqueValues:
-    @pytest.fixture(autouse=True)
-    def _init_table(self):
-        self.table = pd.DataFrame(
-            {
-                "ID": ["A", "A", "B", "C", "C", "C"],
-                "column1": [1, 2, 3, 1, 1, 1],
-                "column2": [2, 2, 2, 2, 2, 2],
-            }
-        )
-
-    def test_unique_values(self):
-        # msreport.aggregate.unique_values(table, group_by, column, is_sorted)
-        import warnings
-
-        warnings.warn(NotImplementedError)
-
-
-class TestApplyAggregationToUniqueGroups:
-    @pytest.fixture(autouse=True)
-    def _init_table(self):
-        self.table = pd.DataFrame(
-            {
-                "ID": ["A", "A", "B", "C", "C", "C"],
-                "column1": [1, 1, 1, 1, 1, 1],
-                "column2": [2, 2, 2, 2, 2, 2],
-            }
-        )
-        self.column1_group_sums = np.array([2, 1, 3])
-        self.column2_group_sums = np.array([4, 2, 6])
-        self.both_column_group_sums = np.array(
-            [self.column1_group_sums, self.column2_group_sums]
-        ).transpose()
-        self.group_by = "ID"
-
-    def test_aggregation_with_single_column(self):
-        aggregation, groups = msreport.aggregate._apply_aggregation_to_unique_groups(
-            table=self.table,
-            group_by=self.group_by,
-            aggregate_columns="column1",
-            aggregate_function=np.sum,
-            is_sorted=True,
-        )
-        np.testing.assert_array_equal(self.column1_group_sums, aggregation)
-
-    def test_aggregation_with_two_columns(self):
-        aggregation, groups = msreport.aggregate._apply_aggregation_to_unique_groups(
-            table=self.table,
-            group_by=self.group_by,
-            aggregate_columns=["column1", "column2"],
-            aggregate_function=lambda x: np.sum(x, axis=0),
-            is_sorted=True,
-        )
-        np.testing.assert_array_equal(self.both_column_group_sums, aggregation)
-
-
-class TestPrepareGroupingIndices:
-    @pytest.fixture(autouse=True)
-    def _init_table(self):
-        self.sorted_values = np.array(["A", "A", "B", "B", "B", "C", "D"])
-        self.scrambled_values = self.sorted_values[[2, 1, 5, 0, 3, 4, 6]]
-
-        self.sorted_table = pd.DataFrame({"ID": self.sorted_values})
-        self.scrambled_table = pd.DataFrame({"ID": self.scrambled_values})
-
-        self.group_by = "ID"
-        self.expected_indices = np.array([0, 2, 5, 6])
-
-    def test_correct_indices_with_is_sorted_true(self):
-        start_indices, groups, table = msreport.aggregate._prepare_grouping_indices(
-            self.sorted_table, self.group_by, is_sorted=True
-        )
-        np.testing.assert_array_equal(start_indices, self.expected_indices)
-
-    def test_correct_group_names_with_is_sorted_true(self):
-        start_indices, groups, table = msreport.aggregate._prepare_grouping_indices(
-            self.sorted_table, self.group_by, is_sorted=True
-        )
-        np.testing.assert_array_equal(groups, np.unique(self.sorted_values))
-
-    def test_table_sorted_properly_with_is_sorted_false(self):
-        start_indices, groups, table = msreport.aggregate._prepare_grouping_indices(
-            self.scrambled_table, self.group_by, is_sorted=False
-        )
-        np.testing.assert_array_equal(table, self.sorted_table)
+import msreport.aggregate.condense as CONDENSE
 
 
 class TestAggfuncJoinStr:
@@ -104,13 +17,13 @@ class TestAggfuncJoinStr:
         ],
     )
     def test_one_column_with_default_separator(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_join_str(array)
+        result = CONDENSE.join_str(array)
         assert result == expected_result
 
     def test_with_specified_separator(self):
         array = np.array(["a", "b", "b"])
         expected_result = "a:::b:::b"
-        result = msreport.aggregate._aggfunc_join_str(array, sep=":::")
+        result = CONDENSE.join_str(array, sep=":::")
         assert result == expected_result
 
     @pytest.mark.parametrize(
@@ -121,7 +34,7 @@ class TestAggfuncJoinStr:
         ],
     )
     def test_with_multiple_columns(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_join_str(array)
+        result = CONDENSE.join_str(array)
         assert result == expected_result
 
 
@@ -152,7 +65,7 @@ class TestAggfuncJoinStrPerColumn:
         ],
     )
     def test_various_inputs(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_join_str_per_column(array)
+        result = CONDENSE.join_str_per_column(array)
         np.testing.assert_array_equal(result, expected_result)
 
 
@@ -169,13 +82,13 @@ class TestAggfuncJoinUniqueStr:
         ],
     )
     def test_one_column_with_default_separator(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_join_unique_str(array)
+        result = CONDENSE.join_unique_str(array)
         assert result == expected_result
 
     def test_with_specified_separator(self):
         array = np.array(["a", "b", "c"])
         expected_result = "a:::b:::c"
-        result = msreport.aggregate._aggfunc_join_unique_str(array, sep=":::")
+        result = CONDENSE.join_unique_str(array, sep=":::")
         assert result == expected_result
 
     @pytest.mark.parametrize(
@@ -187,7 +100,7 @@ class TestAggfuncJoinUniqueStr:
         ],
     )
     def test_with_multiple_columns(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_join_unique_str(array)
+        result = CONDENSE.join_unique_str(array)
         assert result == expected_result
 
 
@@ -218,7 +131,7 @@ class TestAggfuncJoinUniqueStrPerColumn:
         ],
     )
     def test_various_inputs(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_join_unique_str_per_column(array)
+        result = CONDENSE.join_unique_str_per_column(array)
         np.testing.assert_array_equal(result, expected_result)
 
 
@@ -233,7 +146,7 @@ class TestAggfuncSum:
         ],
     )
     def test_with_single_column(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_sum(array)
+        result = CONDENSE.sum(array)
         np.testing.assert_equal(result, expected_result)
 
     @pytest.mark.parametrize(
@@ -246,7 +159,7 @@ class TestAggfuncSum:
         ],
     )
     def test_with_multiple_columns(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_sum(array)
+        result = CONDENSE.sum(array)
         np.testing.assert_equal(result, expected_result)
 
 
@@ -261,7 +174,7 @@ class TestAggfuncSumPerColumn:
         ],
     )
     def test_with_multiple_columns(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_sum_per_column(array)
+        result = CONDENSE.sum_per_column(array)
         np.testing.assert_equal(result, expected_result)
 
 
@@ -276,7 +189,7 @@ class TestAggfuncMax:
         ],
     )
     def test_with_single_column(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_max(array)
+        result = CONDENSE.maximum(array)
         np.testing.assert_equal(result, expected_result)
 
     @pytest.mark.parametrize(
@@ -289,7 +202,7 @@ class TestAggfuncMax:
         ],
     )
     def test_with_multiple_columns(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_max(array)
+        result = CONDENSE.maximum(array)
         np.testing.assert_equal(result, expected_result)
 
 
@@ -304,7 +217,7 @@ class TestAggfuncMaxPerColumn:
         ],
     )
     def test_with_multiple_columns(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_max_per_column(array)
+        result = CONDENSE.maximum_per_column(array)
         np.testing.assert_equal(result, expected_result)
 
 
@@ -319,7 +232,7 @@ class TestAggfuncMin:
         ],
     )
     def test_with_single_column(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_min(array)
+        result = CONDENSE.minimum(array)
         np.testing.assert_equal(result, expected_result)
 
     @pytest.mark.parametrize(
@@ -332,7 +245,7 @@ class TestAggfuncMin:
         ],
     )
     def test_with_multiple_columns(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_min(array)
+        result = CONDENSE.minimum(array)
         np.testing.assert_equal(result, expected_result)
 
 
@@ -347,7 +260,7 @@ class TestAggfuncMinPerColumn:
         ],
     )
     def test_with_multiple_columns(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_min_per_column(array)
+        result = CONDENSE.minimum_per_column(array)
         np.testing.assert_equal(result, expected_result)
 
 
@@ -366,7 +279,7 @@ class TestAggfuncCountUnique:
         ],
     )
     def test_with_single_column(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_count_unique(array)
+        result = CONDENSE.count_unique(array)
         np.testing.assert_equal(result, expected_result)
 
     @pytest.mark.parametrize(
@@ -379,7 +292,7 @@ class TestAggfuncCountUnique:
         ],
     )
     def test_with_multiple_columns(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_count_unique(array)
+        result = CONDENSE.count_unique(array)
         np.testing.assert_equal(result, expected_result)
 
 
@@ -394,5 +307,5 @@ class TestAggfuncCountUniquePerColumn:
         ],
     )
     def test_with_multiple_columns(self, array, expected_result):
-        result = msreport.aggregate._aggfunc_count_unique_per_column(array)
+        result = CONDENSE.count_unique_per_column(array)
         np.testing.assert_equal(result, expected_result)
