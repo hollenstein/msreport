@@ -1,4 +1,5 @@
 import itertools
+from typing import Callable
 import warnings
 
 import numpy as np
@@ -51,23 +52,9 @@ def calculate_pairwise_median_ratio_matrix(
         A three dimensional np.array, containing pair-wise median ratios. With the shape
         (number columns in 'array', number columns in 'array').
     """
-    log_array = np.array(array)
-    if not log_transformed:
-        log_array[log_array == 0] = np.nan
-        log_array = np.log2(log_array)
-
-    num_cols = log_array.shape[1]
-    ratio_marix = np.full((num_cols, num_cols), fill_value=np.nan)
-    ratio_marix = np.zeros((num_cols, num_cols))
-    for i, j in itertools.combinations(range(num_cols), 2):
-        ratios = log_array[:, i] - log_array[:, j]
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=RuntimeWarning)
-            median_ratio = np.nanmedian(ratios[np.isfinite(ratios)])
-        ratio_marix[i, j] = median_ratio
-
-    # Generate a full, mirrowed matrix where the lower triangle is upper triangle * -1
-    ratio_marix = ratio_marix - ratio_marix.T - np.diag(np.diag(ratio_marix))
+    ratio_marix = _calculate_pairwise_center_ratio_matrix(
+        array, np.median, log_transformed=log_transformed
+    )
     return ratio_marix
 
 
@@ -86,21 +73,9 @@ def calculate_pairwise_mode_ratio_matrix(
         A three dimensional np.array, containing pair-wise median ratios. With the shape
         (number columns in 'array', number columns in 'array').
     """
-    log_array = np.array(array)
-    if not log_transformed:
-        log_array[log_array == 0] = np.nan
-        log_array = np.log2(log_array)
-
-    num_cols = log_array.shape[1]
-    ratio_marix = np.full((num_cols, num_cols), fill_value=np.nan)
-    ratio_marix = np.zeros((num_cols, num_cols))
-    for i, j in itertools.combinations(range(num_cols), 2):
-        ratios = log_array[:, i] - log_array[:, j]
-        mode_ratio = msreport.helper.mode(ratios[np.isfinite(ratios)])
-        ratio_marix[i, j] = mode_ratio
-
-    # Generate a full, mirrowed matrix where the lower triangle is upper triangle * -1
-    ratio_marix = ratio_marix - ratio_marix.T - np.diag(np.diag(ratio_marix))
+    ratio_marix = _calculate_pairwise_center_ratio_matrix(
+        array, msreport.helper.mode, log_transformed=log_transformed
+    )
     return ratio_marix
 
 
@@ -150,6 +125,45 @@ def calculate_lstsq_profiles(coef_matrix: np.ndarray, ratio_array: np.ndarray):
     log_profile[absent_coef] = np.nan
     log_profile[~absent_coef] = coef_estimates
     return log_profile
+
+
+def _calculate_pairwise_center_ratio_matrix(
+    array: np.ndarray, center_function: Callable, log_transformed: bool = False
+) -> np.ndarray:
+    """Calculates a pairwise centered ratio matrix from an intensity array.
+
+    Args:
+        array: A two-dimensional array, with the first dimension corresponding to rows
+            and the second dimension to columns.
+        center_function: Function that is applied to the ratios of each pair-wise
+            comparison to calculate the centered ratio.
+        log_transformed: If true, the 'array' contains log transformed intensity values.
+            Otherwise the 'array' is log2 transformed before calculating the ratios.
+
+    Returns:
+        A three dimensional np.array, containing pair-wise median ratios. With the shape
+        (number columns in 'array', number columns in 'array').
+    """
+    # Note: Is currently tested only via the calculate_pairwise_median_ratio_matrix and
+    #       calculate_pairwise_mode_ratio_matrix functions.
+    log_array = np.array(array)
+    if not log_transformed:
+        log_array[log_array == 0] = np.nan
+        log_array = np.log2(log_array)
+
+    num_cols = log_array.shape[1]
+    ratio_marix = np.full((num_cols, num_cols), fill_value=np.nan)
+    ratio_marix = np.zeros((num_cols, num_cols))
+    for i, j in itertools.combinations(range(num_cols), 2):
+        ratios = log_array[:, i] - log_array[:, j]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            median_ratio = center_function(ratios[np.isfinite(ratios)])
+        ratio_marix[i, j] = median_ratio
+
+    # Generate a full, mirrowed matrix where the lower triangle is upper triangle * -1
+    ratio_marix = ratio_marix - ratio_marix.T - np.diag(np.diag(ratio_marix))
+    return ratio_marix
 
 
 def _coefficients_from_single_row_matrix(ratio_matrix):
