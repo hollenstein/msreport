@@ -107,3 +107,29 @@ class TestValueDependentNormalizer:
         observed_fits = normalizer.get_fits()
         for column in self.table:
             np.testing.assert_array_equal(observed_fits[column], expected_fits[column])  # fmt: skip
+
+
+class TestNormalizers:
+    def test_median_normalizer(self):
+        table = pd.DataFrame(
+            {
+                "A": [10, 11, 12, 13, 14, 15, 30, 30, 30],
+                "B": [11, 12, 13, 14, 15, 16, 60, 60, 60],
+            }
+        )
+        normalizer = msreport.normalize.MedianNormalizer().fit(table)
+        fitted_A = normalizer.get_fits()["A"]
+        expected_A = -0.5
+        np.testing.assert_allclose(fitted_A, expected_A, rtol=1e-07, atol=1e-07)
+
+    def test_mode_normalizer(self):
+        table = pd.DataFrame(
+            {
+                "A": [10, 11, 12, 13, 14, 15, 30, 30, 30],
+                "B": [11, 12, 13, 14, 15, 16, 60, 60, 60],
+            }
+        )
+        normalizer = msreport.normalize.ModeNormalizer().fit(table)
+        fitted_A = normalizer.get_fits()["A"]
+        expected_A = -0.5608569864240109
+        np.testing.assert_allclose(fitted_A, expected_A, rtol=1e-07, atol=1e-07)
