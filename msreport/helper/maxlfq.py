@@ -94,7 +94,6 @@ def prepare_coefficient_matrix(
         Tuple containing the coefficient matrix, ratio array, and initial rows array.
     """
     # TODO: Update docstring!
-    # TODO: Not tested!
     if len(ratio_matrix.shape) == 2:
         result = _coefficients_from_single_row_matrix(ratio_matrix)
     else:
@@ -114,14 +113,13 @@ def _coefficients_from_single_row_matrix(ratio_matrix):
         Tuple containing the coefficient matrix, ratio array, and initial rows array.
     """
     # TODO: Update docstring!
-    # TODO: Not tested!
     num_coef = ratio_matrix.shape[1]
     coef_combinations = list(itertools.combinations(range(num_coef), 2))
     num_coef_combinations = len(coef_combinations)
 
     coef_matrix = np.zeros((num_coef_combinations, num_coef))
     ratio_array = np.zeros(num_coef_combinations)
-    initial_rows = np.zeros(num_coef_combinations)
+    initial_rows = np.zeros(num_coef_combinations, dtype=int)
 
     for variable_position, (i, j) in enumerate(coef_combinations):
         ratio_ij = ratio_matrix[i, j]
@@ -141,7 +139,6 @@ def _coefficients_from_multi_row_matrix(ratio_matrix):
         Tuple containing the coefficient matrix, ratio array, and initial rows array.
     """
     # TODO: No docstring!
-    # TODO: Not tested!
     num_coef = ratio_matrix.shape[1]
     coef_combinations = list(itertools.combinations(range(num_coef), 2))
     num_coef_combinations = len(coef_combinations)
@@ -150,7 +147,7 @@ def _coefficients_from_multi_row_matrix(ratio_matrix):
 
     coef_matrix = np.zeros((coef_matrix_rows, num_coef))
     ratio_array = np.zeros(coef_matrix_rows)
-    initial_rows = np.zeros(coef_matrix_rows)
+    initial_rows = np.zeros(coef_matrix_rows, dtype=int)
 
     for matrix_position, matrix in enumerate(ratio_matrix):
         for variable_position, (i, j) in enumerate(coef_combinations):
