@@ -148,6 +148,38 @@ class TestCalculatePairWiseMedianRatioMatrix:
         np.testing.assert_array_equal(expected_matrix, matrix)
 
 
+class TestCalculatePairWiseModeRatioMatrix:
+    def test_corect_shape_with_multi_row_array(self, example_array):
+        matrix = MAXLFQ.calculate_pairwise_mode_ratio_matrix(example_array)
+        # Condensed matrix must have two dimensions
+        assert len(matrix.shape) == 2
+        # Matrix must be square
+        assert matrix.shape[0] == matrix.shape[1]
+        # Size of matrix must correspond to array columns
+        assert matrix.shape[0] == matrix.shape[1] == example_array.shape[1]
+
+    def test_corect_shape_with_single_row_array(self, example_array):
+        single_row_array = example_array[0].reshape(1, 3)
+        matrix = MAXLFQ.calculate_pairwise_mode_ratio_matrix(single_row_array)
+        # Condensed matrix must have two dimensions
+        assert len(matrix.shape) == 2
+        # Matrix must be square
+        assert matrix.shape[0] == matrix.shape[1]
+        # Size of matrix must correspond to array columns
+        assert matrix.shape[0] == matrix.shape[1] == single_row_array.shape[1]
+
+    def test_correct_values_with_multi_row_array(self, example_array):
+        expected_matrix = np.array(
+            [
+                [0.0, -0.010936, -1.0],
+                [0.010936, 0.0, -0.939233],
+                [1.0, 0.939233, 0.0],
+            ]
+        )
+        matrix = MAXLFQ.calculate_pairwise_mode_ratio_matrix(example_array)
+        np.testing.assert_allclose(expected_matrix, matrix, rtol=1e-04, atol=1e-04)
+
+
 class TestPrepareCoefficientMatrix:
     @pytest.mark.parametrize(
         "ratio_matrix",

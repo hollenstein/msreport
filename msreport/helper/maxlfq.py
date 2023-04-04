@@ -4,6 +4,8 @@ import warnings
 import numpy as np
 import sklearn.linear_model
 
+import msreport.helper
+
 
 def calculate_pairwise_ratio_matrix(
     array: np.ndarray, log_transformed: bool = False
@@ -63,6 +65,39 @@ def calculate_pairwise_median_ratio_matrix(
             warnings.simplefilter("ignore", category=RuntimeWarning)
             median_ratio = np.nanmedian(ratios[np.isfinite(ratios)])
         ratio_marix[i, j] = median_ratio
+
+    # Generate a full, mirrowed matrix where the lower triangle is upper triangle * -1
+    ratio_marix = ratio_marix - ratio_marix.T - np.diag(np.diag(ratio_marix))
+    return ratio_marix
+
+
+def calculate_pairwise_mode_ratio_matrix(
+    array: np.ndarray, log_transformed: bool = False
+) -> np.ndarray:
+    """Calculates a pairwise mode ratio matrix from an intensity array.
+
+    Args:
+        array: A two-dimensional array, with the first dimension corresponding to rows
+            and the second dimension to columns.
+        log_transformed: If true, the 'array' contains log transformed intensity values.
+            Otherwise the 'array' is log2 transformed before calculating the ratios.
+
+    Returns:
+        A three dimensional np.array, containing pair-wise median ratios. With the shape
+        (number columns in 'array', number columns in 'array').
+    """
+    log_array = np.array(array)
+    if not log_transformed:
+        log_array[log_array == 0] = np.nan
+        log_array = np.log2(log_array)
+
+    num_cols = log_array.shape[1]
+    ratio_marix = np.full((num_cols, num_cols), fill_value=np.nan)
+    ratio_marix = np.zeros((num_cols, num_cols))
+    for i, j in itertools.combinations(range(num_cols), 2):
+        ratios = log_array[:, i] - log_array[:, j]
+        mode_ratio = msreport.helper.mode(ratios[np.isfinite(ratios)])
+        ratio_marix[i, j] = mode_ratio
 
     # Generate a full, mirrowed matrix where the lower triangle is upper triangle * -1
     ratio_marix = ratio_marix - ratio_marix.T - np.diag(np.diag(ratio_marix))
