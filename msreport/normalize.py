@@ -8,6 +8,7 @@ import pandas as pd
 import statsmodels.nonparametric.smoothers_lowess
 
 import msreport.helper
+import msreport.helper.maxlfq as MAXLFQ
 from msreport.errors import NotFittedError
 
 
@@ -118,15 +119,13 @@ class FixedValueNormalizer(BaseSampleNormalizer):
             table: Dataframe used to calculate normalization values for each column.
         """
         samples = table.columns.tolist()
-        num_samples = len(samples)
-        sample_combinations = list(itertools.combinations(range(num_samples), 2))
-        ratio_table = np.full((num_samples, num_samples), np.nan)
-        for i, j in sample_combinations:
-            ratios = table[samples[i]] - table[samples[j]]
-            ratios = ratios[np.isfinite(ratios)]
-            center_value = self._fit_function(ratios)
-            ratio_table[i, j] = center_value
-        profile = msreport.helper.solve_ratio_matrix(ratio_table)
+        array = table.to_numpy()
+
+        ratio_matrix = MAXLFQ._calculate_pairwise_center_ratio_matrix(
+            array, self._fit_function, log_transformed=True
+        )
+        coef_matrix, ratio_array, _ = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)
+        profile = MAXLFQ.calculate_lstsq_profiles(coef_matrix, ratio_array)
         self._sample_fits = dict(zip(samples, profile))
 
     def _fit_with_pseudo_reference(self, table: pd.DataFrame) -> None:
@@ -141,7 +140,6 @@ class FixedValueNormalizer(BaseSampleNormalizer):
         Args:
             table: Dataframe used to calculate normalization values for each column.
         """
-
         ref_mask = table.isna().sum(axis=1) == 0
         ref_values = table[ref_mask].mean(axis=1)
         samples = table.columns.tolist()
