@@ -2,6 +2,22 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.12 - (Upcoming)
+
+### Added
+- New module `msreport.helper.maxlfq`
+- New module `msreport.helper.aggregate`
+
+### Fixed
+- Mode calculation does now work with np.nan or when all values are identical.
+- Replaced wrong "sklearn" library requirement with the correct one: "scikit-learn"
+
+### Deprecated
+- Removed deprecated `msreport.helper.calc.solve_ratio_matrix`, which functionality is
+  now contained in the `msreport.helper.maxlfq` module
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.11 - New imputation and normalization interface
 
 ### Added
