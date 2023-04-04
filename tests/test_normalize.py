@@ -38,9 +38,28 @@ class TestFixedValueNormalizer:
         for column in normalized_table.columns:
             np.testing.assert_array_equal(normalized_table[column], self.table["B"])
 
-    # Missing tests:
-    # Test fit with pseudo reference -> fit()
-    # Test fit with paired samples -> fit()
+    def test_fitting_with_pseudo_reference(self):
+        center_func = np.mean
+        normalizer = msreport.normalize.FixedValueNormalizer(
+            center_function=center_func, comparison="reference"
+        ).fit(self.table)
+        expected_fits = {
+            c: center_func(self.table[c] - self.table.mean(axis=1)) for c in self.table
+        }
+        assert normalizer.get_fits() == expected_fits
+
+    def test_fitting_with_paired_samples(self):
+        center_func = np.mean
+        normalizer = msreport.normalize.FixedValueNormalizer(
+            center_function=center_func, comparison="paired"
+        ).fit(self.table)
+
+        expected_fits = np.array(
+            [center_func(self.table[c] - self.table.mean(axis=1)) for c in self.table]
+        )
+        observed_fits = np.array([normalizer.get_fits()[c] for c in self.table])
+
+        np.testing.assert_allclose(observed_fits, expected_fits, rtol=1e-07, atol=1e-07)
 
 
 class TestValueDependentNormalizer:
@@ -77,5 +96,14 @@ class TestValueDependentNormalizer:
         normalized_table = self.test_normalizer.transform(self.table)
         np.testing.assert_array_equal(normalized_table, self.table - self.table)
 
-    # Missing tests:
-    # Test fit with pseudo reference -> fit()
+    def test_fitting_with_pseudo_reference(self):
+        center_func = lambda x, y: (np.array(x), np.array(x) - np.array(y))
+        normalizer = msreport.normalize.ValueDependentNormalizer(
+            fit_function=center_func,
+        ).fit(self.table)
+        expected_fits = {
+            c: center_func(self.table[c], self.table.mean(axis=1)) for c in self.table
+        }
+        observed_fits = normalizer.get_fits()
+        for column in self.table:
+            np.testing.assert_array_equal(observed_fits[column], expected_fits[column])  # fmt: skip
