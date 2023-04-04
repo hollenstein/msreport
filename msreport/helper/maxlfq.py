@@ -49,12 +49,24 @@ def calculate_pairwise_median_ratio_matrix(
         A three dimensional np.array, containing pair-wise median ratios. With the shape
         (number columns in 'array', number columns in 'array').
     """
+    log_array = np.array(array)
+    if not log_transformed:
+        log_array[log_array == 0] = np.nan
+        log_array = np.log2(log_array)
 
-    ratio_matrix = calculate_pairwise_ratio_matrix(array, log_transformed)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-        median_ratio_matrix = np.nanmedian(ratio_matrix, axis=0)
-    return median_ratio_matrix
+    num_cols = log_array.shape[1]
+    ratio_marix = np.full((num_cols, num_cols), fill_value=np.nan)
+    ratio_marix = np.zeros((num_cols, num_cols))
+    for i, j in itertools.combinations(range(num_cols), 2):
+        ratios = log_array[:, i] - log_array[:, j]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            median_ratio = np.nanmedian(ratios[np.isfinite(ratios)])
+        ratio_marix[i, j] = median_ratio
+
+    # Generate a full, mirrowed matrix where the lower triangle is upper triangle * -1
+    ratio_marix = ratio_marix - ratio_marix.T - np.diag(np.diag(ratio_marix))
+    return ratio_marix
 
 
 def prepare_coefficient_matrix(
