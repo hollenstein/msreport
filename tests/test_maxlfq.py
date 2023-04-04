@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -130,3 +132,74 @@ class TestCalculatePairWiseMedianRatioMatrix:
         )
         matrix = MAXLFQ.calculate_pairwise_median_ratio_matrix(example_array)
         np.testing.assert_array_equal(expected_matrix, matrix)
+
+
+class TestPrepareCoefficientMatrix:
+    @pytest.mark.parametrize(
+        "ratio_matrix",
+        [
+            np.empty((3, 3)),
+            np.empty((4, 4)),
+            np.empty((5, 5)),
+        ],
+    )
+    def test_correct_coef_matrix_shape_from_single_row_ratio_matrix(self, ratio_matrix):
+        coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)  # fmt: skip
+        ratio_matrix_shape = ratio_matrix.shape
+        coefficient_combinations = len(
+            list(itertools.combinations(range(ratio_matrix_shape[-1]), 2))
+        )
+        expected_coefficient_rows = coefficient_combinations
+
+        assert coef_matrix.shape[0] == expected_coefficient_rows
+        assert coef_matrix.shape[1] == ratio_matrix_shape[-1]
+        assert ratio_array.shape == (expected_coefficient_rows,)
+        assert initial_rows.shape == (expected_coefficient_rows,)
+
+    @pytest.mark.parametrize(
+        "ratio_matrix",
+        [
+            np.empty((1, 2, 2)),
+            np.empty((1, 9, 9)),
+            np.empty((2, 3, 3)),
+            np.empty((3, 3, 3)),
+            np.empty((8, 3, 3)),
+            np.empty((2, 6, 6)),
+            np.empty((3, 6, 6)),
+            np.empty((4, 6, 6)),
+        ],
+    )
+    def test_correct_coef_matrix_shape_from_multi_row_ratio_matrix(self, ratio_matrix):
+        coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)  # fmt: skip
+        ratio_matrix_shape = ratio_matrix.shape
+        coefficient_combinations = len(
+            list(itertools.combinations(range(ratio_matrix_shape[-1]), 2))
+        )
+        num_inner_ratio_matrices = ratio_matrix_shape[0]
+        expected_coefficient_rows = coefficient_combinations * num_inner_ratio_matrices
+
+        assert coef_matrix.shape[0] == expected_coefficient_rows
+        assert coef_matrix.shape[1] == ratio_matrix_shape[-1]
+        assert ratio_array.shape == (expected_coefficient_rows,)
+        assert initial_rows.shape == (expected_coefficient_rows,)
+
+    def test_correct_coef_matrix_prepared_from_single_row_ratio_matrix(self, single_row_ratio_matrix):  # fmt: skip
+        coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(
+            single_row_ratio_matrix
+        )
+        for coefs, ratio, row in zip(coef_matrix, ratio_array, initial_rows):
+            coef_1_column = np.where(coefs == 1)
+            coef_2_column = np.where(coefs == -1)
+            expected_ratio = single_row_ratio_matrix[coef_1_column, coef_2_column]
+            np.testing.assert_equal(ratio, expected_ratio)
+
+    def test_correct_coef_matrix_prepared_from_multi_row_ratio_matrix(self, multi_row_ratio_matrix):  # fmt: skip
+        coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(
+            multi_row_ratio_matrix
+        )
+        for coefs, ratio, row in zip(coef_matrix, ratio_array, initial_rows):
+            ratio_matrix = multi_row_ratio_matrix[row]
+            coef_1_column = np.where(coefs == 1)
+            coef_2_column = np.where(coefs == -1)
+            expected_ratio = ratio_matrix[coef_1_column, coef_2_column]
+            np.testing.assert_equal(ratio, expected_ratio)
