@@ -163,9 +163,11 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
         """Initializes the ValueDependentNormalizer.
 
         Args:
-            fit_function: A function that accepts a sequence of values and returns a
-                numpy array with two columns. The first column must contain the values
-                and the second column the associated deviations.
+            fit_function: A function that accepts two sequences of values with equal
+                length, with the first sequence being the observed samples values and
+                the second the reference values. The function must return a numpy array
+                with two columns. The first column contains the values and the second
+                column the fitted deviations.
         """
         self._sample_fits = None
         self._fit_function = fit_function
