@@ -217,3 +217,52 @@ class TestPrepareCoefficientMatrix:
             coef_2_column = np.where(coefs == -1)
             expected_ratio = ratio_matrix[coef_1_column, coef_2_column]
             np.testing.assert_equal(ratio, expected_ratio)
+
+
+class TestCalcualteLstsqProfiles:
+    def test_correct_profiles_with_simple_input(self):
+        coef_matrix = np.array(
+            [
+                [1.0, -1.0, 0.0],
+                [1.0, 0.0, -1.0],
+                [0.0, 1.0, -1.0],
+            ]
+        )
+        ratio_matrix = np.array([-1.0, -2.0, -1.0])
+        log_profile = MAXLFQ.calculate_lstsq_profiles(coef_matrix, ratio_matrix)
+
+        expected_profile = np.array([0, 1, 2])
+        observed_profile = log_profile - np.nanmin(log_profile)
+        np.testing.assert_allclose(observed_profile, expected_profile)
+
+
+class TestCalculationOfProfilesFromIntensities:
+    # fmt: off
+    def test_with_complete_ratio_matrix_calculation(self, example_array):
+        ratio_matrix = MAXLFQ.calculate_pairwise_ratio_matrix(example_array, log_transformed=False)
+        coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)
+        log_profile = MAXLFQ.calculate_lstsq_profiles(coef_matrix, ratio_array)
+
+        expected_profile = np.array([0, 0.27272727, 0.96969697])
+        observed_profile = log_profile - np.nanmin(log_profile)
+        np.testing.assert_allclose(observed_profile, expected_profile, atol=1e-08, equal_nan=True)
+
+    def test_with_median_ratio_matrix_calculation(self, example_array):
+        ratio_matrix = MAXLFQ.calculate_pairwise_median_ratio_matrix(example_array, log_transformed=False)
+        coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)
+        log_profile = MAXLFQ.calculate_lstsq_profiles(coef_matrix, ratio_array)
+
+        expected_profile = np.array([0., 0., 1.])
+        observed_profile = log_profile - np.nanmin(log_profile)
+        np.testing.assert_allclose(observed_profile, expected_profile, atol=1e-08, equal_nan=True)
+
+    def test_with_missing_values(self, example_array):
+        example_array[:, 1] = 0
+        ratio_matrix = MAXLFQ.calculate_pairwise_median_ratio_matrix(example_array, log_transformed=False)
+        coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)
+        log_profile = MAXLFQ.calculate_lstsq_profiles(coef_matrix, ratio_array)
+
+        expected_profile = np.array([0., np.nan, 1.])
+        observed_profile = log_profile - np.nanmin(log_profile)
+        np.testing.assert_allclose(observed_profile, expected_profile, atol=1e-08, equal_nan=True)
+    # fmt: on
