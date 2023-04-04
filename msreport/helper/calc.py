@@ -43,19 +43,27 @@ def mode(values: Iterable) -> float:
     """Calculate the mode by using kernel-density estimation.
 
     Args:
-        values: Sequence of values for which the mode will be estimated.
+        values: Sequence of values for which the mode will be estimated, only finite
+            values are used for the calculation.
 
     Returns:
-        The estimated mode.
+        The estimated mode. If no finite values are present, returns nan.
     """
-    median = np.median(values)
-    bounds = (median - 1.5, median + 1.5)
-    kde = scipy.stats.gaussian_kde(values)
-    optimize_result = scipy.optimize.minimize_scalar(
-        lambda x: -kde(x)[0], method="Bounded", bounds=bounds
-    )
-    mode = optimize_result.x
-    # Maybe add fallback function if optimize was not successful
+    values = np.array(values)
+    finite_values = values[np.isfinite(values)]
+    if len(finite_values) == 0:
+        mode = np.nan
+    elif len(np.unique(finite_values)) == 1:
+        mode = np.unique(finite_values)[0]
+    else:
+        median = np.median(finite_values)
+        bounds = (median - 1.5, median + 1.5)
+        kde = scipy.stats.gaussian_kde(finite_values)
+        optimize_result = scipy.optimize.minimize_scalar(
+            lambda x: -kde(x)[0], method="Bounded", bounds=bounds
+        )
+        mode = optimize_result.x
+        # Maybe add fallback function if optimize was not successful
     return mode
 
 

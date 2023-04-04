@@ -254,11 +254,30 @@ def test_intensities_in_logspace(data, data_in_logspace):
     assert msreport.helper.intensities_in_logspace(data) == data_in_logspace
 
 
-def test_mode():
-    values = np.random.normal(size=100)
-    mode = msreport.helper.mode(values)
-    assert isinstance(mode, float)
-    assert mode < 1 and mode > -1
+class TestMode:
+    @pytest.fixture(autouse=True)
+    def _init_random_values(self):
+        np.random.seed(0)
+        self.values = np.random.normal(size=100)
+
+    def test_mode_is_calculated_properly(self):
+        mode = msreport.helper.mode(self.values)
+        np.testing.assert_allclose(mode, 0.0879, rtol=1e-02, atol=1e-02, equal_nan=True)  # fmt: skip
+
+    def test_mode_calculation_with_some_nan_returns_a_number(self):
+        self.values[[i for i in range(1, 100, 10)]] = np.nan
+        mode = msreport.helper.mode(self.values)
+        assert ~np.isnan(mode)
+
+    def test_mode_calculation_with_all_nan_returns_nan(self):
+        self.values[:] = np.nan
+        mode = msreport.helper.mode(self.values)
+        assert np.isnan(mode)
+
+    def test_mode_calculation_with_all_identical_values(self):
+        self.values[:] = 1
+        mode = msreport.helper.mode(self.values)
+        assert mode == 1
 
 
 def test_calculate_tryptic_ibaq_peptides():
