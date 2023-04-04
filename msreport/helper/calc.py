@@ -9,36 +9,6 @@ import pyteomics.mass
 import pyteomics.parser
 
 
-def solve_ratio_matrix(matrix: np.ndarray) -> np.ndarray:
-    """Solves a square matrix containing pair wise log ratios.
-
-    Args:
-        matrix: A two-dimensional array with equal length in both dimensions.
-
-    Returns:
-        An array containing the least-squares solution.
-    """
-    # Not tested #
-    assert matrix.shape[0] == matrix.shape[1]
-    num_groups = matrix.shape[0]
-    group_combinations = list(itertools.combinations(range(num_groups), 2))
-    num_combinations = len(group_combinations)
-
-    coefficient_matrix = np.zeros((num_combinations, num_groups))
-    dependent_variables = np.empty(num_combinations)
-
-    for variable_position, (i, j) in enumerate(group_combinations):
-        ratio_ij = matrix[i, j]
-        coefficient_matrix[variable_position, i] = 1
-        coefficient_matrix[variable_position, j] = -1
-        dependent_variables[variable_position] = ratio_ij
-
-    x, resid, rank, s = np.linalg.lstsq(
-        coefficient_matrix, dependent_variables, rcond=None
-    )
-    return x
-
-
 def mode(values: Iterable) -> float:
     """Calculate the mode by using kernel-density estimation.
 
