@@ -101,6 +101,20 @@ class TestCalculatePairWiseRatioMatrix:
         median_matrix = np.nanmedian(matrix, axis=0)
         np.testing.assert_array_equal(expected_median_matrix, median_matrix)
 
+    @pytest.mark.parametrize(
+        "input_array",
+        [
+            np.empty((1, 2), dtype=np.int32),
+            np.empty((1, 2), dtype=np.int64),
+            np.empty((1, 2), dtype=int),
+        ],
+    )
+    def test_with_integer_input_array(self, input_array):
+        try:
+            MAXLFQ.calculate_pairwise_ratio_matrix(input_array, log_transformed=True)  # fmt: skip
+        except ValueError:
+            assert False, "Using an integer input array raised an exception"
+
 
 class TestCalculatePairWiseMedianRatioMatrix:
     def test_corect_shape_with_multi_row_array(self, example_array):

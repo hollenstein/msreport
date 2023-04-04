@@ -20,10 +20,12 @@ def calculate_pairwise_ratio_matrix(
         A three dimensional np.array, containing pair-wise ratios. With the shape
         (Number rows in 'array', number columns in 'array', number columns in 'array')
     """
-    if log_transformed:
-        log_array = array
+    if np.issubdtype(array.dtype, np.integer):
+        log_array = array.astype(float)
     else:
         log_array = array.copy()
+
+    if not log_transformed:
         log_array[log_array == 0] = np.nan
         log_array = np.log2(log_array)
 
@@ -55,7 +57,29 @@ def calculate_pairwise_median_ratio_matrix(
     return median_ratio_matrix
 
 
-def calculate_profiles_lstsq(coef_matrix: np.ndarray, ratio_array: np.ndarray):
+def prepare_coefficient_matrix(
+    ratio_matrix: np.ndarray,
+) -> (np.ndarray, np.ndarray, np.ndarray):
+    """Generates a coefficient matrix from a ratio matrix.
+
+    Args:
+        ratio_matrix: Two- or three-dimensional numpy array containing one or multiple
+            pair-wise ratio matrices.
+
+    Returns:
+        Tuple containing the coefficient matrix, ratio array, and initial rows array.
+    """
+    # TODO: Update docstring!
+    if len(ratio_matrix.shape) == 2:
+        result = _coefficients_from_single_row_matrix(ratio_matrix)
+    else:
+        result = _coefficients_from_multi_row_matrix(ratio_matrix)
+    coef_matrix, ratio_array, initial_rows = result
+
+    return coef_matrix, ratio_array, initial_rows
+
+
+def calculate_lstsq_profiles(coef_matrix: np.ndarray, ratio_array: np.ndarray):
     """Calculates log ratio profiles with least-squares.
 
     Args:
@@ -79,28 +103,6 @@ def calculate_profiles_lstsq(coef_matrix: np.ndarray, ratio_array: np.ndarray):
     log_profile[absent_coef] = np.nan
     log_profile[~absent_coef] = coef_estimates
     return log_profile
-
-
-def prepare_coefficient_matrix(
-    ratio_matrix: np.ndarray,
-) -> (np.ndarray, np.ndarray, np.ndarray):
-    """Generates a coefficient matrix from a ratio matrix.
-
-    Args:
-        ratio_matrix: Two- or three-dimensional numpy array containing one or multiple
-            pair-wise ratio matrices.
-
-    Returns:
-        Tuple containing the coefficient matrix, ratio array, and initial rows array.
-    """
-    # TODO: Update docstring!
-    if len(ratio_matrix.shape) == 2:
-        result = _coefficients_from_single_row_matrix(ratio_matrix)
-    else:
-        result = _coefficients_from_multi_row_matrix(ratio_matrix)
-    coef_matrix, ratio_array, initial_rows = result
-
-    return coef_matrix, ratio_array, initial_rows
 
 
 def _coefficients_from_single_row_matrix(ratio_matrix):
