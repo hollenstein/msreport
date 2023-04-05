@@ -1,5 +1,6 @@
 import numpy as np
-import pandas as pd
+
+import msreport.helper.maxlfq as MAXLFQ
 
 
 def join_str(array: np.ndarray, sep: str = ";") -> str:
@@ -7,7 +8,7 @@ def join_str(array: np.ndarray, sep: str = ";") -> str:
     return sep.join(sorted([str(i) for i in array.flatten()]))
 
 
-def join_str_per_column(array: np.ndarray, sep: str = ";") -> str:
+def join_str_per_column(array: np.ndarray, sep: str = ";") -> np.ndarray:
     """Returns for each column a joined string of sorted values."""
     return np.array([join_str(i) for i in array.transpose()])
 
@@ -51,7 +52,7 @@ def maximum(array: np.ndarray) -> float:
         return np.nan
 
 
-def maximum_per_column(array: np.ndarray) -> int:
+def maximum_per_column(array: np.ndarray) -> np.ndarray:
     """Returns for each column the highest finite value."""
     return np.array([maximum(i) for i in array.transpose()])
 
@@ -65,12 +66,12 @@ def minimum(array: np.ndarray) -> int:
         return np.nan
 
 
-def minimum_per_column(array: np.ndarray) -> int:
+def minimum_per_column(array: np.ndarray) -> np.ndarray:
     """Returns for each column the lowest finite value."""
     return np.array([minimum(i) for i in array.transpose()])
 
 
-def count_unique(array):
+def count_unique(array: np.ndarray) -> int:
     """Returns the number of unique values from one or multiple columns.
 
     Note that empty strings or np.nan are not counted as unique values.
