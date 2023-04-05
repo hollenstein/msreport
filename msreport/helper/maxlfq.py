@@ -14,14 +14,32 @@ def calculate_pairwise_ratio_matrix(
     """Calculates a pairwise ratio matrix from an intensity array.
 
     Args:
-        array: A two-dimensional array, with the first dimension corresponding to rows
-            and the second dimension to columns.
-        log_transformed: If true, the 'array' contains log transformed intensity values.
-            Otherwise the 'array' is log2 transformed before calculating the ratios.
+        array: A two-dimensional numpy array, with the first dimension corresponding to
+            rows and the second dimension to columns.
+        log_transformed: If True, the 'array' is expected to contain log2 transformed
+            intensity values. If False, the array is expected to contain non-transformed
+            intensity values.
 
     Returns:
-        A three dimensional np.array, containing pair-wise ratios. With the shape
-        (Number rows in 'array', number columns in 'array', number columns in 'array')
+        A 3-dimensional numpy array, containing pair-wise ratios. The shape of the
+        output array is (n, i, i), where n is the number of rows of the input array and
+        i is the number of columns.
+
+    Example:
+        >>> array = np.array(
+        ...     [
+        ...         [4.0, 4.0, 8.0],
+        ...         [8.0, 9.0, np.nan],
+        ...     ]
+        ... )
+        >>> calculate_pairwise_ratio_matrix(array)
+        array([[[ 0.      ,  0.      , -1.      ],
+                [ 0.      ,  0.      , -1.      ],
+                [ 1.      ,  1.      ,  0.      ]],
+        <BLANKLINE>
+               [[ 0.      , -0.169925,       nan],
+                [ 0.169925,  0.      ,       nan],
+                [      nan,       nan,       nan]]])
     """
     if np.issubdtype(array.dtype, np.integer):
         log_array = array.astype(float)
@@ -43,14 +61,27 @@ def calculate_pairwise_median_ratio_matrix(
     """Calculates a pairwise median ratio matrix from an intensity array.
 
     Args:
-        array: A two-dimensional array, with the first dimension corresponding to rows
-            and the second dimension to columns.
-        log_transformed: If true, the 'array' contains log transformed intensity values.
-            Otherwise the 'array' is log2 transformed before calculating the ratios.
+        array: A two-dimensional numpy array, with the first dimension corresponding to
+            rows and the second dimension to columns.
+        log_transformed: If True, the 'array' is expected to contain log2 transformed
+            intensity values. If False, the array is expected to contain non-transformed
+            intensity values.
 
     Returns:
-        A three dimensional np.array, containing pair-wise median ratios. With the shape
-        (number columns in 'array', number columns in 'array').
+        A square 2-dimensional numpy array, containing pair-wise ratios. The shape of
+        the output array is (i, i), where i is the number of columns of the input array.
+
+    Example:
+        >>> array = np.array(
+        ...     [
+        ...         [4.0, 4.0, 8.0],
+        ...         [8.0, 9.0, np.nan],
+        ...     ]
+        ... )
+        >>> calculate_pairwise_median_ratio_matrix(array)
+        array([[ 0.       , -0.0849625, -1.       ],
+               [ 0.0849625,  0.       , -1.       ],
+               [ 1.       ,  1.       ,  0.       ]])
     """
     ratio_marix = _calculate_pairwise_center_ratio_matrix(
         array, np.median, log_transformed=log_transformed
@@ -64,14 +95,27 @@ def calculate_pairwise_mode_ratio_matrix(
     """Calculates a pairwise mode ratio matrix from an intensity array.
 
     Args:
-        array: A two-dimensional array, with the first dimension corresponding to rows
-            and the second dimension to columns.
-        log_transformed: If true, the 'array' contains log transformed intensity values.
-            Otherwise the 'array' is log2 transformed before calculating the ratios.
+        array: A two-dimensional numpy array, with the first dimension corresponding to
+            rows and the second dimension to columns.
+        log_transformed: If True, the 'array' is expected to contain log2 transformed
+            intensity values. If False, the array is expected to contain non-transformed
+            intensity values.
 
     Returns:
-        A three dimensional np.array, containing pair-wise median ratios. With the shape
-        (number columns in 'array', number columns in 'array').
+        A square 2-dimensional numpy array, containing pair-wise ratios. The shape of
+        the output array is (i, i), where i is the number of columns of the input array.
+
+    Example:
+        >>> array = np.array(
+        ...     [
+        ...         [4.0, 4.0, 8.0],
+        ...         [8.0, 9.0, np.nan],
+        ...     ]
+        ... )
+        >>> calculate_pairwise_mode_ratio_matrix(array)
+        array([[ 0.       , -0.0849625, -1.       ],
+               [ 0.0849625,  0.       , -1.       ],
+               [ 1.       ,  1.       ,  0.       ]])
     """
     ratio_marix = _calculate_pairwise_center_ratio_matrix(
         array, msreport.helper.mode, log_transformed=log_transformed
@@ -85,11 +129,35 @@ def prepare_coefficient_matrix(
     """Generates a coefficient matrix from a ratio matrix.
 
     Args:
-        ratio_matrix: Two- or three-dimensional numpy array containing one or multiple
-            pair-wise ratio matrices.
+        ratio_matrix: A numpy array containing one or multiple pair-wise ratio matrices.
+            Each ratio matrix must be a square array with the pair-wise ratios in their
+            respective positions. Only the upper triangular part of the ratio matrix is
+            used to generate the coefficient matrix. If the 'ratio_matrix' contains
+            multiple ratio matrices, the shape of the array should be (n, i, i), where n
+            is the number of ratio matrices and i is the number of rows and columns per
+            ratio matrix. If only one ratio matrix is provided, the shape of the array
+            should be (i, i).
 
     Returns:
-        Tuple containing the coefficient matrix, ratio array, and initial rows array.
+        Tuple containing the coefficient matrix, ratio array, and an initial rows array.
+        Where the initial rows array contains an index refering the number of the actual
+        ratio matrix, if 'ratio_matrix' has only 2 dimensions all row values are zero.
+
+    Example:
+        >>> ratio_matrix = np.array(
+        ...     [
+        ...         [0.0, -0.1, -1.0],
+        ...         [0.1, 0.0, -1.0],
+        ...         [1.0, 1.0, 0.0],
+        ...     ]
+        ... )
+        >>> prepare_coefficient_matrix(ratio_matrix)
+        (array([[ 1., -1.,  0.],
+                [ 1.,  0., -1.],
+                [ 0.,  1., -1.]]),
+         array([-0.1, -1. , -1. ]),
+         array([0, 0, 0]))
+
     """
     # TODO: Update docstring!
     if len(ratio_matrix.shape) == 2:
@@ -110,9 +178,20 @@ def calculate_lstsq_profiles(coef_matrix: np.ndarray, ratio_array: np.ndarray):
 
     Returns:
         One-dimensional numpy array representing the estimated least-squares profile.
+
+    Example:
+        >>> coef_matrix = np.array(
+        ...     [
+        ...         [1.0, -1.0, 0.0],
+        ...         [1.0, 0.0, -1.0],
+        ...         [0.0, 1.0, -1.0],
+        ...     ]
+        ... )
+        >>> ratio_array = np.array([-0.1, -1.0, -1.0])
+        >>> calculate_lstsq_profiles(coef_matrix, ratio_array)
+        array([-0.36666667, -0.3       ,  0.66666667])
     """
     # TODO: Update docstring!
-    # TODO: Not tested!
     finite_rows = np.isfinite(ratio_array)
     coef_matrix = coef_matrix[finite_rows]
     ratio_array = ratio_array[finite_rows]
@@ -133,16 +212,17 @@ def _calculate_pairwise_center_ratio_matrix(
     """Calculates a pairwise centered ratio matrix from an intensity array.
 
     Args:
-        array: A two-dimensional array, with the first dimension corresponding to rows
-            and the second dimension to columns.
+        array: A two-dimensional numpy array, with the first dimension corresponding to
+            rows and the second dimension to columns.
         center_function: Function that is applied to the ratios of each pair-wise
-            comparison to calculate the centered ratio.
-        log_transformed: If true, the 'array' contains log transformed intensity values.
-            Otherwise the 'array' is log2 transformed before calculating the ratios.
+            comparison of columns in the input array to calculate the centered ratio.
+        log_transformed: If True, the 'array' is expected to contain log2 transformed
+            intensity values. If False, the array is expected to contain non-transformed
+            intensity values.
 
     Returns:
-        A three dimensional np.array, containing pair-wise median ratios. With the shape
-        (number columns in 'array', number columns in 'array').
+        A square 2-dimensional numpy array, containing pair-wise ratios. The shape of
+        the output array is (i, i), where i is the number of columns of the input array.
     """
     # Note: Is currently tested only via the calculate_pairwise_median_ratio_matrix and
     #       calculate_pairwise_mode_ratio_matrix functions.
@@ -174,10 +254,15 @@ def _coefficients_from_single_row_matrix(ratio_matrix):
     """Calculates coefficients, ratios, and initial rows for a single row matrix.
 
     Args:
-        ratio_matrix: Two-dimensional numpy array containing a pair-wise ratio matrix.
+        ratio_matrix: A numpy array containing one single pair-wise ratio matrices. The
+            ratio matrix must be a square array with the pair-wise ratios in their
+            respective positions. Only the upper triangular part of the ratio matrix is
+            used to generate the coefficient matrix.
 
     Returns:
-        Tuple containing the coefficient matrix, ratio array, and initial rows array.
+        Tuple containing the coefficient matrix, ratio array, and an initial rows array.
+        The intial rows array contains all zeros and is returned for consistency with
+        `_coefficients_from_multi_row_matrix`.
     """
     # TODO: Update docstring!
     num_coef = ratio_matrix.shape[1]
@@ -200,12 +285,18 @@ def _coefficients_from_multi_row_matrix(ratio_matrix):
     """Calculates coefficients, ratios, and initial rows for a multi row matrix.
 
     Args:
-        ratio_matrix: Two-dimensional numpy array representing the ratios.
+        ratio_matrix: A numpy array containing multiple pair-wise ratio matrices. Each
+            ratio matrix must be a square array with the pair-wise ratios in their
+            respective positions. Only the upper triangular part of the ratio matrix is
+            used to generate the coefficient matrix. The shape of 'ratio_matrix' must be
+            (n, i, i), where n is the number of ratio matrices and i is the number of
+            rows and columns per ratio matrix.
 
     Returns:
-        Tuple containing the coefficient matrix, ratio array, and initial rows array.
+        Tuple containing the coefficient matrix, ratio array, and an initial rows array.
+        The initial rows array contains integers refering the index of the ratio matrix.
     """
-    # TODO: No docstring!
+    # TODO: Update docstring!
     num_coef = ratio_matrix.shape[1]
     coef_combinations = list(itertools.combinations(range(num_coef), 2))
     num_coef_combinations = len(coef_combinations)
