@@ -3,6 +3,107 @@ from typing import Callable, Iterable, Union
 import numpy as np
 import pandas as pd
 
+import msreport.aggregate.condense as CONDENSE
+from msreport.helper import find_sample_columns
+
+
+def count_unique(
+    table: pd.DataFrame,
+    group_by: str,
+    input_column: Union[str, Iterable],
+    output_column: str = "Unique counts",
+    is_sorted: bool = False,
+) -> pd.DataFrame:
+    """Counts unique values per group
+
+    Note that empty strings and np.nan do not contribute to the unique value count.
+
+    Args:
+        table: Dataframe used for generating groups, which will be aggregated.
+        group_by: Column used to determine unique groups.
+        input_column: Column or list of columns, which will be used for counting the
+            number of unique values per group.
+        output_column: Optional, allows specifying an alternative column name for the
+            returned dataframe. Default is "Unique counts".
+        is_sorted: Indicates whether the table is already sorted with respect to the
+            'group_by' column.
+
+    Returns:
+        A dataframe with unique 'group_by' values as index and a unique counts column
+        containing the number of unique counts per group.
+    """
+    aggregation, groups = aggregate_unique_groups(
+        table, group_by, input_column, CONDENSE.count_unique, is_sorted
+    )
+    return pd.DataFrame(columns=[output_column], data=aggregation, index=groups)
+
+
+def join_unique(
+    table: pd.DataFrame,
+    group_by: str,
+    input_column: Union[str, Iterable],
+    output_column: str = "Unique values",
+    sep: str = ";",
+    is_sorted: bool = False,
+) -> pd.DataFrame:
+    """Per group concatenates unique values as a string with a separter.
+
+    Args:
+        table: Dataframe used for generating groups, which will be aggregated.
+        group_by: Column used to determine unique groups.
+        input_column: Column or list of columns, which will be used for defining the
+            unique values.
+        output_column: Optional, allows specifying an alternative column name for the
+            returned dataframe. Default is "Unique values".
+        sep: String that is used as a separator between unique values.
+        is_sorted: Indicates whether the table is already sorted with respect to the
+            'group_by' column.
+
+    Returns:
+        A dataframe with unique 'group_by' values as index and a unique values column
+        containing the joined unique values per group. Unique values are sorted and
+        joined with the specified separator.
+    """
+    aggregation, groups = aggregate_unique_groups(
+        table,
+        group_by,
+        input_column,
+        lambda x: CONDENSE.join_unique_str(x, sep=sep),
+        is_sorted,
+    )
+    return pd.DataFrame(columns=[output_column], data=aggregation, index=groups)
+
+
+def sum_columns(
+    table: pd.DataFrame,
+    group_by: str,
+    samples: Iterable[str],
+    column_tag: str,
+    is_sorted: bool = False,
+) -> pd.DataFrame:
+    """Sums sample column values per group.
+
+    Note that empty strings and np.nan do not contribute to the unique value count.
+
+    Args:
+        table: Dataframe used for generating groups, which will be aggregated.
+        group_by: Column used to determine unique groups.
+        samples: List of sample names that appear in columns of the table.
+        column_tag: Substring of column names, which is used together with the sample
+            names to determine the columns that will be summarized.
+        is_sorted: Indicates whether the table is already sorted with respect to the
+            'group_by' column.
+
+    Returns:
+        A dataframe with unique 'group_by' values as index and one column per sample.
+        The columns contain the summed group values per sample.
+    """
+    columns = find_sample_columns(table, column_tag, samples)
+    aggregation, groups = aggregate_unique_groups(
+        table, group_by, columns, CONDENSE.sum_per_column, is_sorted
+    )
+    return pd.DataFrame(columns=columns, data=aggregation, index=groups)
+
 
 def aggregate_unique_groups(
     table: pd.DataFrame,
@@ -21,7 +122,7 @@ def aggregate_unique_groups(
     Args:
         table: Dataframe used for generating groups, which will be aggregated.
         group_by: Column used to determine unique groups.
-        aggregate_columns: Columns or list of columns, which will be passed to the
+        aggregate_columns: Column or list of columns, which will be passed to the
             condenser function.
         condenser: Function that is applied to each group for generating the
             aggregation result. If multiple columns are specified for aggregation,

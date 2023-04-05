@@ -5,6 +5,78 @@ import pytest
 import msreport.aggregate.summarize as SUMMARIZE
 
 
+@pytest.fixture
+def example_data():
+    table = pd.DataFrame(
+        {
+            "ID": ["A", "A", "B", "C", "C", "C"],
+            "Peptide sequence": ["AAA", "AAA", "BBB", "CCA", "CCB", "CCB"],
+            "Quant S1": [1, 1, 1, 1, 1, 1],
+            "Quant S2": [2, 2, 2, 2, 2, 2],
+        }
+    )
+    example_data = {"table": table, "groub by": "ID", "samples": ["S1", "S2"]}
+    return example_data
+
+
+class TestCountUnique:
+    @pytest.fixture(autouse=True)
+    def _init_data(self, example_data):
+        self.table = example_data["table"]
+        self.group_by = example_data["groub by"]
+
+    def test_count_unique_peptides(self):
+        unique_peptides = SUMMARIZE.count_unique(
+            self.table,
+            self.group_by,
+            input_column="Peptide sequence",
+            output_column="Unique",
+            is_sorted=False,
+        )
+        expected_result = pd.DataFrame(data={"Unique": [1, 1, 2]}, index=["A", "B", "C"])  # fmt: skip
+        pd.testing.assert_frame_equal(unique_peptides, expected_result, check_dtype=False)  # fmt: skip
+
+
+class TestJoinUnique:
+    @pytest.fixture(autouse=True)
+    def _init_data(self, example_data):
+        self.table = example_data["table"]
+        self.group_by = example_data["groub by"]
+
+    def test_join_unique(self):
+        sequences = SUMMARIZE.join_unique(
+            self.table,
+            self.group_by,
+            input_column="Peptide sequence",
+            output_column="Unique",
+            is_sorted=False,
+        )
+        expected_result = pd.DataFrame(data={"Unique": ["AAA", "BBB", "CCA;CCB"]}, index=["A", "B", "C"])  # fmt: skip
+        pd.testing.assert_frame_equal(sequences, expected_result, check_dtype=False)
+
+
+class TestSumColumns:
+    @pytest.fixture(autouse=True)
+    def _init_data(self, example_data):
+        self.table = example_data["table"]
+        self.group_by = example_data["groub by"]
+        self.samples = example_data["samples"]
+
+    def test_sum_columns(self):
+        # fmt: off
+        summed_columns = SUMMARIZE.sum_columns(self.table, self.group_by, self.samples, "Quant", is_sorted=False)
+        expected_result = pd.DataFrame(
+            data={"Quant S1": [2, 1, 3], "Quant S2": [4, 2, 6]}, index=["A", "B", "C"]
+        )
+        pd.testing.assert_frame_equal(summed_columns, expected_result, check_dtype=False)
+        # fmt: on
+
+
+class TestSumSpectralCounts:
+    # sum_spectral_counts
+    ...
+
+
 class TestApplyAggregationToUniqueGroups:
     @pytest.fixture(autouse=True)
     def _init_table(self):
