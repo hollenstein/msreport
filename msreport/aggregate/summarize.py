@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, Union
+from typing import Callable, Iterable, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -78,19 +78,20 @@ def sum_columns(
     table: pd.DataFrame,
     group_by: str,
     samples: Iterable[str],
-    column_tag: str,
+    input_tag: str,
+    output_tag: Optional[str] = None,
     is_sorted: bool = False,
 ) -> pd.DataFrame:
     """Sums sample column values per group.
-
-    Note that empty strings and np.nan do not contribute to the unique value count.
 
     Args:
         table: Dataframe used for generating groups, which will be aggregated.
         group_by: Column used to determine unique groups.
         samples: List of sample names that appear in columns of the table.
-        column_tag: Substring of column names, which is used together with the sample
+        input_tag: Substring of column names, which is used together with the sample
             names to determine the columns that will be summarized.
+        output_tag: Optional, if specified the 'input_tag' is replaced by the
+            'output_tag' in the columns of the returned dataframe.
         is_sorted: Indicates whether the table is already sorted with respect to the
             'group_by' column.
 
@@ -98,11 +99,52 @@ def sum_columns(
         A dataframe with unique 'group_by' values as index and one column per sample.
         The columns contain the summed group values per sample.
     """
-    columns = find_sample_columns(table, column_tag, samples)
+    output_tag = input_tag if output_tag is None else output_tag
+    columns = find_sample_columns(table, input_tag, samples)
     aggregation, groups = aggregate_unique_groups(
         table, group_by, columns, CONDENSE.sum_per_column, is_sorted
     )
-    return pd.DataFrame(columns=columns, data=aggregation, index=groups)
+    output_columns = [column.replace(input_tag, output_tag) for column in columns]
+    return pd.DataFrame(columns=output_columns, data=aggregation, index=groups)
+
+
+def sum_columns_maxlfq(
+    table: pd.DataFrame,
+    group_by: str,
+    samples: Iterable[str],
+    input_tag: str,
+    output_tag: Optional[str] = None,
+    is_sorted: bool = False,
+) -> pd.DataFrame:
+    """Sums sample column values per group using the MaxLFQ approach.
+
+    Performs per group a least squares regression of pair-wise median ratios to
+    calculate estimated abundance profiles. These profiles are then scaled based on the
+    intensity values such that the columns with finite profile values are used and the
+    sum of the scaled profiles matches the sum of the input array.
+
+    Args:
+        table: Dataframe used for generating groups, which will be aggregated.
+        group_by: Column used to determine unique groups.
+        samples: List of sample names that appear in columns of the table.
+        input_tag: Substring of column names, which is used together with the sample
+            names to determine the columns that will be summarized.
+        output_tag: Optional, if specified the 'input_tag' is replaced by the
+            'output_tag' in the columns of the returned dataframe.
+        is_sorted: Indicates whether the table is already sorted with respect to the
+            'group_by' column.
+
+    Returns:
+        A dataframe with unique 'group_by' values as index and one column per sample.
+        The columns contain the summed group values per sample.
+    """
+    output_tag = input_tag if output_tag is None else output_tag
+    columns = find_sample_columns(table, input_tag, samples)
+    aggregation, groups = aggregate_unique_groups(
+        table, group_by, columns, CONDENSE.sum_by_median_ratio_regression, is_sorted
+    )
+    output_columns = [column.replace(input_tag, output_tag) for column in columns]
+    return pd.DataFrame(columns=output_columns, data=aggregation, index=groups)
 
 
 def aggregate_unique_groups(

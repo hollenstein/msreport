@@ -11,7 +11,7 @@ def example_data():
         {
             "ID": ["A", "A", "B", "C", "C", "C"],
             "Peptide sequence": ["AAA", "AAA", "BBB", "CCA", "CCB", "CCB"],
-            "Quant S1": [1, 1, 1, 1, 1, 1],
+            "Quant S1": [1, 1, 1, 1, 1, 2.5],
             "Quant S2": [2, 2, 2, 2, 2, 2],
         }
     )
@@ -62,19 +62,61 @@ class TestSumColumns:
         self.group_by = example_data["groub by"]
         self.samples = example_data["samples"]
 
-    def test_sum_columns(self):
-        # fmt: off
-        summed_columns = SUMMARIZE.sum_columns(self.table, self.group_by, self.samples, "Quant", is_sorted=False)
-        expected_result = pd.DataFrame(
-            data={"Quant S1": [2, 1, 3], "Quant S2": [4, 2, 6]}, index=["A", "B", "C"]
+    def test_correct_calculation_without_output_tag(self):
+        summed_columns = SUMMARIZE.sum_columns(
+            self.table,
+            self.group_by,
+            self.samples,
+            input_tag="Quant",
+            is_sorted=False,
         )
-        pd.testing.assert_frame_equal(summed_columns, expected_result, check_dtype=False)
-        # fmt: on
+        expected_result = pd.DataFrame(
+            data={"Quant S1": [2, 1, 4.5], "Quant S2": [4, 2, 6]}, index=["A", "B", "C"]
+        )
+        pd.testing.assert_frame_equal(summed_columns, expected_result, check_dtype=False)  # fmt: skip
+
+    def test_with_output_tag(self):
+        summed_columns = SUMMARIZE.sum_columns(
+            self.table,
+            self.group_by,
+            self.samples,
+            input_tag="Quant",
+            output_tag="OUT",
+            is_sorted=False,
+        )
+        assert summed_columns.columns.tolist() == ["OUT S1", "OUT S2"]
 
 
-class TestSumSpectralCounts:
-    # sum_spectral_counts
-    ...
+class TestSumColumnsMaxlfq:
+    @pytest.fixture(autouse=True)
+    def _init_data(self, example_data):
+        self.table = example_data["table"]
+        self.group_by = example_data["groub by"]
+        self.samples = example_data["samples"]
+
+    def test_correct_calculation_without_output_tag(self):
+        summed_columns = SUMMARIZE.sum_columns_maxlfq(
+            self.table,
+            self.group_by,
+            self.samples,
+            input_tag="Quant",
+            is_sorted=False,
+        )
+        expected_result = pd.DataFrame(
+            data={"Quant S1": [2, 1, 3.5], "Quant S2": [4, 2, 7]}, index=["A", "B", "C"]
+        )
+        pd.testing.assert_frame_equal(summed_columns, expected_result, check_dtype=False)  # fmt: skip
+
+    def test_with_output_tag(self):
+        summed_columns = SUMMARIZE.sum_columns_maxlfq(
+            self.table,
+            self.group_by,
+            self.samples,
+            input_tag="Quant",
+            output_tag="OUT",
+            is_sorted=False,
+        )
+        assert summed_columns.columns.tolist() == ["OUT S1", "OUT S2"]
 
 
 class TestApplyAggregationToUniqueGroups:
