@@ -171,8 +171,9 @@ def impute_missing_values(
     """Imputes missing expression values in qtable.
 
     Imputes missing values (nan) present in the qtable expression columns, requires
-    that expression columns are defined. The imputer will be fit with the
-    expression values if it has not been fitted already.
+    that the qtable has defined expression columns. If the passed imputer object is not
+    yet fitted, it will be fit with the expression values. If 'exclude_invalid' is True,
+    only valid expression values will be used for fitting the imputer.
 
     Args:
         qtable: A Qtable instance, which missing expression values will be imputed.
@@ -181,7 +182,7 @@ def impute_missing_values(
             column names correspond to the sample names present in qtable.design. A not
             fitted imputer is fitted with the expression values present in the qtable.
         exclude_invalid: If true, the column "Valid" is used to determine for which rows
-            imputation is performed; default True.
+            imputation is performed. Default True.
     """
     table = qtable.make_expression_table(samples_as_columns=True, features=["Valid"])
     sample_columns = table.columns.drop("Valid")
