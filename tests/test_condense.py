@@ -1,5 +1,6 @@
+import warnings
+
 import numpy as np
-import pandas as pd
 import pytest
 
 import msreport.aggregate.condense as CONDENSE
@@ -309,3 +310,104 @@ class TestAggfuncCountUniquePerColumn:
     def test_with_multiple_columns(self, array, expected_result):
         result = CONDENSE.count_unique_per_column(array)
         np.testing.assert_equal(result, expected_result)
+
+
+class TestProfileByMedianRatioRegression:
+    @pytest.mark.parametrize(
+        "array, expected_result",
+        [
+            (
+                np.array([[1, 10], [2, 20]]),
+                np.array([1, 10]),
+            ),
+            (
+                np.array([[1, 10], [2, np.nan]]),
+                np.array([1, 10]),
+            ),
+            (
+                np.array([[1, np.nan], [2, np.nan]]),
+                np.array([np.nan, np.nan]),
+            ),
+            (
+                np.array([[np.nan, np.nan], [np.nan, np.nan]]),
+                np.array([np.nan, np.nan]),
+            ),
+            (
+                np.array([[1], [2]]),
+                np.array([np.nan]),
+            ),
+        ],
+    )
+    def test_correct_profiles_with_arrays_containing_nan(self, array, expected_result):
+        profile = CONDENSE.profile_by_median_ratio_regression(array)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            profile = profile / np.nanmin(profile)
+
+        np.testing.assert_allclose(profile, expected_result, rtol=1e-07, atol=1e-07, equal_nan=True)  # fmt: skip
+
+    def test_correct_profiles_with_input_array_containing_partly_wrong_values(self):
+        expected_profile = np.power(2, range(0, 5))
+        array = np.array(
+            [
+                expected_profile,
+                expected_profile * 2,
+                expected_profile * 3,
+                expected_profile[::-1],
+            ]
+        )
+
+        profile = CONDENSE.profile_by_median_ratio_regression(array)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            profile = profile / np.nanmin(profile)
+
+        np.testing.assert_allclose(profile, expected_profile, rtol=1e-07, atol=1e-07, equal_nan=True)  # fmt: skip
+
+
+class TestSumByMedianRatioRegression:
+    @pytest.mark.parametrize(
+        "array, expected_result",
+        [
+            (
+                np.array([[100, 200], [300, 600]]),
+                np.array([400, 800]),
+            ),
+            (
+                np.array([[1, 10], [11, np.nan]]),
+                np.array([2, 20]),
+            ),
+            (
+                np.array([[1, np.nan], [2, np.nan]]),
+                np.array([np.nan, np.nan]),
+            ),
+            (
+                np.array([[np.nan, np.nan], [np.nan, np.nan]]),
+                np.array([np.nan, np.nan]),
+            ),
+            (
+                np.array([[1], [2]]),
+                np.array([np.nan]),
+            ),
+            (
+                np.array([[1, 2]]),
+                np.array([1, 2]),
+            ),
+        ],
+    )
+    def test_correct_sum_calculated_with_arrays_containing_nan(self, array, expected_result):  # fmt: skip
+        result = CONDENSE.sum_by_median_ratio_regression(array)
+        np.testing.assert_allclose(result, expected_result, rtol=1e-07, atol=1e-07, equal_nan=True)  # fmt: skip
+
+    def test_unused_input_columns_not_used_for_intensity_scaling(self):  # fmt: skip
+        expected_result = np.array([300, 600, 900, np.nan])
+        array = np.array(
+            [
+                [100, 200, 300, np.nan],
+                [200, 400, 600, np.nan],
+                [np.nan, np.nan, np.nan, 1000],
+            ]
+        )
+
+        result = CONDENSE.sum_by_median_ratio_regression(array)
+        np.testing.assert_allclose(result, expected_result, rtol=1e-07, atol=1e-07, equal_nan=True)  # fmt: skip
