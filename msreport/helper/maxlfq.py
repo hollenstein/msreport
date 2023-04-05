@@ -146,7 +146,11 @@ def _calculate_pairwise_center_ratio_matrix(
     """
     # Note: Is currently tested only via the calculate_pairwise_median_ratio_matrix and
     #       calculate_pairwise_mode_ratio_matrix functions.
-    log_array = np.array(array)
+    if np.issubdtype(array.dtype, np.integer):
+        log_array = array.astype(float)
+    else:
+        log_array = array.copy()
+
     if not log_transformed:
         log_array[log_array == 0] = np.nan
         log_array = np.log2(log_array)
