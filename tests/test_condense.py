@@ -14,7 +14,10 @@ class TestAggfuncJoinStr:
             (np.array([1, 3, 2]), "1;2;3"),  # Integers
             (np.array([2, 1, 2]), "1;2;2"),  # Integers
             (np.array([1, "a", 2]), "1;2;a"),  # Strings and integers mixed
-            (np.array([1, "a", np.nan]), "1;a;nan"),  # With np.nan
+            (np.array([1, "a", ""]), "1;a"),  # With empty string
+            (np.array(["", "", ""]), ""),  # With only empty strings
+            (np.array([1.0, 2.0, np.nan]), "1.0;2.0"),  # With np.nan
+            (np.array([1, 2, np.nan]), "1.0;2.0"),  # Nan containing arrays are float
         ],
     )
     def test_one_column_with_default_separator(self, array, expected_result):
@@ -60,8 +63,8 @@ class TestAggfuncJoinStrPerColumn:
                 np.array(["a"]),
             ),
             (
-                np.array([["a", "A"], ["a", 1], ["b", 1]]),
-                np.array(["a;a;b", "1;1;A"]),
+                np.array([["a", "A"], ["a", ""], ["b", 1]]),
+                np.array(["a;a;b", "1;A"]),
             ),
         ],
     )

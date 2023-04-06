@@ -4,12 +4,22 @@ import msreport.helper.maxlfq as MAXLFQ
 
 
 def join_str(array: np.ndarray, sep: str = ";") -> str:
-    """Returns a joined string of sorted values from the array."""
-    return sep.join(sorted([str(i) for i in array.flatten()]))
+    """Returns a joined string of sorted values from the array.
+
+    Note that empty strings or np.nan are not included in the joined string.
+    """
+    elements = []
+    for value in array.flatten():
+        if value != "" and not (isinstance(value, float) and np.isnan(value)):
+            elements.append(str(value))
+    return sep.join(sorted(elements))
 
 
 def join_str_per_column(array: np.ndarray, sep: str = ";") -> np.ndarray:
-    """Returns for each column a joined string of sorted values."""
+    """Returns for each column a joined string of sorted values.
+
+    Note that empty strings or np.nan are not included in the joined string.
+    """
     return np.array([join_str(i) for i in array.transpose()])
 
 
