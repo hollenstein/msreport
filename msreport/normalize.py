@@ -121,11 +121,11 @@ class FixedValueNormalizer(BaseSampleNormalizer):
         samples = table.columns.tolist()
         array = table.to_numpy()
 
-        ratio_matrix = MAXLFQ._calculate_pairwise_center_ratio_matrix(
+        ratio_matrix = MAXLFQ._calculate_pairwise_centered_log_ratio_matrix(
             array, self._fit_function, log_transformed=True
         )
         coef_matrix, ratio_array, _ = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)
-        profile = MAXLFQ.calculate_lstsq_profiles(coef_matrix, ratio_array)
+        profile = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
         self._sample_fits = dict(zip(samples, profile))
 
     def _fit_with_pseudo_reference(self, table: pd.DataFrame) -> None:

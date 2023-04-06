@@ -110,13 +110,13 @@ def profile_by_median_ratio_regression(array: np.ndarray) -> np.ndarray:
         An array containing estimated abundance profiles, with length equal to the
         number of columns in the input array.
     """
-    ratio_matrix = MAXLFQ.calculate_pairwise_median_ratio_matrix(
+    ratio_matrix = MAXLFQ.calculate_pairwise_median_log_ratio_matrix(
         array, log_transformed=False
     )
     coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(
         ratio_matrix
     )
-    log_profile = MAXLFQ.calculate_lstsq_profiles(coef_matrix, ratio_array)
+    log_profile = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
     profile = np.power(2, log_profile)
     return profile
 

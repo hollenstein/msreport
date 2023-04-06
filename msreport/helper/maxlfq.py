@@ -3,25 +3,24 @@ from typing import Callable
 import warnings
 
 import numpy as np
-import sklearn.linear_model
 
 import msreport.helper
 
 
-def calculate_pairwise_ratio_matrix(
+def calculate_pairwise_log_ratio_matrix(
     array: np.ndarray, log_transformed: bool = False
 ) -> np.ndarray:
-    """Calculates a pairwise ratio matrix from an intensity array.
+    """Calculates a pairwise log ratio matrix from an intensity array.
 
     Args:
         array: A two-dimensional numpy array, with the first dimension corresponding to
             rows and the second dimension to columns.
-        log_transformed: If True, the 'array' is expected to contain log2 transformed
+        log_transformed: If True, the 'array' is expected to contain log transformed
             intensity values. If False, the array is expected to contain non-transformed
-            intensity values.
+            intensity values, which are log2 transformed for the calculation of ratios.
 
     Returns:
-        A 3-dimensional numpy array, containing pair-wise ratios. The shape of the
+        A 3-dimensional numpy array, containing pair-wise log ratios. The shape of the
         output array is (n, i, i), where n is the number of rows of the input array and
         i is the number of columns.
 
@@ -32,7 +31,7 @@ def calculate_pairwise_ratio_matrix(
         ...         [8.0, 9.0, np.nan],
         ...     ]
         ... )
-        >>> calculate_pairwise_ratio_matrix(array)
+        >>> calculate_pairwise_log_ratio_matrix(array)
         array([[[ 0.      ,  0.      , -1.      ],
                 [ 0.      ,  0.      , -1.      ],
                 [ 1.      ,  1.      ,  0.      ]],
@@ -55,21 +54,22 @@ def calculate_pairwise_ratio_matrix(
     return ratio_matrix
 
 
-def calculate_pairwise_median_ratio_matrix(
+def calculate_pairwise_median_log_ratio_matrix(
     array: np.ndarray, log_transformed: bool = False
 ) -> np.ndarray:
-    """Calculates a pairwise median ratio matrix from an intensity array.
+    """Calculates a pairwise median log ratio matrix from an intensity array.
 
     Args:
         array: A two-dimensional numpy array, with the first dimension corresponding to
             rows and the second dimension to columns.
-        log_transformed: If True, the 'array' is expected to contain log2 transformed
+        log_transformed: If True, the 'array' is expected to contain log transformed
             intensity values. If False, the array is expected to contain non-transformed
-            intensity values.
+            intensity values, which are log2 transformed for the calculation of ratios.
 
     Returns:
-        A square 2-dimensional numpy array, containing pair-wise ratios. The shape of
-        the output array is (i, i), where i is the number of columns of the input array.
+        A square 2-dimensional numpy array, containing pair-wise log ratios. The shape
+        of the output array is (i, i), where i is the number of columns of the input
+        array.
 
     Example:
         >>> array = np.array(
@@ -78,18 +78,18 @@ def calculate_pairwise_median_ratio_matrix(
         ...         [8.0, 9.0, np.nan],
         ...     ]
         ... )
-        >>> calculate_pairwise_median_ratio_matrix(array)
+        >>> calculate_pairwise_median_log_ratio_matrix(array)
         array([[ 0.       , -0.0849625, -1.       ],
                [ 0.0849625,  0.       , -1.       ],
                [ 1.       ,  1.       ,  0.       ]])
     """
-    ratio_marix = _calculate_pairwise_center_ratio_matrix(
+    ratio_marix = _calculate_pairwise_centered_log_ratio_matrix(
         array, np.median, log_transformed=log_transformed
     )
     return ratio_marix
 
 
-def calculate_pairwise_mode_ratio_matrix(
+def calculate_pairwise_mode_log_ratio_matrix(
     array: np.ndarray, log_transformed: bool = False
 ) -> np.ndarray:
     """Calculates a pairwise mode ratio matrix from an intensity array.
@@ -97,9 +97,9 @@ def calculate_pairwise_mode_ratio_matrix(
     Args:
         array: A two-dimensional numpy array, with the first dimension corresponding to
             rows and the second dimension to columns.
-        log_transformed: If True, the 'array' is expected to contain log2 transformed
+        log_transformed: If True, the 'array' is expected to contain log transformed
             intensity values. If False, the array is expected to contain non-transformed
-            intensity values.
+            intensity values, which are log2 transformed for the calculation of ratios.
 
     Returns:
         A square 2-dimensional numpy array, containing pair-wise ratios. The shape of
@@ -112,12 +112,12 @@ def calculate_pairwise_mode_ratio_matrix(
         ...         [8.0, 9.0, np.nan],
         ...     ]
         ... )
-        >>> calculate_pairwise_mode_ratio_matrix(array)
+        >>> calculate_pairwise_mode_log_ratio_matrix(array)
         array([[ 0.       , -0.0849625, -1.       ],
                [ 0.0849625,  0.       , -1.       ],
                [ 1.       ,  1.       ,  0.       ]])
     """
-    ratio_marix = _calculate_pairwise_center_ratio_matrix(
+    ratio_marix = _calculate_pairwise_centered_log_ratio_matrix(
         array, msreport.helper.mode, log_transformed=log_transformed
     )
     return ratio_marix
@@ -169,8 +169,8 @@ def prepare_coefficient_matrix(
     return coef_matrix, ratio_array, initial_rows
 
 
-def calculate_lstsq_profiles(coef_matrix: np.ndarray, ratio_array: np.ndarray):
-    """Calculates log ratio profiles with least-squares.
+def log_profiles_by_lstsq(coef_matrix: np.ndarray, ratio_array: np.ndarray):
+    """Calculates estimated log abundance profiles by least-squares fitting.
 
     Args:
         coef_matrix: Two-dimensional numpy array representing the coefficients.
@@ -188,7 +188,7 @@ def calculate_lstsq_profiles(coef_matrix: np.ndarray, ratio_array: np.ndarray):
         ...     ]
         ... )
         >>> ratio_array = np.array([-0.1, -1.0, -1.0])
-        >>> calculate_lstsq_profiles(coef_matrix, ratio_array)
+        >>> log_profiles_by_lstsq(coef_matrix, ratio_array)
         array([-0.36666667, -0.3       ,  0.66666667])
     """
     # TODO: Update docstring!
@@ -206,26 +206,26 @@ def calculate_lstsq_profiles(coef_matrix: np.ndarray, ratio_array: np.ndarray):
     return log_profile
 
 
-def _calculate_pairwise_center_ratio_matrix(
+def _calculate_pairwise_centered_log_ratio_matrix(
     array: np.ndarray, center_function: Callable, log_transformed: bool = False
 ) -> np.ndarray:
-    """Calculates a pairwise centered ratio matrix from an intensity array.
+    """Calculates a pairwise, centered log2 ratio matrix from an intensity array.
 
     Args:
         array: A two-dimensional numpy array, with the first dimension corresponding to
             rows and the second dimension to columns.
         center_function: Function that is applied to the ratios of each pair-wise
             comparison of columns in the input array to calculate the centered ratio.
-        log_transformed: If True, the 'array' is expected to contain log2 transformed
+        log_transformed: If True, the 'array' is expected to contain log transformed
             intensity values. If False, the array is expected to contain non-transformed
-            intensity values.
+            intensity values, which are log2 transformed for the calculation of ratios.
 
     Returns:
         A square 2-dimensional numpy array, containing pair-wise ratios. The shape of
         the output array is (i, i), where i is the number of columns of the input array.
     """
-    # Note: Is currently tested only via the calculate_pairwise_median_ratio_matrix and
-    #       calculate_pairwise_mode_ratio_matrix functions.
+    # Note: Is currently tested only via the calculate_pairwise_median_log_ratio_matrix
+    #       and calculate_pairwise_mode_log_ratio_matrix functions.
     if np.issubdtype(array.dtype, np.integer):
         log_array = array.astype(float)
     else:

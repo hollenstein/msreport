@@ -63,9 +63,9 @@ def single_row_ratio_matrix():
     return single_row_ratio_matrix
 
 
-class TestCalculatePairWiseRatioMatrix:
+class TestCalculatePairWiseLogRatioMatrix:
     def test_corect_shape_with_multi_row_array(self, example_array):
-        matrix = MAXLFQ.calculate_pairwise_ratio_matrix(example_array)
+        matrix = MAXLFQ.calculate_pairwise_log_ratio_matrix(example_array)
 
         # Matrix mus have three dimensions
         assert len(matrix.shape) == 3
@@ -78,7 +78,7 @@ class TestCalculatePairWiseRatioMatrix:
 
     def test_corect_shape_with_single_row_array(self, example_array):
         single_row_array = example_array[0].reshape(1, 3)
-        matrix = MAXLFQ.calculate_pairwise_ratio_matrix(single_row_array)
+        matrix = MAXLFQ.calculate_pairwise_log_ratio_matrix(single_row_array)
 
         # Condensed matrix must have two dimensions
         assert len(matrix.shape) == 3
@@ -97,7 +97,7 @@ class TestCalculatePairWiseRatioMatrix:
                 [1.0, 1.0, 0.0],
             ]
         )
-        matrix = MAXLFQ.calculate_pairwise_ratio_matrix(example_array)
+        matrix = MAXLFQ.calculate_pairwise_log_ratio_matrix(example_array)
         median_matrix = np.nanmedian(matrix, axis=0)
         np.testing.assert_array_equal(expected_median_matrix, median_matrix)
 
@@ -111,14 +111,14 @@ class TestCalculatePairWiseRatioMatrix:
     )
     def test_with_integer_input_array(self, input_array):
         try:
-            MAXLFQ.calculate_pairwise_ratio_matrix(input_array, log_transformed=True)  # fmt: skip
+            MAXLFQ.calculate_pairwise_log_ratio_matrix(input_array, log_transformed=True)  # fmt: skip
         except ValueError:
             assert False, "Using an integer input array raised an exception"
 
 
-class TestCalculatePairWiseMedianRatioMatrix:
+class TestCalculatePairWiseMedianLogRatioMatrix:
     def test_corect_shape_with_multi_row_array(self, example_array):
-        matrix = MAXLFQ.calculate_pairwise_median_ratio_matrix(example_array)
+        matrix = MAXLFQ.calculate_pairwise_median_log_ratio_matrix(example_array)
         # Condensed matrix must have two dimensions
         assert len(matrix.shape) == 2
         # Matrix must be square
@@ -128,7 +128,7 @@ class TestCalculatePairWiseMedianRatioMatrix:
 
     def test_corect_shape_with_single_row_array(self, example_array):
         single_row_array = example_array[0].reshape(1, 3)
-        matrix = MAXLFQ.calculate_pairwise_median_ratio_matrix(single_row_array)
+        matrix = MAXLFQ.calculate_pairwise_median_log_ratio_matrix(single_row_array)
         # Condensed matrix must have two dimensions
         assert len(matrix.shape) == 2
         # Matrix must be square
@@ -144,13 +144,13 @@ class TestCalculatePairWiseMedianRatioMatrix:
                 [1.0, 1.0, 0.0],
             ]
         )
-        matrix = MAXLFQ.calculate_pairwise_median_ratio_matrix(example_array)
+        matrix = MAXLFQ.calculate_pairwise_median_log_ratio_matrix(example_array)
         np.testing.assert_array_equal(expected_matrix, matrix)
 
 
-class TestCalculatePairWiseModeRatioMatrix:
+class TestCalculatePairWiseModeLogRatioMatrix:
     def test_corect_shape_with_multi_row_array(self, example_array):
-        matrix = MAXLFQ.calculate_pairwise_mode_ratio_matrix(example_array)
+        matrix = MAXLFQ.calculate_pairwise_mode_log_ratio_matrix(example_array)
         # Condensed matrix must have two dimensions
         assert len(matrix.shape) == 2
         # Matrix must be square
@@ -160,7 +160,7 @@ class TestCalculatePairWiseModeRatioMatrix:
 
     def test_corect_shape_with_single_row_array(self, example_array):
         single_row_array = example_array[0].reshape(1, 3)
-        matrix = MAXLFQ.calculate_pairwise_mode_ratio_matrix(single_row_array)
+        matrix = MAXLFQ.calculate_pairwise_mode_log_ratio_matrix(single_row_array)
         # Condensed matrix must have two dimensions
         assert len(matrix.shape) == 2
         # Matrix must be square
@@ -176,7 +176,7 @@ class TestCalculatePairWiseModeRatioMatrix:
                 [1.0, 0.939233, 0.0],
             ]
         )
-        matrix = MAXLFQ.calculate_pairwise_mode_ratio_matrix(example_array)
+        matrix = MAXLFQ.calculate_pairwise_mode_log_ratio_matrix(example_array)
         np.testing.assert_allclose(expected_matrix, matrix, rtol=1e-04, atol=1e-04)
 
 
@@ -251,7 +251,7 @@ class TestPrepareCoefficientMatrix:
             np.testing.assert_equal(ratio, expected_ratio)
 
 
-class TestCalcualteLstsqProfiles:
+class TestLogProfilesByLastsq:
     def test_correct_profiles_with_simple_input(self):
         coef_matrix = np.array(
             [
@@ -261,7 +261,7 @@ class TestCalcualteLstsqProfiles:
             ]
         )
         ratio_matrix = np.array([-1.0, -2.0, -1.0])
-        log_profile = MAXLFQ.calculate_lstsq_profiles(coef_matrix, ratio_matrix)
+        log_profile = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_matrix)
 
         expected_profile = np.array([0, 1, 2])
         observed_profile = log_profile - np.nanmin(log_profile)
@@ -271,18 +271,18 @@ class TestCalcualteLstsqProfiles:
 class TestCalculationOfProfilesFromIntensities:
     # fmt: off
     def test_with_complete_ratio_matrix_calculation(self, example_array):
-        ratio_matrix = MAXLFQ.calculate_pairwise_ratio_matrix(example_array, log_transformed=False)
+        ratio_matrix = MAXLFQ.calculate_pairwise_log_ratio_matrix(example_array, log_transformed=False)
         coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)
-        log_profile = MAXLFQ.calculate_lstsq_profiles(coef_matrix, ratio_array)
+        log_profile = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
 
         expected_profile = np.array([0, 0.27272727, 0.96969697])
         observed_profile = log_profile - np.nanmin(log_profile)
         np.testing.assert_allclose(observed_profile, expected_profile, atol=1e-08, equal_nan=True)
 
     def test_with_median_ratio_matrix_calculation(self, example_array):
-        ratio_matrix = MAXLFQ.calculate_pairwise_median_ratio_matrix(example_array, log_transformed=False)
+        ratio_matrix = MAXLFQ.calculate_pairwise_median_log_ratio_matrix(example_array, log_transformed=False)
         coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)
-        log_profile = MAXLFQ.calculate_lstsq_profiles(coef_matrix, ratio_array)
+        log_profile = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
 
         expected_profile = np.array([0., 0., 1.])
         observed_profile = log_profile - np.nanmin(log_profile)
@@ -290,9 +290,9 @@ class TestCalculationOfProfilesFromIntensities:
 
     def test_with_missing_values(self, example_array):
         example_array[:, 1] = 0
-        ratio_matrix = MAXLFQ.calculate_pairwise_median_ratio_matrix(example_array, log_transformed=False)
+        ratio_matrix = MAXLFQ.calculate_pairwise_median_log_ratio_matrix(example_array, log_transformed=False)
         coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)
-        log_profile = MAXLFQ.calculate_lstsq_profiles(coef_matrix, ratio_array)
+        log_profile = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
 
         expected_profile = np.array([0., np.nan, 1.])
         observed_profile = log_profile - np.nanmin(log_profile)
