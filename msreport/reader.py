@@ -504,6 +504,7 @@ class FragPipeReader(ResultReader):
         "proteins": "combined_protein.tsv",
         "peptides": "combined_peptide.tsv",
         "ions": "combined_ion.tsv",
+        "ion_evidence": "ion.tsv",
     }
     isobar_filenames: dict[str, str] = {
         "proteins": "protein.tsv",
@@ -702,6 +703,81 @@ class FragPipeReader(ResultReader):
         # TODO: not tested #
         df = self._read_file("ions" if filename is None else filename)
 
+        # FUTURE: replace this by _add_protein_entries(df, False) if FragPipe adds
+        #         'Indistinguishable Proteins' to the ion table.
+        df["Protein reported by software"] = df["Protein ID"]
+        df["Representative protein"] = df["Protein reported by software"]
+        if rename_columns:
+            df = self._rename_columns(df, prefix_column_tags)
+        if rewrite_modifications and rename_columns:
+            df = self._add_peptide_modification_entries(df)
+        return df
+
+    def import_ion_evidence(
+        self,
+        filename: Optional[str] = None,
+        rename_columns: bool = True,
+        rewrite_modifications: bool = True,
+        prefix_column_tags: bool = True,
+    ) -> pd.DataFrame:
+        """Reads and concatenates "ion.tsv" amd returns a processed dataframe.
+
+        Adds new columns to comply with the MsReport convention. "Modified sequence"
+        and "Modifications columns". "Protein reported by software" and "Representative
+        protein", both contain the first entry from "Leading razor protein".
+
+        "Modified sequence" entries contain modifications within square brackets.
+        "Modification" entries are strings in the form of "position:modification_text",
+        multiple modifications are joined by ";". An example for a modified sequence and
+        a modification entry: "PEPT[Phospho]IDO[Oxidation]", "4:Phospho;7:Oxidation".
+
+        Note that currently the format of the modification itself, as well as the
+        site localization probability are not modified; and no protein site entries are
+        added.
+
+        Args:
+            filename: Allows specifying an alternative filename, otherwise the default
+                filename is used.
+            rename_columns: If True, columns are renamed according to the MsReport
+                convention; default True.
+            rewrite_modifications: If True, the peptide format in "Modified sequence" is
+                changed according to the MsReport convention, and a "Modifications" is
+                added to contains the amino acid position for all modifications.
+                Requires 'rename_columns' to be true. Default True.
+            prefix_column_tags: If True, column tags such as "Intensity" are added
+                in front of the sample names, e.g. "Intensity sample_name". If False,
+                column tags are added afterwards, e.g. "Sample_name Intensity"; default
+                True.
+
+        Returns:
+            A DataFrame containing the processed ion table.
+        """
+        # TODO: not tested #
+
+        # --- Get paths of all ion.tsv files --- #
+        import pathlib
+
+        if filename is None:
+            filename = self.default_filenames["ion_evidence"]
+
+        ion_table_paths = []
+        for path in pathlib.Path(self.data_directory).iterdir():
+            ion_table_path = path / filename
+            if path.is_dir() and ion_table_path.exists():
+                ion_table_paths.append(ion_table_path)
+
+        # --- like self._read_file --- #
+        ion_tables = []
+        for path in ion_table_paths:
+            table = pd.read_csv(ion_table_path, sep="\t", low_memory=False)
+            str_cols = table.select_dtypes(include=["object"]).columns
+            table.loc[:, str_cols] = table.loc[:, str_cols].fillna("")
+
+            table["Sample"] = path.parent.name
+            ion_tables.append(table)
+        df = pd.concat(ion_tables, ignore_index=True)
+
+        # --- Process dataframe --- #
         # FUTURE: replace this by _add_protein_entries(df, False) if FragPipe adds
         #         'Indistinguishable Proteins' to the ion table.
         df["Protein reported by software"] = df["Protein ID"]
