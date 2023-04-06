@@ -111,6 +111,12 @@ class TestImportIonEvidence:
         assert "Modifications" in table
         assert "Intensity" in table
 
+    def test_tables_from_different_samples_are_different(self, test_reader):
+        table = test_reader.import_ion_evidence()
+        table_1 = table[table["Sample"] == "SampleA_1"]
+        table_2 = table[table["Sample"] == "SampleB_1"]
+        assert len(table_1) != len(table_2)
+
     def test_sample_column_filled_with_ion_table_folder(self, test_reader):
         table = test_reader.import_ion_evidence()
         np.testing.assert_array_equal(

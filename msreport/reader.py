@@ -770,12 +770,12 @@ class FragPipeReader(ResultReader):
 
         # --- like self._read_file --- #
         ion_tables = []
-        for path in ion_table_paths:
-            table = pd.read_csv(ion_table_path, sep="\t", low_memory=False)
+        for filepath in ion_table_paths:
+            table = pd.read_csv(filepath, sep="\t", low_memory=False)
             str_cols = table.select_dtypes(include=["object"]).columns
             table.loc[:, str_cols] = table.loc[:, str_cols].fillna("")
 
-            table["Sample"] = path.parent.name
+            table["Sample"] = filepath.parent.name
             ion_tables.append(table)
         df = pd.concat(ion_tables, ignore_index=True)
 
