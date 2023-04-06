@@ -126,8 +126,8 @@ class MaxQuantReader(ResultReader):
             dataframe, conforming to the MsReport naming convention.
         import_peptides: Reads a "peptides.txt" file and returns a processed
             dataframe, conforming to the MsReport naming convention.
-        import_ions: Reads an "evidence.xt" file and returns a processed dataframe,
-            conforming to the MsReport naming convention.
+        import_ion_evidence: Reads an "evidence.xt" file and returns a processed
+            dataframe, conforming to the MsReport naming convention.
 
     Attributes:
         default_filenames: (class attribute) Look up of filenames for the result files
@@ -153,7 +153,7 @@ class MaxQuantReader(ResultReader):
     default_filenames: dict[str, str] = {
         "proteins": "proteinGroups.txt",
         "peptides": "peptides.txt",
-        "ions": "evidence.txt",
+        "ion_evidence": "evidence.txt",
     }
     protected_columns: list[str] = ["iBAQ peptides"]
     sample_column_tags: list[str] = [
@@ -310,7 +310,7 @@ class MaxQuantReader(ResultReader):
             df = self._rename_columns(df, prefix_column_tags)
         return df
 
-    def import_ions(
+    def import_ion_evidence(
         self,
         filename: Optional[str] = None,
         rename_columns: bool = True,
@@ -348,7 +348,7 @@ class MaxQuantReader(ResultReader):
             A dataframe containing the processed ion table.
         """
         # TODO: not tested
-        df = self._read_file("ions")
+        df = self._read_file("ion_evidence")
         df["Protein reported by software"] = _extract_protein_ids(
             df["Leading razor protein"]
         )

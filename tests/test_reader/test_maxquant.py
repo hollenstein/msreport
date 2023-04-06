@@ -73,8 +73,8 @@ class TestMaxQuantReader:
         assert "SampleA_1 Intensity" in table
         assert not table["Leading razor protein"].str.contains("REV__").any()
 
-    def test_integration_import_ions(self):
-        table = self.reader.import_ions(
+    def test_integration_import_ion_evidence(self):
+        table = self.reader.import_ion_evidence(
             rename_columns=True,
             rewrite_modifications=True,
             drop_decoy=True,
