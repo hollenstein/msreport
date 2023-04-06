@@ -474,6 +474,8 @@ class FragPipeReader(ResultReader):
             convention.
         import_ions: Reads a "combined_ion.tsv" or "ion.tsv" file and returns a
             processed dataframe, conforming to the MsReport naming convention.
+        import_ion_evidence: Reads and concatenates all "ion.tsv" files and returns a
+            processed dataframe, conforming to the MsReport naming convention.
 
     Attributes:
         default_filenames: (class attribute) Look up of default filenames of the result
@@ -720,7 +722,7 @@ class FragPipeReader(ResultReader):
         rewrite_modifications: bool = True,
         prefix_column_tags: bool = True,
     ) -> pd.DataFrame:
-        """Reads and concatenates "ion.tsv" amd returns a processed dataframe.
+        """Reads and concatenates all "ion.tsv" files and returns a processed dataframe.
 
         Adds new columns to comply with the MsReport convention. "Modified sequence"
         and "Modifications columns". "Protein reported by software" and "Representative
