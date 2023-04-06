@@ -126,17 +126,18 @@ def calculate_pairwise_mode_log_ratio_matrix(
 def prepare_coefficient_matrix(
     ratio_matrix: np.ndarray,
 ) -> (np.ndarray, np.ndarray, np.ndarray):
-    """Generates a coefficient matrix from a ratio matrix.
+    """Generates a coefficient matrix from a log ratio matrix.
 
     Args:
         ratio_matrix: A numpy array containing one or multiple pair-wise ratio matrices.
-            Each ratio matrix must be a square array with the pair-wise ratios in their
-            respective positions. Only the upper triangular part of the ratio matrix is
-            used to generate the coefficient matrix. If the 'ratio_matrix' contains
-            multiple ratio matrices, the shape of the array should be (n, i, i), where n
-            is the number of ratio matrices and i is the number of rows and columns per
-            ratio matrix. If only one ratio matrix is provided, the shape of the array
-            should be (i, i).
+            Each ratio matrix must be a square array, with a ratio at position (i, j)
+            being calculated from an abundance table as 'column i - column j'. Ratios
+            should have been calculated by row index Only the upper triangular part of
+            the ratio matrix is used to generate the coefficient matrix. If the
+            'ratio_matrix' contains multiple ratio matrices, the shape of the array
+            should be (n, i, i), where n is the number of ratio matrices and i is the
+            number of rows and columns per ratio matrix. If only one ratio matrix is
+            provided, the shape of the array should be (i, i).
 
     Returns:
         Tuple containing the coefficient matrix, ratio array, and an initial rows array.
@@ -254,10 +255,11 @@ def _coefficients_from_single_row_matrix(ratio_matrix):
     """Calculates coefficients, ratios, and initial rows for a single row matrix.
 
     Args:
-        ratio_matrix: A numpy array containing one single pair-wise ratio matrices. The
-            ratio matrix must be a square array with the pair-wise ratios in their
-            respective positions. Only the upper triangular part of the ratio matrix is
-            used to generate the coefficient matrix.
+        ratio_matrix: A numpy array containing one single pair-wise ratio matrix. The
+            ratio matrix must be a square array, with a ratio at position (i, j) being
+            calculated from an abundance table as 'column i - column j'. Only the upper
+            triangular part of the ratio matrix is used to generate the coefficient
+            matrix.
 
     Returns:
         Tuple containing the coefficient matrix, ratio array, and an initial rows array.
@@ -286,11 +288,12 @@ def _coefficients_from_multi_row_matrix(ratio_matrix):
 
     Args:
         ratio_matrix: A numpy array containing multiple pair-wise ratio matrices. Each
-            ratio matrix must be a square array with the pair-wise ratios in their
-            respective positions. Only the upper triangular part of the ratio matrix is
-            used to generate the coefficient matrix. The shape of 'ratio_matrix' must be
-            (n, i, i), where n is the number of ratio matrices and i is the number of
-            rows and columns per ratio matrix.
+            ratio matrix must be a square array, with a ratio at position (i, j) being
+            calculated from an abundance table as 'column i - column j'. Only the upper
+            triangular part of the ratio matrix is used to generate the coefficient
+            matrix. The shape of 'ratio_matrix' must be(n, i, i), where n is the number
+            of ratio matrices and i is the number of rows and columns per ratio
+            matrix.
 
     Returns:
         Tuple containing the coefficient matrix, ratio array, and an initial rows array.
