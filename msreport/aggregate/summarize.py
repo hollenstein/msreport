@@ -199,7 +199,7 @@ def _prepare_grouping_indices(
         is_sorted: If True the table is expected to be already sorted with 'group_by'.
 
     Returns:
-        table, group_names, group_start_indices
+        group_start_indices, group_names, table
     """
     if not is_sorted:
         table = table.sort_values(by=group_by)
