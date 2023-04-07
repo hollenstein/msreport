@@ -153,7 +153,7 @@ def aggregate_unique_groups(
     aggregate_columns: Union[str, Iterable],
     condenser: Callable,
     is_sorted: bool,
-) -> np.ndarray:
+) -> (np.ndarray, np.ndarray):
     """Aggregates a table by applying a condenser function to unique groups.
 
     The function returns two arrays containing the aggregated values and the
