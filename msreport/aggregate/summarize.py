@@ -46,7 +46,7 @@ def join_unique(
     sep: str = ";",
     is_sorted: bool = False,
 ) -> pd.DataFrame:
-    """Per group concatenates unique values as a string with a separter.
+    """Per group concatenates unique values as a string with a separator.
 
     Args:
         table: Dataframe used for generating groups, which will be aggregated.
