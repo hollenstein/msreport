@@ -1,6 +1,63 @@
 from typing import Iterable, Union
 
 import pandas as pd
+import msreport.aggregate.condense as CONDENSE
+
+
+def pivot_table(
+    long_table: pd.DataFrame,
+    index: str,
+    group_by: str,
+    annotation_columns: Iterable[str],
+    pivoting_columns: Iterable[str],
+):
+    """Generates a pivoted table in wide format.
+
+    Args:
+        table: Dataframe in long format that is used to generate a table in wide format.
+        index: One or multiple column names that are used to group the table for
+            pivoting.
+        group_by: Column that is used to split the table on its unique entries.
+        annotation_columns: Each column generates a new column in the pivoted table.
+            Entries from each annotation column are aggregated for each group created by
+            the column(s) specified by 'index' and unique values are joined together
+            with ";" as separator.
+        pivoting_columns: Columns that are combined with unique entries from 'group_by'
+            to generate new columns in the pivoted table.
+
+    Returns:
+        A reshaped, pivot table with length equal to unique values from the 'index'
+        column.
+
+    Example:
+        >>> table = pd.DataFrame(
+        ...     {
+        ...         "ID": ["A", "B", "C", "B", "C", "D"],
+        ...         "Sample": ["S1", "S1", "S1", "S2", "S2", "S2"],
+        ...         "Annotation": ["A", "B", "C", "B", "C", "D"],
+        ...         "Quant": [1.0, 1.0, 1.0, 2.0, 2.0, 2.0],
+        ...     }
+        ... )
+        >>> pivot_table(table, "ID", "Sample", ["Annotation"], ["Quant"])
+          ID  Annotation  Quant S1  Quant S2
+        0  A           A       1.0       NaN
+        1  B           B       1.0       2.0
+        2  C           C       1.0       2.0
+        3  D           D       NaN       2.0
+    """
+    sub_tables = []
+    for column in annotation_columns:
+        sub_tables.append(join_unique(long_table, index, column))
+    for column in pivoting_columns:
+        sub_tables.append(pivot_column(long_table, index, group_by, column))
+
+    merged_table = sub_tables[0]
+    for sub_table in sub_tables[1:]:
+        merged_table = merged_table.join(sub_table, how="outer")
+    wide_table = merged_table.reset_index()
+
+    # wide_table = merge_and_reset_index(sub_tables)
+    return wide_table
 
 
 def pivot_column(
@@ -41,3 +98,39 @@ def pivot_column(
     pivot = table.pivot(index=index, columns=group_by, values=values)
     pivot.columns = [f"{values} {sample_column}" for sample_column in pivot.columns]
     return pivot
+
+
+def join_unique(
+    table: pd.DataFrame, index: Union[str, Iterable], values: str
+) -> pd.DataFrame:
+    """Returns a new dataframe with unique values from a column and grouped by 'index'.
+
+    Args:
+        table: Input dataframe from which to generate the new dataframe.
+        index: One or multiple column names group the table by.
+        values: Column which is used to extract unique values.
+
+    Returns:
+        A dataframe with a single column named 'values', where the unique values of the
+            column specified by 'values' are joined together with ";" for each group
+            created by the column(s) specified by 'index'.
+
+    Example:
+        >>> table = pd.DataFrame(
+        ...     {
+        ...         "ID": ["A", "A", "B", "B"],
+        ...         "Annotation": ["A1", "A1", "B1", "B1"],
+        ...     }
+        ... )
+        >>> join_unique(table, "ID", "Annotation")
+            Annotation
+        ID
+        A           A1
+        B           B1
+    """
+    series = table.groupby(index).apply(
+        lambda x: CONDENSE.join_unique_str(x[values].to_numpy())
+    )
+    new_df = pd.DataFrame(series)
+    new_df.columns = [values]
+    return new_df

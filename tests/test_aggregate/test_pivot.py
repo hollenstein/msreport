@@ -10,6 +10,7 @@ def example_data():
     simple_table = pd.DataFrame(
         {
             "ID": ["A", "B", "C", "B", "C", "D"],
+            "Annotation": ["A", "B", "C", "B", "C", "D"],
             "Sample": ["S1", "S1", "S1", "S2", "S2", "S2"],
             "Quant": [1.0, 1.0, 1.0, 2.0, 2.0, 2.0],
         }
@@ -18,6 +19,7 @@ def example_data():
         {
             "ID_1": ["A", "A", "B", "A", "A", "B"],
             "ID_2": ["1", "2", "1", "1", "2", "1"],
+            "Annotation": ["A1", "A2", "B1", "A1", "A2", "B1"],
             "Sample": ["S1", "S1", "S1", "S2", "S2", "S2"],
             "Quant": [1.0, 1.0, 1.0, 2.0, 2.0, 2.0],
         }
@@ -94,3 +96,73 @@ class TestPivotColumn:
             },
         ).set_index(["ID_1", "ID_2"])
         assert pivot_table.equals(expected_table)
+
+
+class TestJoinUnique:
+    def test_column_values_as_expected(self, example_data):
+        long_table = example_data["complex_table"]
+        output_table = PIVOT.join_unique(long_table, index="ID_1", values="Annotation")
+        expected_table = pd.DataFrame(
+            data={
+                "ID_1": ["A", "B"],
+                "Annotation": ["A1;A2", "B1"],
+            },
+        ).set_index("ID_1")
+        assert output_table.equals(expected_table)
+
+    def test_column_values_as_expected_with_multi_index(self, example_data):
+        long_table = example_data["complex_table"]
+        output_table = PIVOT.join_unique(
+            long_table, index=["ID_1", "ID_2"], values="Annotation"
+        )
+        expected_table = pd.DataFrame(
+            data={
+                "ID_1": ["A", "A", "B"],
+                "ID_2": ["1", "2", "1"],
+                "Annotation": ["A1", "A2", "B1"],
+            },
+        ).set_index(["ID_1", "ID_2"])
+        assert output_table.equals(expected_table)
+
+
+class TestPivotTable:
+    def test_pivoted_table_from_single_index_as_expected(self, example_data):
+        long_table = example_data["simple_table"]
+        output_table = PIVOT.pivot_table(
+            long_table,
+            index="ID",
+            group_by="Sample",
+            annotation_columns=["Annotation"],
+            pivoting_columns=["Quant"],
+        )
+        expected_table = pd.DataFrame(
+            data={
+                "ID": ["A", "B", "C", "D"],
+                "Annotation": ["A", "B", "C", "D"],
+                "Quant S1": [1.0, 1.0, 1.0, np.nan],
+                "Quant S2": [np.nan, 2.0, 2.0, 2.0],
+            },
+        ).set_index("ID")
+        expected_table.reset_index(inplace=True)
+        assert output_table.equals(expected_table)
+
+    def test_pivoted_table_from_single_index_as_expected(self, example_data):
+        long_table = example_data["complex_table"]
+        output_table = PIVOT.pivot_table(
+            long_table,
+            index=["ID_1", "ID_2"],
+            group_by="Sample",
+            annotation_columns=["Annotation"],
+            pivoting_columns=["Quant"],
+        )
+        expected_table = pd.DataFrame(
+            data={
+                "ID_1": ["A", "A", "B"],
+                "ID_2": ["1", "2", "1"],
+                "Annotation": ["A1", "A2", "B1"],
+                "Quant S1": [1.0, 1.0, 1.0],
+                "Quant S2": [2.0, 2.0, 2.0],
+            },
+        ).set_index(["ID_1", "ID_2"])
+        expected_table.reset_index(inplace=True)
+        assert output_table.equals(expected_table)
