@@ -153,9 +153,9 @@ def prepare_coefficient_matrix(
         ...     ]
         ... )
         >>> prepare_coefficient_matrix(ratio_matrix)
-        (array([[ 1., -1.,  0.],
-                [ 1.,  0., -1.],
-                [ 0.,  1., -1.]]),
+        (array([[ 1, -1,  0],
+                [ 1,  0, -1],
+                [ 0,  1, -1]]),
          array([-0.1, -1. , -1. ]),
          array([0, 0, 0]))
 
@@ -183,9 +183,9 @@ def log_profiles_by_lstsq(coef_matrix: np.ndarray, ratio_array: np.ndarray):
     Example:
         >>> coef_matrix = np.array(
         ...     [
-        ...         [1.0, -1.0, 0.0],
-        ...         [1.0, 0.0, -1.0],
-        ...         [0.0, 1.0, -1.0],
+        ...         [1, -1, 0],
+        ...         [1, 0, -1],
+        ...         [0, 1, -1],
         ...     ]
         ... )
         >>> ratio_array = np.array([-0.1, -1.0, -1.0])
@@ -271,7 +271,7 @@ def _coefficients_from_single_row_matrix(ratio_matrix):
     coef_combinations = list(itertools.combinations(range(num_coef), 2))
     num_coef_combinations = len(coef_combinations)
 
-    coef_matrix = np.zeros((num_coef_combinations, num_coef))
+    coef_matrix = np.zeros((num_coef_combinations, num_coef), dtype=int)
     ratio_array = np.zeros(num_coef_combinations)
     initial_rows = np.zeros(num_coef_combinations, dtype=int)
 
@@ -306,7 +306,7 @@ def _coefficients_from_multi_row_matrix(ratio_matrix):
     num_matrices = ratio_matrix.shape[0]
     coef_matrix_rows = num_coef_combinations * num_matrices
 
-    coef_matrix = np.zeros((coef_matrix_rows, num_coef))
+    coef_matrix = np.zeros((coef_matrix_rows, num_coef), dtype=int)
     ratio_array = np.zeros(coef_matrix_rows)
     initial_rows = np.zeros(coef_matrix_rows, dtype=int)
 

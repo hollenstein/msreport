@@ -255,9 +255,9 @@ class TestLogProfilesByLastsq:
     def test_expected_profiles_returned_with_simple_input(self):
         coef_matrix = np.array(
             [
-                [1.0, -1.0, 0.0],
-                [1.0, 0.0, -1.0],
-                [0.0, 1.0, -1.0],
+                [1, -1, 0],
+                [1, 0, -1],
+                [0, 1, -1],
             ]
         )
         ratio_matrix = np.array([-1.0, -2.0, -1.0])
@@ -270,18 +270,18 @@ class TestLogProfilesByLastsq:
     def test_expected_profiles_returned_with_long_input_and_nan(self):
         coef_matrix = np.array(
             [
-                [1.0, -1.0, 0.0],
-                [1.0, 0.0, -1.0],
-                [0.0, 1.0, -1.0],
-                [1.0, -1.0, 0.0],
-                [1.0, 0.0, -1.0],
-                [0.0, 1.0, -1.0],
-                [1.0, -1.0, 0.0],
-                [1.0, 0.0, -1.0],
-                [0.0, 1.0, -1.0],
-                [1.0, -1.0, 0.0],
-                [1.0, 0.0, -1.0],
-                [0.0, 1.0, -1.0],
+                [1, -1, 0],
+                [1, 0, -1],
+                [0, 1, -1],
+                [1, -1, 0],
+                [1, 0, -1],
+                [0, 1, -1],
+                [1, -1, 0],
+                [1, 0, -1],
+                [0, 1, -1],
+                [1, -1, 0],
+                [1, 0, -1],
+                [0, 1, -1],
             ]
         )
         ratio_array = np.array([0, -1, -1, 0, -1, -1, 0, np.nan, np.nan, -1, -1, 0])
@@ -309,9 +309,9 @@ class TestLogProfilesByLastsq:
     def test_columns_not_present_in_coef_matrix_return_nan(self):
         coef_matrix = np.array(
             [
-                [0, 1.0, -1.0, 0.0, 0],
-                [0, 1.0, 0.0, -1.0, 0],
-                [0, 0.0, 1.0, -1.0, 0],
+                [0, 1, -1, 0, 0],
+                [0, 1, 0, -1, 0],
+                [0, 0, 1, -1, 0],
             ]
         )
         ratio_matrix = np.array([-1.0, -2.0, -1.0])
