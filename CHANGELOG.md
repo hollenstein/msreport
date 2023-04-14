@@ -2,11 +2,18 @@
 
 ----------------------------------------------------------------------------------------
 
-## 0.0.12 - (Upcoming)
+## 0.0.12 - Data aggregation methods and MaxLFQ
 
 ### Added
-- New module `msreport.helper.maxlfq`
-- New module `msreport.helper.aggregate`
+- New module `msreport.aggregate`, containing the submodules:
+  - `pivot` for converting a table in long format to wide format.
+  - `condense` provides various low-level functions to condense multiple rows into a
+    single one, for example by summing up values, counting unique values, are summing up
+    data by median ratio regression similar to the MaxLFQ algorithm.
+  - `summarize` provides high-level functions to aggregate a table on unique entries
+    and condense the row information in various ways. 
+- New module `msreport.helper.maxlfq` that contains functions to perform the various
+  steps required for aggregating a table with the MaxLFQ algorithm.
 - Added `reader.FragPipeReader` method `import_ion_evidence` to read and concatenate all
   ion.tsv files from a FragPipe result folder.
 
