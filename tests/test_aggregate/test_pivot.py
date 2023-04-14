@@ -126,7 +126,7 @@ class TestJoinUnique:
 
 
 class TestPivotTable:
-    def test_pivoted_table_from_single_index_as_expected(self, example_data):
+    def test_pivoted_table_from_single_index_looks_as_expected(self, example_data):
         long_table = example_data["simple_table"]
         output_table = PIVOT.pivot_table(
             long_table,
@@ -146,7 +146,7 @@ class TestPivotTable:
         expected_table.reset_index(inplace=True)
         assert output_table.equals(expected_table)
 
-    def test_pivoted_table_from_single_index_as_expected(self, example_data):
+    def test_pivoted_table_from_multi_index_looks_as_expected(self, example_data):
         long_table = example_data["complex_table"]
         output_table = PIVOT.pivot_table(
             long_table,

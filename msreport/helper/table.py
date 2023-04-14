@@ -187,3 +187,26 @@ def find_sample_columns(
         if any([sample in column for sample in samples]):
             matched_columns.append(column)
     return matched_columns
+
+
+def join_tables(
+    tables: Iterable[pd.DataFrame], reset_index: bool = False
+) -> pd.DataFrame:
+    """Returns a joined dataframe.
+
+    Dataframes are merged iteratively on their index using an outer join, beginning with
+    the first entry from 'tables'. Can only join dataframes with different columns.
+
+    Args:
+        tables: Dataframes that will be merged together.
+        reset_index: If True, the index of the joined dataframe is reset.
+
+    Returns:
+        A merged dataframe.
+    """
+    merged_table = tables[0]
+    for table in tables[1:]:
+        merged_table = merged_table.join(table, how="outer")
+    if reset_index:
+        merged_table.reset_index(inplace=True)
+    return merged_table

@@ -2,6 +2,7 @@ from typing import Iterable, Union
 
 import pandas as pd
 import msreport.aggregate.condense as CONDENSE
+import msreport.helper
 
 
 def pivot_table(
@@ -51,12 +52,7 @@ def pivot_table(
     for column in pivoting_columns:
         sub_tables.append(pivot_column(long_table, index, group_by, column))
 
-    merged_table = sub_tables[0]
-    for sub_table in sub_tables[1:]:
-        merged_table = merged_table.join(sub_table, how="outer")
-    wide_table = merged_table.reset_index()
-
-    # wide_table = merge_and_reset_index(sub_tables)
+    wide_table = msreport.helper.join_tables(sub_tables, reset_index=True)
     return wide_table
 
 

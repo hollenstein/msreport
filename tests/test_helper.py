@@ -35,6 +35,120 @@ def test_find_sample_columns():
     assert columns == ["Test Sample_A", "Test Sample_B"]
 
 
+class TestJoinTables:
+    def test_join_two_tables_with_single_index(self):
+        tables = [
+            pd.DataFrame({"Column 1": [1, 2, 3]}, index=["A", "B", "C"]),
+            pd.DataFrame({"Column 2": [6, 5, 4]}, index=["C", "B", "A"]),
+        ]
+        expected = pd.DataFrame(
+            {"Column 1": [1, 2, 3], "Column 2": [4, 5, 6]}, index=["A", "B", "C"]
+        )
+        joined = msreport.helper.join_tables(tables, reset_index=False)
+        assert joined.equals(expected)
+
+    def test_join_three_tables_with_single_index(self):
+        tables = [
+            pd.DataFrame({"Column 1": [1, 2]}, index=["A", "B"]),
+            pd.DataFrame({"Column 2": [4, 3]}, index=["B", "A"]),
+            pd.DataFrame({"Column 3": [5, 6]}, index=["A", "B"]),
+        ]
+        expected = pd.DataFrame(
+            {"Column 1": [1, 2], "Column 2": [3, 4], "Column 3": [5, 6]},
+            index=["A", "B"],
+        )
+        joined = msreport.helper.join_tables(tables, reset_index=False)
+        assert joined.equals(expected)
+
+    def test_join_two_tables_with_multi_index(self):
+        tables = [
+            pd.DataFrame(
+                {
+                    "Column 1": [1, 2, 3],
+                    "Index 1": ["A", "A", "B"],
+                    "Index 2": ["1", "2", "-"],
+                }
+            ),
+            pd.DataFrame(
+                {
+                    "Column 2": [4, 5, 6],
+                    "Index 1": ["A", "B", "C"],
+                    "Index 2": ["2", "-", "-"],
+                }
+            ),
+        ]
+        for table in tables:
+            table.set_index(["Index 1", "Index 2"], inplace=True)
+        expected = pd.DataFrame(
+            {
+                "Column 1": [1, 2, 3, np.nan],
+                "Column 2": [np.nan, 4, 5, 6],
+                "Index 1": ["A", "A", "B", "C"],
+                "Index 2": ["1", "2", "-", "-"],
+            }
+        )
+        expected.set_index(["Index 1", "Index 2"], inplace=True)
+        joined = msreport.helper.join_tables(tables, reset_index=False)
+        assert joined.equals(expected)
+
+    def test_join_two_tables_partly_overlapping_single_index_multiple_columns(self):
+        tables = [
+            pd.DataFrame({"Column 1": [1, 2], "Column 2": [3, 4]}, index=["A", "B"]),
+            pd.DataFrame({"Column 3": [6, 5]}, index=["C", "B"]),
+        ]
+        expected = pd.DataFrame(
+            {
+                "Column 1": [1, 2, np.nan],
+                "Column 2": [3, 4, np.nan],
+                "Column 3": [np.nan, 5, 6],
+            },
+            index=["A", "B", "C"],
+        )
+        joined = msreport.helper.join_tables(tables, reset_index=False)
+        assert joined.equals(expected)
+
+    def test_join_two_tables_with_multi_index_and_reset_index(self):
+        tables = [
+            pd.DataFrame(
+                {
+                    "Column 1": [1, 2, 3],
+                    "Index 1": ["A", "A", "B"],
+                    "Index 2": ["1", "2", "-"],
+                }
+            ),
+            pd.DataFrame(
+                {
+                    "Column 2": [4, 5, 6],
+                    "Index 1": ["A", "B", "C"],
+                    "Index 2": ["2", "-", "-"],
+                }
+            ),
+        ]
+        for table in tables:
+            table.set_index(["Index 1", "Index 2"], inplace=True)
+        expected = pd.DataFrame(
+            {
+                "Index 1": ["A", "A", "B", "C"],
+                "Index 2": ["1", "2", "-", "-"],
+                "Column 1": [1, 2, 3, np.nan],
+                "Column 2": [np.nan, 4, 5, 6],
+            }
+        )
+        joined = msreport.helper.join_tables(tables, reset_index=True)
+        assert joined.equals(expected)
+
+    def test_join_two_tables_and_reset_index_with_no_index_name(self):
+        tables = [
+            pd.DataFrame({"Column 1": [1, 2, 3]}, index=["A", "B", "C"]),
+            pd.DataFrame({"Column 2": [6, 5, 4]}, index=["C", "B", "A"]),
+        ]
+        expected = pd.DataFrame(
+            {"index": ["A", "B", "C"], "Column 1": [1, 2, 3], "Column 2": [4, 5, 6]}
+        )
+        joined = msreport.helper.join_tables(tables, reset_index=True)
+        assert joined.equals(expected)
+
+
 def test_rename_mq_reporter_channels_only_intensity():
     table = pd.DataFrame(
         columns=[
