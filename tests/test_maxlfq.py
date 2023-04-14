@@ -252,7 +252,7 @@ class TestPrepareCoefficientMatrix:
 
 
 class TestLogProfilesByLastsq:
-    def test_correct_profiles_with_simple_input(self):
+    def test_expected_profiles_returned_with_simple_input(self):
         coef_matrix = np.array(
             [
                 [1.0, -1.0, 0.0],
@@ -261,11 +261,62 @@ class TestLogProfilesByLastsq:
             ]
         )
         ratio_matrix = np.array([-1.0, -2.0, -1.0])
-        log_profile = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_matrix)
+        log_profiles = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_matrix)
 
         expected_profile = np.array([0, 1, 2])
-        observed_profile = log_profile - np.nanmin(log_profile)
+        observed_profile = log_profiles - np.nanmin(log_profiles)
         np.testing.assert_allclose(observed_profile, expected_profile)
+
+    def test_expected_profiles_returned_with_long_input_and_nan(self):
+        coef_matrix = np.array(
+            [
+                [1.0, -1.0, 0.0],
+                [1.0, 0.0, -1.0],
+                [0.0, 1.0, -1.0],
+                [1.0, -1.0, 0.0],
+                [1.0, 0.0, -1.0],
+                [0.0, 1.0, -1.0],
+                [1.0, -1.0, 0.0],
+                [1.0, 0.0, -1.0],
+                [0.0, 1.0, -1.0],
+                [1.0, -1.0, 0.0],
+                [1.0, 0.0, -1.0],
+                [0.0, 1.0, -1.0],
+            ]
+        )
+        ratio_array = np.array([0, -1, -1, 0, -1, -1, 0, np.nan, np.nan, -1, -1, 0])
+        log_profiles = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
+
+        expected_profile = np.array([0, 0.27272727, 0.96969697])
+        observed_profile = log_profiles - np.nanmin(log_profiles)
+        np.testing.assert_allclose(
+            observed_profile, expected_profile, atol=1e-08, equal_nan=True
+        )
+
+    def test_empty_matrix_returns_all_nans(self):
+        coef_matrix = np.array(
+            [
+                [0, 0, 0],
+                [0, 0, 0],
+                [0, 0, 0],
+            ]
+        )
+        ratio_matrix = np.array([1, 2, 3])
+        observed_profile = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_matrix)
+        expected_profile = np.array([np.nan, np.nan, np.nan])
+        np.testing.assert_allclose(observed_profile, expected_profile)
+
+    def test_columns_not_present_in_coef_matrix_return_nan(self):
+        coef_matrix = np.array(
+            [
+                [0, 1.0, -1.0, 0.0, 0],
+                [0, 1.0, 0.0, -1.0, 0],
+                [0, 0.0, 1.0, -1.0, 0],
+            ]
+        )
+        ratio_matrix = np.array([-1.0, -2.0, -1.0])
+        log_profiles = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_matrix)
+        assert np.all(np.isnan(log_profiles) == [True, False, False, False, True])
 
 
 class TestCalculationOfProfilesFromIntensities:
@@ -273,28 +324,28 @@ class TestCalculationOfProfilesFromIntensities:
     def test_with_complete_ratio_matrix_calculation(self, example_array):
         ratio_matrix = MAXLFQ.calculate_pairwise_log_ratio_matrix(example_array, log_transformed=False)
         coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)
-        log_profile = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
+        log_profiles = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
 
         expected_profile = np.array([0, 0.27272727, 0.96969697])
-        observed_profile = log_profile - np.nanmin(log_profile)
+        observed_profile = log_profiles - np.nanmin(log_profiles)
         np.testing.assert_allclose(observed_profile, expected_profile, atol=1e-08, equal_nan=True)
 
     def test_with_median_ratio_matrix_calculation(self, example_array):
         ratio_matrix = MAXLFQ.calculate_pairwise_median_log_ratio_matrix(example_array, log_transformed=False)
         coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)
-        log_profile = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
+        log_profiles = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
 
         expected_profile = np.array([0., 0., 1.])
-        observed_profile = log_profile - np.nanmin(log_profile)
+        observed_profile = log_profiles - np.nanmin(log_profiles)
         np.testing.assert_allclose(observed_profile, expected_profile, atol=1e-08, equal_nan=True)
 
     def test_with_missing_values(self, example_array):
-        example_array[:, 1] = 0
+        example_array[:, 1] = np.nan
         ratio_matrix = MAXLFQ.calculate_pairwise_median_log_ratio_matrix(example_array, log_transformed=False)
         coef_matrix, ratio_array, initial_rows = MAXLFQ.prepare_coefficient_matrix(ratio_matrix)
-        log_profile = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
+        log_profiles = MAXLFQ.log_profiles_by_lstsq(coef_matrix, ratio_array)
 
         expected_profile = np.array([0., np.nan, 1.])
-        observed_profile = log_profile - np.nanmin(log_profile)
+        observed_profile = log_profiles - np.nanmin(log_profiles)
         np.testing.assert_allclose(observed_profile, expected_profile, atol=1e-08, equal_nan=True)
     # fmt: on
