@@ -18,7 +18,7 @@
   ion.tsv files from a FragPipe result folder.
 
 ### Fixed
-- Mode calculation does now work with np.nan or when all values are identical.
+- Mode calculation did now work with np.nan or when all values are identical.
 - Replaced wrong "sklearn" library requirement with the correct one: "scikit-learn"
 
 ### Changed
