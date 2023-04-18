@@ -126,7 +126,7 @@ def calculate_pairwise_mode_log_ratio_matrix(
 def prepare_coefficient_matrix(
     ratio_matrix: np.ndarray,
 ) -> (np.ndarray, np.ndarray, np.ndarray):
-    """Generates a coefficient matrix from a log ratio matrix.
+    """Prepares coefficients, ratios, and initial row indices from a log ratio matrix.
 
     Args:
         ratio_matrix: A numpy array containing one or multiple pair-wise ratio matrices.
@@ -135,14 +135,21 @@ def prepare_coefficient_matrix(
             should have been calculated by row index Only the upper triangular part of
             the ratio matrix is used to generate the coefficient matrix. If the
             'ratio_matrix' contains multiple ratio matrices, the shape of the array
-            should be (n, i, i), where n is the number of ratio matrices and i is the
+            has to be (n, i, i), where n is the number of ratio matrices and i is the
             number of rows and columns per ratio matrix. If only one ratio matrix is
-            provided, the shape of the array should be (i, i).
+            provided, the shape of the array has to be (i, i).
 
     Returns:
-        Tuple containing the coefficient matrix, ratio array, and an initial rows array.
-        Where the initial rows array contains an index refering the number of the actual
-        ratio matrix, if 'ratio_matrix' has only 2 dimensions all row values are zero.
+        A tuple containing the following three elements:
+        - A coefficent matrix. 2d array with the number of rows corresponding to the
+          first dimension of the 'ratio_matrix' and the number of columns to the second
+          dimension.
+        - Ratios: 1d array containing the ratios from the ratio matrix, each entry
+          corresponds to a row in the coefficent matrix.
+        - Ratio matrix row indices: 1d array containing row indicies that refer to the
+          index of the first dimenstion from the 'ratio_matrix', and thus to row indices
+          from the original table that was used to generate 'the ratio_matrix'. If
+          the 'ratio_matrix' has only 2 dimensions all values are zero.
 
     Example:
         >>> ratio_matrix = np.array(
@@ -160,7 +167,6 @@ def prepare_coefficient_matrix(
          array([0, 0, 0]))
 
     """
-    # TODO: Update docstring!
     if len(ratio_matrix.shape) == 2:
         result = _coefficients_from_single_row_matrix(ratio_matrix)
     else:
@@ -175,10 +181,11 @@ def log_profiles_by_lstsq(coef_matrix: np.ndarray, ratio_array: np.ndarray):
 
     Args:
         coef_matrix: Two-dimensional numpy array representing the coefficients.
-        ratio_array: One-dimensional numpy array representing the ratios.
+        ratio_array: One-dimensional numpy array representing the ratios, each entry
+            corresponds to a row in the coefficent matrix.
 
     Returns:
-        One-dimensional numpy array representing the estimated least-squares profile.
+        One-dimensional numpy array containing the estimated least-squares profile.
 
     Example:
         >>> coef_matrix = np.array(
@@ -192,7 +199,6 @@ def log_profiles_by_lstsq(coef_matrix: np.ndarray, ratio_array: np.ndarray):
         >>> log_profiles_by_lstsq(coef_matrix, ratio_array)
         array([-0.36666667, -0.3       ,  0.66666667])
     """
-    # TODO: Update docstring!
     finite_rows = np.isfinite(ratio_array)
     coef_matrix = coef_matrix[finite_rows]
     ratio_array = ratio_array[finite_rows]
@@ -252,7 +258,7 @@ def _calculate_pairwise_centered_log_ratio_matrix(
 
 
 def _coefficients_from_single_row_matrix(ratio_matrix):
-    """Calculates coefficients, ratios, and initial rows for a single row matrix.
+    """Calculates coefficients, ratios, and initial row indices for a single row matrix.
 
     Args:
         ratio_matrix: A numpy array containing one single pair-wise ratio matrix. The
@@ -262,29 +268,34 @@ def _coefficients_from_single_row_matrix(ratio_matrix):
             matrix.
 
     Returns:
-        Tuple containing the coefficient matrix, ratio array, and an initial rows array.
-        The intial rows array contains all zeros and is returned for consistency with
-        `_coefficients_from_multi_row_matrix`.
+        A tuple containing the following three elements:
+        - A coefficent matrix. 2d array with the number of rows corresponding to the
+          first dimension of the 'ratio_matrix' and the number of columns to the second
+          dimension.
+        - Ratios: 1d array containing the ratios from the ratio matrix, each entry
+          corresponds to a row in the coefficent matrix.
+        - Ratio matrix row indices: 1d array with equal length as the ratios array,
+          containing all zero values. is returned for consistency with the function
+          `_coefficients_from_multi_row_matrix`.
     """
-    # TODO: Update docstring!
     num_coef = ratio_matrix.shape[1]
     coef_combinations = list(itertools.combinations(range(num_coef), 2))
     num_coef_combinations = len(coef_combinations)
 
     coef_matrix = np.zeros((num_coef_combinations, num_coef), dtype=int)
     ratio_array = np.zeros(num_coef_combinations)
-    initial_rows = np.zeros(num_coef_combinations, dtype=int)
+    idx_ratio_matrix_first_dimension = np.zeros(num_coef_combinations, dtype=int)
 
     for variable_position, (i, j) in enumerate(coef_combinations):
         ratio_ij = ratio_matrix[i, j]
         coef_matrix[variable_position, i] = 1
         coef_matrix[variable_position, j] = -1
         ratio_array[variable_position] = ratio_ij
-    return coef_matrix, ratio_array, initial_rows
+    return coef_matrix, ratio_array, idx_ratio_matrix_first_dimension
 
 
 def _coefficients_from_multi_row_matrix(ratio_matrix):
-    """Calculates coefficients, ratios, and initial rows for a multi row matrix.
+    """Calculates coefficients, ratios, and initial row indices for a multi row matrix.
 
     Args:
         ratio_matrix: A numpy array containing multiple pair-wise ratio matrices. Each
@@ -296,10 +307,16 @@ def _coefficients_from_multi_row_matrix(ratio_matrix):
             matrix.
 
     Returns:
-        Tuple containing the coefficient matrix, ratio array, and an initial rows array.
-        The initial rows array contains integers refering the index of the ratio matrix.
+        A tuple containing the following three elements:
+        - A coefficent matrix. 2d array with the number of rows corresponding to the
+          first dimension of the 'ratio_matrix' and the number of columns to the second
+          and third dimension.
+        - Ratios: 1d array containing the ratios from the ratio matrix, each entry
+          corresponds to a row in the coefficent matrix.
+        - Ratio matrix row indices: 1d array containing row indicies that refer to the
+          index of the first dimenstion from the 'ratio_matrix', and thus to row indices
+          from the original table that was used to generate 'the ratio_matrix'.
     """
-    # TODO: Update docstring!
     num_coef = ratio_matrix.shape[1]
     coef_combinations = list(itertools.combinations(range(num_coef), 2))
     num_coef_combinations = len(coef_combinations)
@@ -308,7 +325,7 @@ def _coefficients_from_multi_row_matrix(ratio_matrix):
 
     coef_matrix = np.zeros((coef_matrix_rows, num_coef), dtype=int)
     ratio_array = np.zeros(coef_matrix_rows)
-    initial_rows = np.zeros(coef_matrix_rows, dtype=int)
+    idx_ratio_matrix_first_dimension = np.zeros(coef_matrix_rows, dtype=int)
 
     for matrix_position, matrix in enumerate(ratio_matrix):
         for variable_position, (i, j) in enumerate(coef_combinations):
@@ -317,6 +334,6 @@ def _coefficients_from_multi_row_matrix(ratio_matrix):
             coef_matrix[position, i] = 1
             coef_matrix[position, j] = -1
             ratio_array[position] = ratio_ij
-            initial_rows[position] = matrix_position
+            idx_ratio_matrix_first_dimension[position] = matrix_position
 
-    return coef_matrix, ratio_array, initial_rows
+    return coef_matrix, ratio_array, idx_ratio_matrix_first_dimension
