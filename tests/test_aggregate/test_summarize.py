@@ -140,7 +140,7 @@ class TestApplyAggregationToUniqueGroups:
         aggregation, groups = SUMMARIZE.aggregate_unique_groups(
             table=self.table,
             group_by=self.group_by,
-            aggregate_columns="column1",
+            columns_to_aggregate="column1",
             condenser=np.sum,
             is_sorted=True,
         )
@@ -150,7 +150,7 @@ class TestApplyAggregationToUniqueGroups:
         aggregation, groups = SUMMARIZE.aggregate_unique_groups(
             table=self.table,
             group_by=self.group_by,
-            aggregate_columns=["column1", "column2"],
+            columns_to_aggregate=["column1", "column2"],
             condenser=lambda x: np.sum(x, axis=0),
             is_sorted=True,
         )
