@@ -62,6 +62,8 @@ def join_unique(
 ) -> pd.DataFrame:
     """Aggregates column(s) by concatenating unique values for each unique group.
 
+    Note that empty strings and np.nan do not contribute to the unique value count.
+
     Args:
         table: The input DataFrame used for aggregating on unique groups.
         group_by: The name of the column used to determine unique groups for
@@ -84,7 +86,7 @@ def join_unique(
         >>> table = pd.DataFrame(
         ...     {
         ...         "ID": ["A", "A", "B", "C", "C", "C"],
-        ...         "Peptide sequence": ["a", "a", "b", "c1", "c2", "c2"],
+        ...         "Peptide sequence": ["a", "", "b", "c1", "c2", "c2"],
         ...     }
         ... )
         >>> join_unique(table, group_by="ID", input_column="Peptide sequence")

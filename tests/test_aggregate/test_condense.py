@@ -81,6 +81,9 @@ class TestAggfuncJoinUniqueStr:
             (np.array(["c", "a", "b"]), "a;b;c"),  # Sort outcome
             (np.array(["a", "a", "b"]), "a;b"),  # With repeats
             (np.array([1, 3, 2]), "1;2;3"),  # Integers
+            (np.array(["a", "a", ""]), "a"),  # With empty string
+            (np.array(["", "", ""]), ""),  # With only empty strings
+            (np.array([1.0, 1.0, np.nan]), "1.0"),  # With np.nan
             (np.array([1, "a", 2]), "1;2;a"),  # Strings and integers mixed
             (np.array([1, "a", np.nan]), "1;a;nan"),  # With np.nan
         ],

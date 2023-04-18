@@ -25,7 +25,11 @@ def join_str_per_column(array: np.ndarray, sep: str = ";") -> np.ndarray:
 
 def join_unique_str(array: np.ndarray, sep: str = ";") -> str:
     """Returns a joined string of unique sorted values from the array."""
-    return sep.join(sorted([str(i) for i in set(array.flatten())]))
+    elements = []
+    for value in array.flatten():
+        if value != "" and not (isinstance(value, float) and np.isnan(value)):
+            elements.append(str(value))
+    return sep.join(sorted(set(elements)))
 
 
 def join_unique_str_per_column(array: np.ndarray, sep: str = ";") -> np.ndarray:
