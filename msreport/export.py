@@ -136,11 +136,11 @@ def to_amica(
     table_name: str = "amica_table.tsv",
     design_name: str = "amica_design.tsv",
 ) -> None:
-    """Writes amica input and design tables from a qtable.
+    """Exports a qtable to an amica protein table and design files.
 
-    As amica requires the same number of columns for each intensity group (Intensity,
-    LFQIntensity, ImputedIntensity, iBAQ), experiment intensity columns are removed and
-    only sample intensity columns are written to the output.
+    Note that amica expects the same number of columns for each group of intensity
+    columns (Intensity, LFQIntensity, ImputedIntensity, iBAQ), therefore only sample
+    columns are included from samples that are present in the qtable design.
 
     Args:
         qtable: A Qtable instance.
@@ -217,7 +217,9 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
             follow the MsReport conventions.
 
     Returns:
-        A dataframe which columns are in the amica data table format.
+        A dataframe which columns are in the amica data table format. Note that only
+        intensity columns are included from samples that are present in the qtable
+        design.
     """
     filter_columns = ["Valid", "Potential contaminant"]
     amica_column_mapping = {
@@ -226,12 +228,12 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
         "Valid": "quantified",
         "Potential contaminant": "Potential.contaminant",
     }
-    amica_column_tags = {
+    amica_column_tag_mapping = {
         "Intensity ": "Intensity_",
         "LFQ intensity ": "LFQIntensity_",
         "Expression ": "ImputedIntensity_",
-        "Spectral count ": "razorUniqueCount_",
         "iBAQ intensity ": "iBAQ_",
+        "Spectral count ": "razorUniqueCount_",
         "Average expression ": "AveExpr_",
         "Ratio [log2] ": "logFC_",
         "P-value ": "P.Value_",
@@ -243,12 +245,13 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
         "Expression",
         "iBAQ intensity",
     ]
+    sample_columns_tags = ["Spectral count"] + intensity_column_tags
     amica_comparison_tag = (" vs ", "__vs__")
 
     amica_table = qtable.get_data()
 
-    # Drop intensity columns that are not sample columns (e.g. experiment columns)
-    for tag in intensity_column_tags[2:3]:
+    # Drop intensity columns from samples that are not present in the design
+    for tag in sample_columns_tags:
         columns = helper.find_columns(amica_table, tag)
         sample_columns = helper.find_sample_columns(
             amica_table, tag, qtable.get_samples()
@@ -271,7 +274,7 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
         if column in amica_table.columns:
             amica_table[column] = ["+" if i else "" for i in amica_table[column]]
 
-    for old_tag, new_tag in amica_column_tags.items():
+    for old_tag, new_tag in amica_column_tag_mapping.items():
         for old_column in helper.find_columns(amica_table, old_tag):
             new_column = old_column.replace(old_tag, new_tag)
             amica_column_mapping[old_column] = new_column
