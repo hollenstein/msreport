@@ -13,6 +13,7 @@ Index([
 ], dtype='object')
 """
 import os
+from collections import defaultdict as ddict
 
 import numpy as np
 import pandas as pd
@@ -74,6 +75,58 @@ def contaminants_to_clipboard(qtable: Qtable) -> None:
 
     data.sort_values("iBAQ intensity total", ascending=False, inplace=True)
     data.to_clipboard(index=False)
+
+
+def to_perseus_matrix(
+    qtable: Qtable,
+    directory,
+    table_name: str = "perseus_matrix.tsv",
+) -> None:
+    """Exports a qtable to a perseus matrix file in tsv format.
+
+    The Perseus matrix file has a second header row that contains single-letter entries
+    for column annotations. The first entry starts with the string "#!{Type}" followed
+    by an annotation letter, such as "#!{Type}E".
+
+    The annotation single letter code is:
+        E = Expression
+        N = numerical
+        C = Categorical
+        T = Text
+
+    Args:
+        qtable: A Qtable instance.
+        directory: Output path of the generated files.
+        table_name: Optional, filename of the perseus matrix file. Default is
+            "perseus_matrix.tsv".
+    """
+    table = qtable.data
+    default_category = "T"
+    annotation_row_prefix = "#!{Type}"
+    categorical_tags = ["Events", "Missing"]
+
+    categorical_columns = ["Potential contaminant", "Valid"]
+    for tag in categorical_tags:
+        categorical_columns.extend([c for c in table.columns if tag in c])
+
+    expression_columns = [qtable.get_expression_column(s) for s in qtable.get_samples()]
+
+    numeric_columns = table.select_dtypes(include="number").columns.tolist()
+    numeric_columns = set(numeric_columns).difference(expression_columns)
+    numeric_columns = set(numeric_columns).difference(categorical_columns)
+
+    column_categories = ddict(lambda: default_category)
+    column_categories.update({c: "N" for c in numeric_columns})
+    column_categories.update({c: "C" for c in categorical_columns})
+    column_categories.update({c: "E" for c in expression_columns})
+
+    column_annotation = [column_categories[column] for column in table.columns]
+    column_annotation[0] = f"{annotation_row_prefix}{column_annotation[0]}"
+    annotation_frame = pd.DataFrame(columns=table.columns, data=[column_annotation])
+
+    perseus_matrix = pd.concat([annotation_frame, table])
+    perseus_matrix_path = os.path.join(directory, table_name)
+    perseus_matrix.to_csv(perseus_matrix_path, sep="\t", index=False)
 
 
 def to_amica(
