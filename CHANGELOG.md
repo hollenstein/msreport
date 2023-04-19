@@ -2,7 +2,7 @@
 
 ----------------------------------------------------------------------------------------
 
-## 0.0.12 - Data aggregation methods and MaxLFQ
+## 0.0.12 - Methods for data aggregation and MaxLFQ
 
 ### Added
 - New module `msreport.aggregate`, containing the submodules:
