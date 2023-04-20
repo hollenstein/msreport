@@ -1,9 +1,11 @@
 from __future__ import annotations
 from typing import Any, Optional
+import os
 import warnings
 
 import numpy as np
 import pandas as pd
+import yaml
 
 import msreport.helper as helper
 
@@ -312,6 +314,64 @@ class Qtable:
             expression_features.columns.difference(self._expression_features)
         )
 
+    def save(self, directory: str, basename: str):
+        """Save qtable to disk, creating a data, design, and config file.
+
+        Saving the qtable will generate three files, each starting with the specified
+        basename, followed by an individual extension. The generated files are:
+        "basename.data.tsv", "basename.design.tsv" and "basename.config.yaml"
+
+        Args:
+            directory: The path of the directory where to save the generated files.
+            basename: Basename of files that will be generated.
+        """
+        filepaths = _get_qtable_export_filepaths(directory, basename)
+
+        config_data = {
+            "Expression columns": self._expression_columns,
+            "Expression features": self._expression_features,
+            "Expression sample mapping": self._expression_sample_mapping,
+            "Data dtypes": self.data.dtypes.astype(str).to_dict(),
+        }
+        with open(filepaths["config"], "w") as openfile:
+            yaml.safe_dump(config_data, openfile)
+        self.data.to_csv(filepaths["data"], sep="\t", index=True)
+        self.design.to_csv(filepaths["design"], sep="\t", index=True)
+
+    @classmethod
+    def load(cls, directory: str, basename: str) -> Qtable:
+        """Load a qtable from disk by reading a data, design, and config file.
+
+        Loading a qtable will first import the three files generated during saving, then
+        create and configure a new qtable instance. Each of the filename starts with the
+        specified basename, followed by an individual extension. The loaded files are:
+        "basename.data.tsv", "basename.design.tsv" and "basename.config.yaml"
+
+        Args:
+            directory: The path of the directory where saved qtable files are located.
+            basename: Basename of saved files.
+
+        Returns:
+            An instance of Qtable loaded from the specified files.
+        """
+        filepaths = _get_qtable_export_filepaths(directory, basename)
+        with open(filepaths["config"]) as openfile:
+            config_data = yaml.safe_load(openfile)
+
+        dtypes = config_data["Data dtypes"]
+        data = _read_csv_str_safe(
+            filepaths["data"], dtypes, **{"sep": "\t", "index_col": 0}
+        )
+        design = pd.read_csv(
+            filepaths["design"], sep="\t", index_col=0, keep_default_na=True
+        )
+
+        qtable = Qtable(data, design)
+        qtable._expression_columns = config_data["Expression columns"]
+        qtable._expression_features = config_data["Expression features"]
+        qtable._expression_sample_mapping = config_data["Expression sample mapping"]
+        return qtable
+
     def to_tsv(self, path: str, index: bool = False):
         """Writes the data table to a .tsv (tab-separated values) file."""
         self.data.to_csv(path, sep="\t", index=index)
@@ -447,3 +507,26 @@ def _str_to_substr_mapping(strings, substrings) -> dict[str, str]:
     for sub in substrings:
         mapping.update({s: sub for s in strings if sub in s})
     return mapping
+
+
+def _get_qtable_export_filepaths(directory: str, name: str):
+    """Returns a dictionary of standard filepaths for loading and saving a qtable."""
+    filenames = {
+        "data": f"{name}.data.tsv",
+        "design": f"{name}.design.tsv",
+        "config": f"{name}.config.yaml",
+    }
+    filepaths = {k: os.path.join(directory, fn) for k, fn in filenames.items()}
+    return filepaths
+
+
+def _read_csv_str_safe(filepath: str, dtypes: dict[str, str], **kwargs):
+    """Uses pands.read_csv to read a csv file and preserves empty strings."""
+    converters = {}
+    dtypes_used = {}
+    for column, dtype in dtypes.items():
+        if dtype in ["object", "o"]:
+            converters[column] = lambda x: "" if x == "" else x
+        else:
+            dtypes_used[column] = dtype
+    return pd.read_csv(filepath, dtype=dtypes_used, converters=converters, **kwargs)

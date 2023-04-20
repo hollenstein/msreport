@@ -474,3 +474,28 @@ class TestQtableMakeExpressionTable:
             features=["id"], samples_as_columns=True
         )
         assert isinstance(expr_table_by_qtable, pd.DataFrame)
+
+
+class TestQtableSafeLoad:
+    @pytest.fixture(autouse=True)
+    def _init_qtable(self, example_qtable):
+        # Need to refactor to not rely on the FragPipeReader
+        # Note that it is import to test missing values / empty strings in object cols
+        from msreport.reader import FragPipeReader
+
+        reader = FragPipeReader("./tests/testdata/fragpipe", contaminant_tag="contam_")
+        proteins = reader.import_proteins()
+        design = pd.DataFrame(
+            [
+                ("SampleA_1", "Experiment_A", "1"),
+                ("SampleB_1", "Experiment_B", "1"),
+            ],
+            columns=["Sample", "Experiment", "Replicate"],
+        )
+        self.qtable = msreport.qtable.Qtable(proteins, design)
+        self.qtable.set_expression_by_tag("Intensity", log2=True)
+
+    def test_data_is_equal_after_safe_and_load(self, tmp_path):
+        self.qtable.save(tmp_path, "test_qtable")
+        loaded_qtable = self.qtable.load(tmp_path, "test_qtable")
+        pd.testing.assert_frame_equal(self.qtable.data, loaded_qtable.data)
