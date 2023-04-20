@@ -12,6 +12,7 @@ Index([
     'Sequence coverage',
 ], dtype='object')
 """
+from typing import Iterable, Optional
 import os
 from collections import defaultdict as ddict
 
@@ -158,6 +159,56 @@ def to_amica(
     amica_design.to_csv(amica_design_path, sep="\t", index=False)
 
 
+def write_html_coverage_map(
+    outpath: str,
+    protein_name: str,
+    sequence: str,
+    coverage_mask: Iterable[bool],
+    coverage_color: str = "#EE7779",
+    highlight_positions: Optional[Iterable[int]] = None,
+    highlight_color: str = "#00A3AE",
+    column_length: int = 10,
+    row_length: int = 50,
+):
+    """Generates an html file containing a protein coverage map.
+
+    Args:
+        outpath: The path where the generated html file will be saved.
+        protein_name: Name of the protein that will be displayed as part of the title on
+            the html page.
+        sequence: A protein amino acid sequence in single letter code.
+        coverage_mask: An iterable of boolean values that represents the coverage map of
+            a protein sequence. A True value at a specific position indicates that the
+            corresponding amino acid was covered by the identified peptides.
+        coverage_color: Hex color code for highlighting amino acids that correspond to
+            covered regions from the coverage mask, for example "#FF0000" for red.
+        highlight_positions: Optional, allows specifying a list of amino acid positions
+            that are highlighted in a different color. Note that positions specified
+            here will overwrite the coloring from the coverage mask. Positions are
+            one-indexed, which means that the first amino acid positions is 1.
+        highlight_color: Hex color code for highlighting amino acids specified with the
+            'highlight_positions' variable.
+        column_length: Number of amino acids after which a space is inserted.
+        row_length: Number of amino acids after which a new line is inserted.
+    """
+    highlight_positions = highlight_positions if highlight_positions is not None else ()
+    highlights = {pos - 1: highlight_color for pos in highlight_positions}
+    html_title = f"Protein coverage map: {protein_name}"
+
+    boundaries = _find_covered_region_boundaries(coverage_mask)
+    html_sequence_map = _generate_html_sequence_map(
+        sequence,
+        boundaries,
+        coverage_color,
+        highlights=highlights,
+        column_length=column_length,
+        row_length=row_length,
+    )
+    html_text = _generate_html_coverage_map_page(html_sequence_map, title=html_title)
+    with open(outpath, "w") as openfile:
+        openfile.write(html_text)
+
+
 def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
     """Returns a dataframe in the amica format.
 
@@ -245,3 +296,137 @@ def _amica_design_from(qtable: Qtable) -> pd.DataFrame:
     amica_design_columns = {"Sample": "samples", "Experiment": "groups"}
     amica_design = design.rename(columns=amica_design_columns)
     return amica_design
+
+
+def _generate_html_coverage_map_page(
+    html_sequence_map: str, title: str = "Protein coverage map"
+) -> str:
+    """Generates the code for an html pag displaying a protein coverage map.
+
+    Args:
+        html_sequence_map: A string containing html code that represents a protein
+            coverage map.
+        title: Title of coverage page, is displayed in the browser tab as well as a
+            title on the page itself.
+
+    Returns:
+        A string containing the html code of the sequence coverage html page.
+
+    """
+    # fmt: off
+    html_lines = (
+        '<!-- index.html -->',
+        '',
+        '<!DOCTYPE html>',
+        '<html lang="en">',
+        '    <head>',
+        '        <meta charset="utf-8">',
+        f'        <title>{title}</title>',
+        '        <style>',
+        '           h1 {font-family: "Arial", sans-serif;}'
+        '           body {',
+        '               font-family: "Lucida Console", "Courier new", monospace;',
+        '               font-size: 100%;'
+        '           }',
+        '        </style>',
+        '    </head>',
+        '    <body>',
+        f'        <h1>{title}</h1>',
+        f'        <p>{html_sequence_map}</p>',
+        '    </body>',
+        '</html>',
+    )
+    # fmt: on
+    html_string = "\n".join(html_lines)
+    return html_string
+
+
+def _generate_html_sequence_map(
+    sequence: str,
+    covered_regions: Iterable[Iterable[int]],
+    coverage_color: str,
+    highlights: Optional[dict[int, str]] = None,
+    column_length: int = 10,
+    row_length: int = 50,
+) -> str:
+    """Generates the html code for a sequence coverage map with colored highlighting.
+
+    Args:
+        sequence: Amino acid sequence of a protein
+        covered_regions: A list of tuples, where each tuple specifies the start and end
+            positions of the continuously covered regions in the protein sequence. Note
+            that the positions are zero-indexed.
+        coverage_color: Hex color code for highlighting amino acids from the covered
+            regions.
+        highlights: Optional, allows specifying amino acid positions that should be
+            highlighted with a specific color. Must be a dictionary with keys being
+            zero indexed protein positions and values hex color codes.
+        column_length: Number of amino acids after which a space is inserted.
+        row_length: Number of amino acids after which a new line is inserted.
+
+    Returns:
+        A string containing the html code of the sequence coverage map.
+    """
+    coverage_start_idx, coverage_stop_idx = list(zip(*covered_regions))
+    highlights = highlights if highlights is not None else {}
+
+    strings = []
+    for pos, character in enumerate(sequence):
+        character = character.upper()
+        if pos in coverage_start_idx:
+            strings.append(f'<FONT COLOR="{coverage_color}">')
+
+        if pos == 0:
+            ...
+        elif pos % row_length == 0:
+            strings.append("<br>")
+        elif pos % column_length == 0:  # rather Pos in this row
+            strings.append(" ")
+
+        if pos in highlights:
+            color = highlights[pos]
+            strings.append(f'<FONT COLOR="{color}">{character}</FONT>')
+        else:
+            strings.append(character)
+
+        if pos in coverage_stop_idx:
+            strings.append("</FONT>")
+    html_sequence_block = "".join(strings)
+    return html_sequence_block
+
+
+def _find_covered_region_boundaries(coverage_mask: Iterable[bool]) -> list[tuple[int]]:
+    """Returns a list of boundaries from continuously covered regions in a protein.
+
+    Args:
+        coverage_mask: An iterable of boolean values that represents the coverage map of
+            a protein sequence. A True value at a specific position indicates that the
+            corresponding amino acid was covered by the identified peptides.
+
+    Returns:
+        A list of tuples, where each tuple specifies the start and end positions of the
+        continuously covered regions in the coverage mask. Note that the positions are
+        zero-indexed.
+
+    Examples:
+        >>> coverage_mask = [True, True, False, False, True]
+        >>> _find_covered_region_boundaries(coverage_mask)
+        ... [(0, 1), (4, 4)]
+    """
+    start = []
+    stop = []
+
+    start_index = 0
+
+    previous_was_covered = coverage_mask[0]
+    if previous_was_covered:
+        start.append(start_index)
+    for i, is_covered in enumerate(coverage_mask[1:], start=start_index + 1):
+        if is_covered and not previous_was_covered:
+            start.append(i)
+        if not is_covered and previous_was_covered:
+            stop.append(i - 1)
+        previous_was_covered = is_covered
+    if previous_was_covered:
+        stop.append(i)
+    return list(zip(start, stop))
