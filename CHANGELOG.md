@@ -2,6 +2,34 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.13 - The export update
+
+### Added
+- New function `msreport.export.to_perseus_matrix` exports data from a qtable into a tsv
+  file that can be imported into perseus and already contains column annotation types.
+- `Qtable` got a `Qtable.save` and `Qtable.load` method, which allows exporting and
+  importing a configured qtable instance. Saving a qtable generates three separate
+  files, for the tabular data, the design table, and configuration information.
+- Added a function to generate an html file containing a nicely formated protein
+  coverage map. Using `msreport.export.write_html_coverage_map` allows specifying
+  covered regions that will be indicated with a specific color, as well as individual
+  protein positions that will be highlighted with a different color (which can be used
+  for example to highlight modified sites).
+
+### Fixed
+- Fixed an issue of the exported amica table containing unequal numbers of samples for
+  different intensity columns. The issue emerged when only a subset of the samples
+  present in a protein table were used in the design, and thus as expression columns.
+  In this case the amica table contained the full set of sample intensity columns, but
+  only the subset of sample expression columns that were present in the design. Now,
+  only sample intensity columns are exported for samples that are present in the
+  design.
+
+### Deprecated
+- The `Qtable.to_tsv` method will be removed in the future, use `Qtable.save` insted.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.12 - Methods for data aggregation and MaxLFQ
 
 ### Added
