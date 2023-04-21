@@ -374,6 +374,11 @@ class Qtable:
 
     def to_tsv(self, path: str, index: bool = False):
         """Writes the data table to a .tsv (tab-separated values) file."""
+        warnings.warn(
+            "This function is deprecated, use Qtable.save() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.data.to_csv(path, sep="\t", index=index)
 
     def to_clipboard(self, index: bool = False):
