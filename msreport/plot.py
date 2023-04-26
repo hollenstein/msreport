@@ -93,9 +93,10 @@ def missing_values_vertical(
     are added by calling msreport.analyze.analyze_missingness(qtable: Qtable).
 
     Args:
-        qtable: A Qtable instance, which data is used for plotting.
-        exclude_invalid: Optional, if True rows are filtered according to the Boolean
-            entries of "Valid"; default True.
+        qtable: A `Qtable` instance, which data is used for plotting.
+        exclude_invalid: If True, rows are filtered according to the Boolean entries of
+            the "Valid" column.
+
     Returns:
         A matplotlib Figure and a list of Axes objects containing the missing values
         plots.
@@ -149,9 +150,10 @@ def missing_values_horizontal(
     are added by calling msreport.analyze.analyze_missingness(qtable: Qtable).
 
     Args:
-        qtable: A Qtable instance, which data is used for plotting.
-        exclude_invalid: Optional, if True rows are filtered according to the Boolean
-            entries of "Valid"; default True.
+        qtable: A `Qtable` instance, which data is used for plotting.
+        exclude_invalid: If True, rows are filtered according to the Boolean entries of
+            the "Valid" column.
+
     Returns:
         A matplotlib Figure and Axes object, containing the missing values plot.
     """
@@ -196,21 +198,28 @@ def missing_values_horizontal(
 def contaminants(qtable: Qtable, tag: str = "iBAQ intensity") -> (plt.Figure, plt.Axes):
     """A bar plot that displays relative contaminant amounts (iBAQ) per sample.
 
-    The relative iBAQ values are calculated as:
-    sum of contaminant iBAQ intensities / sum of all iBAQ intensities * 100
-
     Requires "iBAQ intensity" columns for each sample, and a "Potential contaminant"
     column to identify the potential contaminant entries.
 
+    The relative iBAQ values are calculated as:
+    sum of contaminant iBAQ intensities / sum of all iBAQ intensities * 100
+
+    It is possible to use intensity columns that are either log-transformed or not. The
+    intensity values undergo an automatic evaluation to determine if they are already
+    in log-space, and if necessary, they are transformed accordingly.
+
     Args:
-        qtable: A Qtable instance, which data is used for plotting.
-        tag: String used for matching the iBAQ intensity columns; default
-            "iBAQ intensity", which corresponds to the MsReport convention.
+        qtable: A `Qtable` instance, which data is used for plotting.
+        tag: A string that is used to extract iBAQ intensity containing columns.
+            Default "iBAQ intensity".
 
     Returns:
         A matplotlib Figure and Axes object, containing the contaminants plot.
     """
     data = qtable.make_sample_table(tag, samples_as_columns=True)
+    if msreport.helper.intensities_in_logspace(data):
+        data = np.power(2, data)
+
     relative_intensity = data / data.sum() * 100
     contaminants = qtable["Potential contaminant"]
     samples = data.columns.to_list()
@@ -263,11 +272,16 @@ def sample_intensities(
     each sample the log2 ratios to the pseudo reference are displayed as a box plot. The
     lower subplot displays the summed intensity of all rows per sample as bar plots.
 
+    It is possible to use intensity columns that are either log-transformed or not. The
+    intensity values undergo an automatic evaluation to determine if they are already
+    in log-space, and if necessary, they are transformed accordingly.
+
     Args:
-        qtable: A Qtable instance, which data is used for plotting.
-        tag: String used for matching the intensity columns.
-        exclude_invalid: Optional, if True rows are filtered according to the Boolean
-            entries of "Valid"; default True.
+        qtable: A `Qtable` instance, which data is used for plotting.
+        tag: A string that is used to extract intensity containing columns.
+            Default "Intensity".
+        exclude_invalid: If True, rows are filtered according to the Boolean entries of
+            the "Valid" column.
 
     Returns:
         A matplotlib Figure and a list of Axes objects, containing the intensity plots.
@@ -315,10 +329,10 @@ def replicate_ratios(
     Requires log2 transformed expression values.
 
     Args:
-        qtable: A Qtable instance, which data is used for plotting.
-        exclude_invalid: Optional, if True rows are filtered according to the Boolean
-            entries of "Valid"; default True.
-        xlim: Optional, specifies the displayed log2 ratio range on the x-axis. Default
+        qtable: A `Qtable` instance, which data is used for plotting.
+        exclude_invalid: If True, rows are filtered according to the Boolean entries of
+            the "Valid" column.
+        xlim: Specifies the displayed range for the log2 ratios on the x-axis. Default
             is from -2 to 2.
 
     Returns:
@@ -402,12 +416,12 @@ def experiment_ratios(
     `msreport.analyze.calculate_experiment_means(qtable: Qtable)`.
 
     Args:
-        qtable: A Qtable instance, which data is used for plotting.
+        qtable: A `Qtable` instance, which data is used for plotting.
         experiments: Optional, list of experiments that will be displayed. If None, all
             experiments from `qtable.design` will be used.
-        exclude_invalid: Optional, if True rows are filtered according to the Boolean
-            entries of "Valid"; default True.
-        ylim: Optional, specifies the displayed log2 ratio range on the y-axis. Default
+        exclude_invalid: If True, rows are filtered according to the Boolean entries of
+            the "Valid" column.
+        ylim: Specifies the displayed range for the log2 ratios on the y-axis. Default
             is from -2 to 2.
 
     Returns:
@@ -483,19 +497,22 @@ def sample_pca(
     values are shown. On the right subplot the explained variance of the principle
     components is display as barplots.
 
+    It is possible to use intensity columns that are either log-transformed or not. The
+    intensity values undergo an automatic evaluation to determine if they are already
+    in log-space, and if necessary, they are transformed accordingly.
+
     Args:
-        qtable: A Qtable instance, which data is used for the PCA analysis.
-        tag: String used for matching the intensity columns, default "Expression".
-            Intensity values are evaluated whether they are likely to be in log-space,
-            and if not are log2 transformed for the PCA analysis.
+        qtable: A `Qtable` instance, which data is used for plotting.
+        tag: A string that is used to extract intensity containing columns.
+            Default "Expression".
         pc_x: Principle component to plot on x-axis of the scatter plot, default "PC1".
             The number of calculated principal components is equal to the number of
             samples.
         pc_y: Principle component to plot on y-axis of the scatter plot, default "PC2".
             The number of calculated principal components is equal to the number of
             samples.
-        exclude_invalid: Optional, if True rows are filtered according to the Boolean
-            entries of "Valid"; default True.
+        exclude_invalid: If True, rows are filtered according to the Boolean entries of
+            the "Valid" column.
 
     Returns:
         A matplotlib Figure and a list of Axes objects, containing the PCA plots.
@@ -613,7 +630,7 @@ def volcano_ma(
     """Generates a volcano and an MA plot for the comparison of two experiments.
 
     Args:
-        qtable: A Qtable instance, which data is used for plotting.
+        qtable: A `Qtable` instance, which data is used for plotting.
         experiment_pair: The names of the two experiments that will be compared,
             experiments must be present in qtable.design.
         comparison_tag: String used in comparison columns to separate a pair of
@@ -624,8 +641,8 @@ def volcano_ma(
             "Representative Protein" column to be annotated. Entries are annotated with
             values from the "Gene Name" column if present, otherwise from the
             "Representative Protein" column.
-        exclude_invalid: Optional, if True rows are filtered according to the Boolean
-            entries of "Valid"; default True.
+        exclude_invalid: If True, rows are filtered according to the Boolean entries of
+            the "Valid" column.
 
     Returns:
         A matplotlib Figure object and a list of two Axes objects containing the volcano
@@ -707,19 +724,19 @@ def expression_comparison(
     display entries with only missing values in one of the two experiments.
 
     Args:
-        qtable: A Qtable instance, which data is used for the PCA analysis.
+        qtable: A `Qtable` instance, which data is used for plotting.
         experiment_pair: The names of the two experiments that will be compared,
             experiments must be present in qtable.design.
         comparison_tag: String used in comparison columns to separate a pair of
             experiments; default " vs ", which corresponds to the MsReport convention.
-        plot_average_expression: Optional, if True plot average expression instead of
-            maxium expression. Default False.
+        plot_average_expression: If True plot average expression instead of maxium
+            expression. Default False.
         special_proteins: Optional, allows to specify a list of entries from the
             "Representative Protein" column to be annotated. Entries are annotated with
             values from the "Gene Name" column if present, otherwise from the
             "Representative Protein" column.
-        exclude_invalid: Optional, if True rows are filtered according to the Boolean
-            entries of "Valid"; default True.
+        exclude_invalid: If True, rows are filtered according to the Boolean entries of
+            the "Valid" column.
 
     Returns:
         A matplotlib Figure objects and a list of three Axes objects containing the
@@ -938,14 +955,18 @@ def expression_clustermap(
 ) -> sns.matrix.ClusterGrid:
     """Plot sample expression values as a hierarchically-clustered heatmap.
 
+    Missing or imputed values are assigned an intensity value of 0 to perform the
+    clustering.Once clustering is done, these values are removed from the heatmap,
+    leaving white entries on the heatmap.
+
     Args:
-        qtable: A Qtable instance, which expression data is used for the heatmap.
-        exclude_invalid: Optional, if True rows are filtered according to the Boolean
-            entries of "Valid"; default True.
+        qtable: A `Qtable` instance, which data is used for plotting.
+        exclude_invalid: If True, rows are filtered according to the Boolean entries of
+            the "Valid" column.
 
     Returns:
-        A seaborn ClusterGrid instance, which has a `savefig` method that can be used
-        for saving the figure.
+        A seaborn ClusterGrid instance. Note that ClusterGrid has a `savefig` method
+        that can be used for saving the figure.
     """
     samples = qtable.get_samples()
     experiments = qtable.get_experiments()
@@ -995,11 +1016,11 @@ def pvalue_histogram(
 ) -> (plt.Figure, list[plt.Axes]):
     """Generates p-value histograms for one or multiple experiment comparisons.
 
-    Histograms are generated with 20 bins of size 0.05. The p-values of each experiment
-    comparison are plotted on a separate subplot.
+    Histograms are generated with 20 bins of size 0.05. The p-value distribution of each
+    experiment comparison is shown with a separate subplot.
 
     Args:
-        qtable: A Qtable instance, which data is used for the p-value histograms.
+        qtable: A `Qtable` instance, which data is used for plotting.
         pvalue_tag: String used for matching the pvalue columns; default "P-value",
             which corresponds to the MsReport convention.
         comparison_tag: String used in comparison columns to separate a pair of
@@ -1008,8 +1029,8 @@ def pvalue_histogram(
             plotting. For each experiment pair a p-value column must exists that follows
             the format f"{pvalue_tag} {experiment_1}{comparison_tag}{experiment_2}".
             If None, all experiment comparisons that are found in qtable.data are used.
-        exclude_invalid: Optional, if True rows are filtered according to the Boolean
-            entries of "Valid"; default True.
+        exclude_invalid: If True, rows are filtered according to the Boolean entries of
+            the "Valid" column.
 
     Returns:
         A matplotlib Figure and a list of Axes objects, containing the p-value plots.
