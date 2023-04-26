@@ -664,12 +664,12 @@ def volcano_ma(
     params = {
         "highlight": {
             "s": 10,
-            "color": "#FAB74E",
+            "color": "#E73C40",
             "edgecolor": "#000000",
             "lw": 0.2,
             "zorder": 3,
         },
-        "default": {"s": scatter_size, "color": "#A0A0A0", "zorder": 2},
+        "default": {"s": scatter_size, "color": "#40B7B5", "zorder": 2},
     }
 
     for column in msreport.helper.find_sample_columns(
@@ -753,11 +753,12 @@ def expression_comparison(
     params = {
         "highlight": {
             "s": 10,
-            "color": "#FAB74E",
+            "color": "#E73C40",
             "edgecolor": "#000000",
             "lw": 0.2,
             "zorder": 3,
         },
+        "default": {"alpha": 0.75, "color": "#40B7B5", "zorder": 2},
     }
 
     mask = (qtable_data[f"Events {exp_1}"] + qtable_data[f"Events {exp_2}"]) > 0
@@ -800,7 +801,7 @@ def expression_comparison(
     x_values = values[x_col]
     y_values = values[y_col]
     ax.grid(axis="both", linestyle="dotted", linewidth=1)
-    ax.scatter(x_values, y_values, s=s, alpha=0.75, color="#A0A0A0", zorder=2)
+    ax.scatter(x_values, y_values, s=s, **params["default"])
     highlight_mask = values["Representative protein"].isin(special_proteins)
     _annotated_scatter(
         x_values=x_values[highlight_mask],
@@ -835,10 +836,9 @@ def expression_comparison(
                     y=values[y_variable],
                     size=np.sqrt(s * 2),
                     marker="o",
-                    alpha=0.75,
-                    color="#A0A0A0",
                     edgecolor="none",
                     ax=ax,
+                    **params["default"],
                 )
                 fig.canvas.draw()
             except UserWarning:
@@ -849,10 +849,9 @@ def expression_comparison(
                     jitter=True,
                     size=np.sqrt(s * 2),
                     marker="o",
-                    alpha=0.75,
-                    color="#A0A0A0",
                     edgecolor="none",
                     ax=ax,
+                    **params["default"],
                 )
                 ax.set_xlim(-0.2, 0.2)
             finally:
@@ -863,6 +862,7 @@ def expression_comparison(
                     y_values=offsets[:, 1],
                     labels=values[annotation_column][highlight_mask],
                     ax=ax,
+                    scatter_kws=params["highlight"],
                 )
                 ax.set_xlim(xlim)
 
