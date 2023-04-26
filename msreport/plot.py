@@ -829,42 +829,27 @@ def expression_comparison(
         if len(values) == 0:
             continue
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", category=UserWarning)
-            try:
-                sns.swarmplot(
-                    y=values[y_variable],
-                    size=np.sqrt(s * 2),
-                    marker="o",
-                    edgecolor="none",
-                    ax=ax,
-                    **params["default"],
-                )
-                fig.canvas.draw()
-            except UserWarning:
-                ax.clear()
-                ax.set_ylabel(y_variable)
-                sns.stripplot(
-                    y=values[y_variable],
-                    jitter=True,
-                    size=np.sqrt(s * 2),
-                    marker="o",
-                    edgecolor="none",
-                    ax=ax,
-                    **params["default"],
-                )
-                ax.set_xlim(-0.2, 0.2)
-            finally:
-                xlim = ax.get_xlim()
-                offsets = ax.collections[0].get_offsets()[highlight_mask]
-                _annotated_scatter(
-                    x_values=offsets[:, 0],
-                    y_values=offsets[:, 1],
-                    labels=values[annotation_column][highlight_mask],
-                    ax=ax,
-                    scatter_kws=params["highlight"],
-                )
-                ax.set_xlim(xlim)
+        sns.stripplot(
+            y=values[y_variable],
+            jitter=True,
+            size=np.sqrt(s * 2),
+            marker="o",
+            edgecolor="none",
+            ax=ax,
+            **params["default"],
+        )
+
+        xlim = -0.2, 0.2
+        ax.set_xlim(xlim)
+        offsets = ax.collections[0].get_offsets()[highlight_mask]
+        _annotated_scatter(
+            x_values=offsets[:, 0],
+            y_values=offsets[:, 1],
+            labels=values[annotation_column][highlight_mask],
+            ax=ax,
+            scatter_kws=params["highlight"],
+        )
+        ax.set_xlim(xlim)
 
     axes[0].set_title(f"Absent in\n{exp_1}", fontsize=9)
     axes[2].set_title(f"Absent in\n{exp_2}", fontsize=9)
