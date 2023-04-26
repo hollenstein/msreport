@@ -1041,13 +1041,11 @@ def pvalue_histogram(
         comparison_group = comparison_tag.join(experiment_pair)
         comparison_column = f"{pvalue_tag} {comparison_group}"
         p_values = data[comparison_column]
-        sns.histplot(
+        ax.hist(
             p_values,
             bins=bins,
-            ax=ax,
-            element="bars",
             zorder=2,
-            color="#FAB74E",
+            color="#fbc97a",
             edgecolor="#FFFFFF",
             linewidth=0.7,
         )
