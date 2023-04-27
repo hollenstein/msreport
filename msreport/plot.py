@@ -344,7 +344,11 @@ def replicate_ratios(
     )
     design = qtable.get_design()
 
-    experiments = design["Experiment"].unique().tolist()
+    experiments = []
+    for experiment in design["Experiment"].unique():
+        if len(qtable.get_samples(experiment)) >= 2:
+            experiments.append(experiment)
+
     num_experiments = len(experiments)
     max_replicates = max([len(qtable.get_samples(exp)) for exp in experiments])
     max_combinations = len(list(itertools.combinations(range(max_replicates), 2)))
@@ -357,6 +361,7 @@ def replicate_ratios(
     fig, axes = plt.subplots(
         num_experiments, max_combinations, figsize=figsize, sharex=True
     )
+    axes = axes if isinstance(axes[0], Iterable) else np.array([axes])
 
     color_wheel = ColorWheelDict()
     _ = [color_wheel[exp] for exp in experiments]
