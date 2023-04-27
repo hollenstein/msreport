@@ -335,7 +335,7 @@ def _generate_html_coverage_map_page(
         '    </head>',
         '    <body>',
         f'        <h1>{title}</h1>',
-        f'        <p>{html_sequence_map}</p>',
+        f'        <p><PRE>{html_sequence_map}</PRE></p>',
         '    </body>',
         '</html>',
     )
@@ -370,20 +370,46 @@ def _generate_html_sequence_map(
     Returns:
         A string containing the html code of the sequence coverage map.
     """
-    coverage_start_idx, coverage_stop_idx = list(zip(*covered_regions))
+    if covered_regions:
+        coverage_start_idx, coverage_stop_idx = list(zip(*covered_regions))
+    else:
+        coverage_start_idx, coverage_stop_idx = (), ()
     highlights = highlights if highlights is not None else {}
+    sequence_length = len(sequence)
 
+    def write_row_index(pos: int, strings: list) -> str:
+        ndigits = len(str(sequence_length))
+        row_index = str(pos + 1).rjust(ndigits) + "   "
+        strings.append(row_index)
+
+    def open_coverage_region(strings: list):
+        strings.append(f'<FONT COLOR="{coverage_color}">')
+
+    def close_coverage_region(strings: list):
+        strings.append("</FONT>")
+
+    def is_end_of_row(pos: int):
+        return (pos != 0) and (pos % row_length == 0)
+
+    def is_end_of_column(pos: int):
+        return (pos != 0) and (pos % column_length == 0) and not is_end_of_row(pos)
+
+    in_covered_region: bool
     strings = []
+    write_row_index(0, strings)
     for pos, character in enumerate(sequence):
-        character = character.upper()
         if pos in coverage_start_idx:
-            strings.append(f'<FONT COLOR="{coverage_color}">')
+            in_covered_region = True
+            open_coverage_region(strings)
 
-        if pos == 0:
-            ...
-        elif pos % row_length == 0:
+        if is_end_of_row(pos):
+            if in_covered_region:
+                close_coverage_region(strings)
             strings.append("<br>")
-        elif pos % column_length == 0:  # rather Pos in this row
+            write_row_index(pos, strings)
+            if in_covered_region:
+                open_coverage_region(strings)
+        elif is_end_of_column(pos):
             strings.append(" ")
 
         if pos in highlights:
@@ -393,7 +419,8 @@ def _generate_html_sequence_map(
             strings.append(character)
 
         if pos in coverage_stop_idx:
-            strings.append("</FONT>")
+            in_covered_region = False
+            close_coverage_region(strings)
     html_sequence_block = "".join(strings)
     return html_sequence_block
 
