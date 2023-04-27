@@ -3,7 +3,6 @@ from collections import UserDict
 import itertools
 from typing import Optional
 import re
-import warnings
 
 import adjustText
 import numpy as np
@@ -13,6 +12,7 @@ import seaborn as sns
 import sklearn.preprocessing
 import sklearn.decomposition
 
+from msreport.errors import MsreportError
 from msreport.qtable import Qtable
 import msreport.helper
 
@@ -431,6 +431,12 @@ def experiment_ratios(
     qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
     if experiments is None:
         experiments = qtable.design["Experiment"].unique().tolist()
+
+    if len(experiments) < 2:
+        raise MsreportError(
+            "This plot cannot be generated with less than two experiments present in"
+            "the qtable.design"
+        )
 
     column_mapping = {f"{tag} {exp}": exp for exp in experiments}
     exp_data = qtable_data[column_mapping.keys()]
