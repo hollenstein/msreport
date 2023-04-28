@@ -1097,11 +1097,6 @@ def pvalue_histogram(
 
 def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None) -> None:
     ax = plt.gca() if ax is None else ax
-    text_params = {
-        "force_text": 0.15,
-        "arrowprops": dict(arrowstyle="-", color="#ebae34", lw=0.75),
-        "lim": 100,
-    }
     if scatter_kws is None:
         scatter_kws = {
             "s": 10,
@@ -1110,6 +1105,13 @@ def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None) ->
             "lw": 0.2,
             "zorder": 3,
         }
+    text_params = {
+        "force_text": 0.15,
+        "arrowprops": dict(
+            arrowstyle="-", color=scatter_kws["color"], lw=0.75, alpha=0.5
+        ),
+        "lim": 100,
+    }
 
     texts = []
     for x, y, text in zip(x_values, y_values, labels):
