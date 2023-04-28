@@ -2,7 +2,7 @@
 
 ----------------------------------------------------------------------------------------
 
-## Unreleased
+## 0.0.14 - Adding color
 
 ### Changed
 - Changed the scatter point colors to cyan with red highlights in
