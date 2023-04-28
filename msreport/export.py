@@ -167,9 +167,9 @@ def write_html_coverage_map(
     peptide_table: pd.DataFrame,
     protein_db: helper.ProteinDatabase,
     displayed_name: Optional[str] = None,
-    coverage_color: str = "#EE7779",
+    coverage_color: str = "#E73C40",
     highlight_positions: Optional[Iterable[int]] = None,
-    highlight_color: str = "#00A3AE",
+    highlight_color: str = "#1E90FF",
     column_length: int = 10,
     row_length: int = 50,
 ):
@@ -409,8 +409,9 @@ def _generate_html_sequence_map(
 
     def write_row_index(pos: int, strings: list) -> str:
         ndigits = len(str(sequence_length))
-        row_index = str(pos + 1).rjust(ndigits) + "   "
-        strings.append(row_index)
+        row_index = str(pos + 1).rjust(ndigits)
+        html_entry = '<FONT COLOR="#000000">' + row_index + "   " + "</FONT>"
+        strings.append(html_entry)
 
     def open_coverage_region(strings: list):
         strings.append(f'<FONT COLOR="{coverage_color}">')
@@ -426,6 +427,7 @@ def _generate_html_sequence_map(
 
     in_covered_region: bool
     strings = []
+    strings.append(f'<FONT COLOR="#606060">')  # Set default text color to grey
     write_row_index(0, strings)
     for pos, character in enumerate(sequence):
         if pos in coverage_start_idx:
@@ -444,13 +446,15 @@ def _generate_html_sequence_map(
 
         if pos in highlights:
             color = highlights[pos]
-            strings.append(f'<FONT COLOR="{color}">{character}</FONT>')
+            strings.append(f'<FONT COLOR="{color}"><u>{character}</u></FONT>')
         else:
             strings.append(character)
 
         if pos in coverage_stop_idx:
             in_covered_region = False
             close_coverage_region(strings)
+    strings.append(f"</FONT>")
+
     html_sequence_block = "".join(strings)
     return html_sequence_block
 
