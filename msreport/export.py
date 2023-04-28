@@ -12,14 +12,16 @@ Index([
     'Sequence coverage',
 ], dtype='object')
 """
-from typing import Iterable, Optional
-import os
 from collections import defaultdict as ddict
+import os
+from typing import Iterable, Optional
+import warnings
 
 import numpy as np
 import pandas as pd
 
 import msreport.helper as helper
+import msreport.reader
 from msreport.qtable import Qtable
 
 
@@ -160,10 +162,11 @@ def to_amica(
 
 
 def write_html_coverage_map(
-    outpath: str,
-    protein_name: str,
-    sequence: str,
-    coverage_mask: Iterable[bool],
+    filepath: str,
+    protein_id: str,
+    peptide_table: pd.DataFrame,
+    protein_db: helper.ProteinDatabase,
+    displayed_name: Optional[str] = None,
     coverage_color: str = "#EE7779",
     highlight_positions: Optional[Iterable[int]] = None,
     highlight_color: str = "#00A3AE",
@@ -173,13 +176,13 @@ def write_html_coverage_map(
     """Generates an html file containing a protein coverage map.
 
     Args:
-        outpath: The path where the generated html file will be saved.
-        protein_name: Name of the protein that will be displayed as part of the title on
-            the html page.
-        sequence: A protein amino acid sequence in single letter code.
-        coverage_mask: An iterable of boolean values that represents the coverage map of
-            a protein sequence. A True value at a specific position indicates that the
-            corresponding amino acid was covered by the identified peptides.
+        filepath: The filepath where the generated html file will be saved.
+        protein_id: ID of the protein that will be displayed on the html page. Must
+            correspond to an entry in the specified `protein_db`.
+        peptide_table: Dataframe which contains peptide information required for
+            calculation of the protein sequence coverage.
+        protein_db: A protein database containing entries from one or multiple FASTA
+            files.
         coverage_color: Hex color code for highlighting amino acids that correspond to
             covered regions from the coverage mask, for example "#FF0000" for red.
         highlight_positions: Optional, allows specifying a list of amino acid positions
@@ -191,11 +194,38 @@ def write_html_coverage_map(
         column_length: Number of amino acids after which a space is inserted.
         row_length: Number of amino acids after which a new line is inserted.
     """
+    warnings.warn(
+        (
+            "`write_html_coverage_map` is still experimental, and the interface might "
+            "change in a future release."
+        ),
+        FutureWarning,
+    )
+    # Get protein information from the protein database
+    protein_entry = protein_db.proteins[protein_id]
+    sequence = protein_entry.sequence
+    protein_length = len(sequence)
+
+    if displayed_name is None:
+        displayed_name = msreport.reader._get_annotation_protein_name(
+            protein_entry, protein_id
+        )
+
+    # Generate coverage boundaries from a peptide table
+    id_column = "Representative protein"
+    peptide_group = peptide_table[peptide_table[id_column] == protein_id]
+    peptide_positions = list(
+        zip(peptide_group["Start position"], peptide_group["End position"])
+    )
+    coverage_mask = helper.make_coverage_mask(protein_length, peptide_positions)
+    boundaries = _find_covered_region_boundaries(coverage_mask)
+
+    # Define highlight positions
     highlight_positions = highlight_positions if highlight_positions is not None else ()
     highlights = {pos - 1: highlight_color for pos in highlight_positions}
-    html_title = f"Protein coverage map: {protein_name}"
+    html_title = f"Protein coverage map: {displayed_name}"
 
-    boundaries = _find_covered_region_boundaries(coverage_mask)
+    # Generate and save the html page
     html_sequence_map = _generate_html_sequence_map(
         sequence,
         boundaries,
@@ -205,7 +235,7 @@ def write_html_coverage_map(
         row_length=row_length,
     )
     html_text = _generate_html_coverage_map_page(html_sequence_map, title=html_title)
-    with open(outpath, "w") as openfile:
+    with open(filepath, "w") as openfile:
         openfile.write(html_text)
 
 
