@@ -2,6 +2,29 @@
 
 ----------------------------------------------------------------------------------------
 
+## Unreleased
+
+### Changed
+- Changed the scatter point colors to cyan with red highlights in
+  `msreport.plot.volcano_ma` and `msreport.plot.expression_comparison`.
+- The `msreport.plot.expression_comparison` plots now always display strip plots for the
+  left and right subplots, instead of mixing strip plots and swarm plots.
+- Changed the interface of `msreport.export.write_html_coverage_map` to use a peptide
+  table and a protein database to automatically extract the protein sequence from the
+  FASTA file and covered regions from the identified peptides.
+  - Note that this function is still experimental and the interface might be changed.
+- Changed the appearance of the html coverage map:
+  - Added amino acid position indicators to the beginning of each row.
+  - Added underscores to highlighted position to improve visibility.
+  - Changed the default font colors to increase the contrast.
+- Added more detailed explanations to the docstrings of the plotting functions.
+
+### Fixed
+- Fixed an error when using `msreport.plot.replicate_ratios()` with only one experiment
+  present in the design table.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.13 - The export update
 
 ### Added
