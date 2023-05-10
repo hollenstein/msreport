@@ -425,7 +425,7 @@ def _generate_html_sequence_map(
     def is_end_of_column(pos: int):
         return (pos != 0) and (pos % column_length == 0) and not is_end_of_row(pos)
 
-    in_covered_region: bool
+    in_covered_region: bool = False
     strings = []
     strings.append(f'<FONT COLOR="#606060">')  # Set default text color to grey
     write_row_index(0, strings)
