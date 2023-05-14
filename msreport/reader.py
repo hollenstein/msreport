@@ -707,7 +707,7 @@ class FragPipeReader(ResultReader):
 
         # FUTURE: replace this by _add_protein_entries(df, False) if FragPipe adds
         #         'Indistinguishable Proteins' to the ion table.
-        df["Protein reported by software"] = df["Protein ID"]
+        df["Protein reported by software"] = _extract_protein_ids(df["Protein"])
         df["Representative protein"] = df["Protein reported by software"]
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
@@ -782,7 +782,7 @@ class FragPipeReader(ResultReader):
         # --- Process dataframe --- #
         # FUTURE: replace this by _add_protein_entries(df, False) if FragPipe adds
         #         'Indistinguishable Proteins' to the ion table.
-        df["Protein reported by software"] = df["Protein ID"]
+        df["Protein reported by software"] = _extract_protein_ids(df["Protein"])
         df["Representative protein"] = df["Protein reported by software"]
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
