@@ -38,6 +38,7 @@ packages = [
   "msreport",
   "msreport.aggregate",
   "msreport.helper",
+  "msreport.rinterface",
   "msreport.rinterface.rscripts",
   "msreport_scripts.benchmark",
   "msreport_scripts.excel_report",
