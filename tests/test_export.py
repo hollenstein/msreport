@@ -38,7 +38,19 @@ def test_generate_html_sequence_map():
         column_length=3,
         row_length=6,
     )
-    expected = '<FONT COLOR="#FF00FF">A</FONT><FONT COLOR="#FF0000">BB</FONT> A<FONT COLOR="#FF0000">CC<br>C</FONT>AA AAA'  # fmt: skip
+    expected = (
+        '<FONT COLOR="#606060">'
+        '<FONT COLOR="#000000"> 1   </FONT>'
+        '<FONT COLOR="#FF00FF"><u>a</u></FONT>'
+        '<FONT COLOR="#FF0000">BB</FONT>'
+        " a"
+        '<FONT COLOR="#FF0000">CC</FONT>'
+        "<br>"
+        '<FONT COLOR="#000000"> 7   </FONT>'
+        '<FONT COLOR="#FF0000">C</FONT>'
+        "aa aaa"
+        "</FONT>"
+    )
     assert html_string == expected
 
 
