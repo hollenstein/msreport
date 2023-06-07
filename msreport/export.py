@@ -184,7 +184,7 @@ def write_html_coverage_map(
         protein_db: A protein database containing entries from one or multiple FASTA
             files.
         displayed_name: Allows specifying a custom displayed name. By default, the
-            protein name is used.
+            protein name and protein id are shown.
         coverage_color: Hex color code for highlighting amino acids that correspond to
             covered regions from the coverage mask, for example "#FF0000" for red.
         highlight_positions: Optional, allows specifying a list of amino acid positions
@@ -209,9 +209,13 @@ def write_html_coverage_map(
     protein_length = len(sequence)
 
     if displayed_name is None:
-        displayed_name = msreport.reader._get_annotation_protein_name(
-            protein_entry, protein_id
+        protein_name = msreport.reader._get_annotation_protein_name(
+            protein_entry, default_value=protein_id
         )
+        if protein_name == protein_id:
+            displayed_name = protein_id
+        else:
+            displayed_name = f"{protein_name} ({protein_id})"
 
     # Generate coverage boundaries from a peptide table
     id_column = "Representative protein"
@@ -225,7 +229,7 @@ def write_html_coverage_map(
     # Define highlight positions
     highlight_positions = highlight_positions if highlight_positions is not None else ()
     highlights = {pos - 1: highlight_color for pos in highlight_positions}
-    html_title = f"Protein coverage map: {displayed_name}"
+    html_title = f"Coverage map: {displayed_name}"
 
     # Generate and save the html page
     sequence_coverage = helper.calculate_sequence_coverage(
