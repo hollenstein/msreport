@@ -183,6 +183,8 @@ def write_html_coverage_map(
             calculation of the protein sequence coverage.
         protein_db: A protein database containing entries from one or multiple FASTA
             files.
+        displayed_name: Allows specifying a custom displayed name. By default, the
+            protein name is used.
         coverage_color: Hex color code for highlighting amino acids that correspond to
             covered regions from the coverage mask, for example "#FF0000" for red.
         highlight_positions: Optional, allows specifying a list of amino acid positions
@@ -226,6 +228,9 @@ def write_html_coverage_map(
     html_title = f"Protein coverage map: {displayed_name}"
 
     # Generate and save the html page
+    sequence_coverage = helper.calculate_sequence_coverage(
+        protein_length, peptide_positions, ndigits=1
+    )
     html_sequence_map = _generate_html_sequence_map(
         sequence,
         boundaries,
@@ -234,7 +239,9 @@ def write_html_coverage_map(
         column_length=column_length,
         row_length=row_length,
     )
-    html_text = _generate_html_coverage_map_page(html_sequence_map, title=html_title)
+    html_text = _generate_html_coverage_map_page(
+        html_sequence_map, sequence_coverage, title=html_title
+    )
     with open(filepath, "w") as openfile:
         openfile.write(html_text)
 
@@ -332,13 +339,14 @@ def _amica_design_from(qtable: Qtable) -> pd.DataFrame:
 
 
 def _generate_html_coverage_map_page(
-    html_sequence_map: str, title: str = "Protein coverage map"
+    html_sequence_map: str, coverage: float, title: str = "Protein coverage map"
 ) -> str:
     """Generates the code for an html pag displaying a protein coverage map.
 
     Args:
         html_sequence_map: A string containing html code that represents a protein
             coverage map.
+        coverage: Sequence coverage in percent.
         title: Title of coverage page, is displayed in the browser tab as well as a
             title on the page itself.
 
@@ -365,6 +373,7 @@ def _generate_html_coverage_map_page(
         '    </head>',
         '    <body>',
         f'        <h1>{title}</h1>',
+        f'        <p>Sequence coverage: {coverage}%</p>',
         f'        <p><PRE>{html_sequence_map}</PRE></p>',
         '    </body>',
         '</html>',
