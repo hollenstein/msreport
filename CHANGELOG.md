@@ -2,6 +2,22 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.15 - Improved html coverage map
+
+### Changed
+- Changed the output of the HTML page generated with
+  `msreport.export.write_html_coverage_map`
+  - The default displayed name now contains the protein name and protein ID.
+  - The coverage map contains the percent of covered protein sequence.
+
+### Fixed
+- In some situations protein entries were not properly parsed when importing ion tables
+  with `FragPipeReader.import_ions`
+- Calling `msreport.export.write_html_coverage_map` caused an error when the covered
+  regions started after the first row of the protein sequence was already written.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.14 - Adding color
 
 ### Changed
