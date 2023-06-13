@@ -2,6 +2,15 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.16 - Minimal peptide import from Spectronaut
+
+### Added
+  - Added a method for importing peptide tables to the `SpectronautReader`. Note that
+    currently no processing of peptide entries is performed and the imported peptide
+    table is mainly used for protein sequence coverage calculation.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.15 - Improved html coverage map
 
 ### Changed
