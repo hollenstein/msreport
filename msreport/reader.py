@@ -915,6 +915,10 @@ class SpectronautReader(ResultReader):
             ("PG.NrOfStrippedSequencesIdentified (Experiment-wide)", "Total peptides"),
             ("PG.NrOfPrecursorsIdentified (Experiment-wide)", "Total ions"),
             ("PG.Cscore", "Cscore"),
+            ("PEP.StrippedSequence", "Peptide sequence"),  # Ions
+            ("PEP.AllOccurringProteinAccessions", "Mapped proteins")  # Ions
+            # Modified peptides need to be parsed and rewritten
+            # ("EG.ModifiedSequence", "Modified sequence"),  # Ions
         ]
     )
     sample_column_tags: list[str] = [
@@ -934,6 +938,7 @@ class SpectronautReader(ResultReader):
                 ".PG.NrOfStrippedSequencesUsedForQuantification",
                 " Total quantified peptides",
             ),
+            (".PEP.Quantity", " Intensity"),  # Ions
         ]
     )
     protein_info_columns: list[str] = [
@@ -1098,10 +1103,72 @@ class SpectronautReader(ResultReader):
             df = self._rename_columns(df, prefix_column_tags)
         return df
 
-    def import_peptides(self) -> None:
-        raise NotImplementedError
+    def import_peptides(
+        self,
+        filename: Optional[str] = None,
+        filetag: Optional[str] = None,
+        rename_columns: bool = True,
+        prefix_column_tags: bool = True,
+    ) -> pd.DataFrame:
+        """Reads a Spectronaut peptide report file and returns a processed DataFrame.
+
+        Uses and renames the following Spectronaut report columns:
+        PG.ProteinAccessions, PEP.Quantity, PEP.StrippedSequence, and
+        PEP.AllOccurringProteinAccessions
+
+        Adds four protein entry columns to comply with the MsReport convention:
+        "Protein reported by software", "Leading proteins", "Representative protein",
+        "Potential contaminant".
+
+        "Protein reported by software" and "Representative protein" contain the first
+        entry from the "PG.ProteinAccessions" column, and "Leading proteins" contains
+        all entries from this column. Multiple leading protein entries are separated by
+        ";".
+
+        Args:
+            filename: Optional, allows specifying a specific file that will be imported.
+            filetag: Optional, can be used to select a file that contains the filetag as
+                a substring, instead of specifying a filename.
+            rename_columns: If True, columns are renamed according to the MsReport
+                convention; default True.
+            prefix_column_tags: If True, column tags such as "Intensity" are added
+                in front of the sample names, e.g. "Intensity sample_name". If False,
+                column tags are added afterwards, e.g. "Sample_name Intensity"; default
+                True.
+
+        Returns:
+            A dataframe containing the processed protein table.
+        """
+        filenames = _find_matching_files(
+            self.data_directory,
+            filename=filename,
+            filetag=filetag,
+            extensions=["xls", "tsv", "csv"],
+        )
+        if len(filenames) == 0:
+            raise FileNotFoundError("No matching file found.")
+        elif len(filenames) > 1:
+            exception_message_lines = [
+                f"Multiple matching files found in: {self.data_directory}",
+                "One of the report filenames must be specified manually:",
+            ]
+            exception_message_lines.extend(filenames)
+            exception_message = "\n".join(exception_message_lines)
+            raise ValueError(exception_message)
+        else:
+            filename = filenames[0]
+
+        df = self._read_file(filename)
+        df = self._tidy_up_sample_columns(df)
+        df = self._add_protein_entries(df)
+        if rename_columns:
+            df = self._rename_columns(df, prefix_column_tags)
+        return df
 
     def import_ions(self) -> None:
+        raise NotImplementedError
+
+    def import_ion_evidence(self) -> None:
         raise NotImplementedError
 
     def _tidy_up_sample_columns(self, df: pd.DataFrame) -> pd.DataFrame:
