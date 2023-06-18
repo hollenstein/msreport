@@ -2,6 +2,25 @@ import pytest
 import msreport.peptidoform
 
 
+class TestParseModifiedSequence:
+    @pytest.mark.parametrize(
+        "modified_sequence, expected_plain_sequence",
+        [
+            (
+                "(Acetyl (Protein N-term))ADSRDPASDQM(Oxidation (M))QHWK",
+                "ADSRDPASDQMQHWK",
+            ),
+            ("ADSRDPASDQMQHWK", "ADSRDPASDQMQHWK"),
+            ("ADSRDPASDQMQHWK(Mod)", "ADSRDPASDQMQHWK"),
+        ],
+    )
+    def test_correct_sequence_extracted(self, modified_sequence, expected_plain_sequence):  # fmt: skip
+        plain_sequence, _ = msreport.peptidoform.parse_modified_sequence(
+            modified_sequence, "(", ")"
+        )
+        assert plain_sequence == expected_plain_sequence
+
+
 def test_make_localization_string():
     modification_localization_probabilities = {
         "15.9949": {11: 1.000},
