@@ -1,3 +1,152 @@
+from collections import defaultdict as ddict
+from typing import Optional
+
+
+class Peptide:
+    """Representation of a peptide sequence identified by mass spectrometry."""
+
+    def __init__(
+        self,
+        modified_sequence: str,
+        localization_probabilities: Optional[dict] = None,
+        protein_position: Optional[int] = None,
+    ):
+        plain_sequence, modifications = parse_modified_sequence(
+            modified_sequence, "[", "]"
+        )
+
+        self.plain_sequence = plain_sequence
+        self.modified_sequence = modified_sequence
+        self.localization_probabilities = localization_probabilities
+        self.protein_position = protein_position
+
+        self.modification_positions = ddict(list)
+        self.modified_residues = {}
+        for position, mod_tag in modifications:
+            self.modification_positions[mod_tag].append(position)
+            self.modified_residues[position] = mod_tag
+
+    def make_modified_sequence(self, include: Optional[list] = None) -> str:
+        """Returns a modified sequence string.
+
+        Args:
+            include: Optional, list of modifications that are included in the modified
+                sequence string. By default all modifications are added.
+
+        Returns:
+            A modified sequence string where modified amino acids are indicated by
+            square brackets containing a modification tag. For example
+            "PEPT[phospho]IDE"
+        """
+        if include is not None:
+            selected_modifications = []
+            for position, mod_tag in self.modified_residues.items():
+                if mod_tag in include:
+                    selected_modifications.append((position, mod_tag))
+            modified_sequence = modify_peptide(
+                self.plain_sequence, selected_modifications
+            )
+        else:
+            modified_sequence = self.modified_sequence
+        return modified_sequence
+
+    def count_modification(self, modification: str) -> int:
+        """Returns how often the a specified modification occurs."""
+        if modification in self.modification_positions:
+            count = len(self.modification_positions[modification])
+        else:
+            count = 0
+        return count
+
+    def get_peptide_site_probability(self, position: int) -> Optional[float]:
+        """Return the modification localization probability of the peptide position.
+
+        Args:
+            position: Peptide position which modification localization probability is
+                returned.
+
+        Returns:
+            Localization probability between 0 and 1. Returns None if the specified
+            position does not contain a modification or if no localization probability
+            is available.
+        """
+        return self._get_site_probability(position, is_protein_position=False)
+
+    def get_protein_site_probability(self, position: int) -> Optional[float]:
+        """Return the modification localization probability of the protein position.
+
+        Args:
+            position: Protein position which modification localization probability is
+                returned.
+
+        Returns:
+            Localization probability between 0 and 1. Returns None if the specified
+            position does not contain a modification or if no localization probability
+            is available.
+        """
+        return self._get_site_probability(position, is_protein_position=True)
+
+    def list_modified_peptide_sites(self, modification: str) -> list[int]:
+        """Returns a list of peptide positions containing the specified modification."""
+        return self._list_modified_sites(modification, use_protein_position=False)
+
+    def list_modified_protein_sites(self, modification: str) -> list[int]:
+        """Returns a list of protein positions containing the specified modification."""
+        return self._list_modified_sites(modification, use_protein_position=True)
+
+    def _get_site_probability(
+        self, position: int, is_protein_position: bool
+    ) -> Optional[float]:
+        """Return the modification localization probability of the peptide position.
+
+        Args:
+            position: Position which modification localization probability is returned.
+            is_protein_position: If True, the specified position is a protein position,
+                if False its a peptide position.
+
+        Returns:
+            Localization probability between 0 and 1. Returns None if the specified
+            position does not contain a modification or if no localization probability
+            is available.
+        """
+        if is_protein_position and self.protein_position is not None:
+            position = position - self.protein_position + 1
+
+        if position not in self.modified_residues:
+            probability = None
+        elif self.localization_probabilities is None:
+            probability = None
+        else:
+            modification = self.modified_residues[position]
+            try:
+                probability = self.localization_probabilities[modification][position]
+            except KeyError:
+                probability = None
+
+        return probability
+
+    def _list_modified_sites(
+        self, modification: str, use_protein_position: bool
+    ) -> list[int]:
+        """Returns a list of positions containint the specified modification.
+
+        Args:
+            modification: Sites containing this modification are extracted.
+            use_protein_position: If True, the returned sites are protein positions and
+                if False, peptide positions are returnd.
+
+        Returns:
+            A list of modified positions
+        """
+        if modification in self.modification_positions:
+            modified_sites = self.modification_positions[modification]
+            if use_protein_position and self.protein_position is not None:
+                modified_sites = [i + self.protein_position - 1 for i in modified_sites]
+        else:
+            modified_sites = []
+        return modified_sites
+
+
 def parse_modified_sequence(
     modified_sequence: str,
     tag_open: str,
