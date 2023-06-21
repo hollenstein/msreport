@@ -40,6 +40,28 @@ def parse_modified_sequence(
     return plain_sequence, sorted(modifications)
 
 
+def modify_peptide(
+    sequence: str,
+    modifications: list[tuple[int, str]],
+    tag_open: str = "[",
+    tag_close: str = "]",
+) -> str:
+    """Returns a string containing the modifications within the peptide sequence.
+
+    Returns:
+        Modified sequence. For example "PEPT[phospho]IDE", for sequence = "PEPTIDE" and
+        modifications = [(4, "phospho")]
+    """
+    last_pos = 0
+    modified_sequence = ""
+    for pos, mod in sorted(modifications):
+        tag = mod.join((tag_open, tag_close))
+        modified_sequence += sequence[last_pos:pos] + tag
+        last_pos = pos
+    modified_sequence += sequence[last_pos:]
+    return modified_sequence
+
+
 def make_localization_string(
     localization_probabilities: dict, decimal_places: int = 3
 ) -> str:
