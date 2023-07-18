@@ -226,9 +226,8 @@ def make_localization_string(
             A site localization probability string according to the MsReport convention.
             Multiple modifications entries are separted by ";". Each modification entry
             consist of a modification tag and site probabilities, separated by "@". The
-            site probability entries consist of
-            f"{peptide position}:{localization probability}" strings, and multiple
-            entries are separted by ",".
+            site probability entries consist of f"{position}:{probability}" strings, and
+            multiple probability entries are separted by ",".
 
             For example "15.9949@11:1.000;79.9663@3:0.200,4:0.800"
     """
