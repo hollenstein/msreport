@@ -11,6 +11,7 @@ from .table import (
     intensities_in_logspace,
     find_columns,
     find_sample_columns,
+    filter_table_by_partial_match,
     join_tables,
     rename_sample_columns,
     rename_mq_reporter_channels,

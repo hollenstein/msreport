@@ -191,6 +191,36 @@ def find_sample_columns(
     return matched_columns
 
 
+def filter_table_by_partial_match(
+    table: pd.DataFrame, column: str, values: Iterable[str]
+) -> pd.DataFrame:
+    """Filter a table to keep only rows partially matching any of the specified values.
+
+    Args:
+        table: The input table that will be filtered.
+        column: The name of the column in the 'table' which entries are checked for
+            partial matches to the values. This column must have the datatype 'str'.
+        modifications: An iterable of strings that are used to filter the table. Any of
+            the specified values must have at least a partial match to an entry from the
+            specified 'column' for a row to be kept in the filtered table.
+
+    Returns:
+        A new DataFrame containing only the rows that have a partial or complete match
+        with any of the specified 'values'.
+
+    Example:
+        >>> df = pd.DataFrame({"Modifications": ["phos", "acetyl;phos", "acetyl"]})
+        >>> filter_table_by_partial_match(df, ["phos"], "Modifications")
+          Modifications
+        0          phos
+        1   acetyl;phos
+    """
+    value_masks = [table[column].str.contains(value) for value in values]
+    target_mask = np.any(value_masks, axis=0)
+    filtered_table = table[target_mask].copy()
+    return filtered_table
+
+
 def join_tables(
     tables: Iterable[pd.DataFrame], reset_index: bool = False
 ) -> pd.DataFrame:
