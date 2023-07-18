@@ -107,7 +107,9 @@ def rename_sample_columns(table: pd.DataFrame, mapping: dict[str, str]) -> pd.Da
     return renamed_table
 
 
-def rename_mq_reporter_channels(table: pd.DataFrame, channel_names: list[str]) -> None:
+def rename_mq_reporter_channels(
+    table: pd.DataFrame, channel_names: Iterable[str]
+) -> None:
     """Renames reporter channel numbers with sample names.
 
     MaxQuant writes reporter channel names either in the format "Reporter intensity 1"
@@ -169,7 +171,7 @@ def find_columns(
 
 
 def find_sample_columns(
-    df: pd.DataFrame, substring: str, samples: list[str]
+    df: pd.DataFrame, substring: str, samples: Iterable[str]
 ) -> list[str]:
     """Returns column names that contain the substring and any entry of 'samples'.
 
