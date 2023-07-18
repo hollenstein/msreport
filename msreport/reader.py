@@ -29,6 +29,7 @@ import pandas as pd
 import msreport.helper as helper
 from msreport.helper.temp import Protein
 from msreport.errors import ProteinsNotInFastaWarning
+import msreport.peptidoform
 
 
 class ResultReader:
@@ -788,6 +789,8 @@ class FragPipeReader(ResultReader):
             df = self._rename_columns(df, prefix_column_tags)
         if rewrite_modifications and rename_columns:
             df = self._add_peptide_modification_entries(df)
+            df = self._add_modification_localization_string(df)
+
         return df
 
     def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -869,6 +872,42 @@ class FragPipeReader(ResultReader):
         new_df = df.copy()
         new_df["Modified sequence"] = mod_entries["Modified sequence"]
         new_df["Modifications"] = mod_entries["Modifications"]
+        return new_df
+
+    def _add_modification_localization_string(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Adds a "Modification localization string" column.
+
+        Entries in the added column correspond to the standardized modifciation localization
+        string formation used by msreport, e.g. "15.9949@11:1.000;79.9663@3:0.200,4:0.800".
+        See `msreport.peptidoform.make_localization_string` for details.
+
+        Args:
+            df: Dataframe containing a "Localization" column.
+
+        Returns:
+            A copy of the input dataframe with updated columns.
+        """
+        # TODO: not tested
+        new_df = df.copy()
+        if not pd.api.types.is_string_dtype(new_df["Localization"].dtype):
+            new_df["Localization"] = (
+                new_df["Localization"].astype(str).replace("nan", "")
+            )
+        localization_strings = []
+        for localization in new_df["Localization"]:
+            localization_probabilities = (
+                msreport.reader.extract_fragpipe_localization_probabilities(
+                    localization
+                )
+            )
+            if localization != "":
+                localization_string = msreport.peptidoform.make_localization_string(
+                    localization_probabilities
+                )
+            else:
+                localization_string = ""
+            localization_strings.append(localization_string)
+        new_df["Modification localization string"] = localization_strings
         return new_df
 
 
@@ -1890,6 +1929,37 @@ def _generate_modification_entries(
         "Modifications": modification_entries,
     }
     return entries
+
+
+def extract_fragpipe_localization_probabilities(localization_entry: str) -> dict:
+    """Extract localization probabilites from a FragPipe "Localization" entry.
+
+    Args:
+        localization_entry: Entry from the "Localization" column of a FragPipe
+            ions.tsv or combined_ions.tsv table.
+
+    Returns:
+        A dictionary of modifications containing a dictionary of {position: probability}
+        mappings. Positions are one-indexed, which means that the first amino acid
+        position is 1.
+
+    Example:
+    >>> extract_fragpipe_localization_probabilities(
+    ...     "M:15.9949@FIM(1.000)TPTLK;STY:79.9663@FIMT(0.334)PT(0.666)LK;"
+    ... )
+    {'15.9949': {3: 1.0}, '79.9663': {4: 0.334, 6: 0.666}}
+    """
+    modification_probabilities = {}
+    for modification_entry in filter(None, localization_entry.split(";")):
+        specified_modification, probability_sequence = modification_entry.split("@")
+        _, modification = specified_modification.split(":")
+        _, probabilities = msreport.peptidoform.parse_modified_sequence(
+            probability_sequence, "(", ")"
+        )
+        modification_probabilities[modification] = {
+            site: float(probability) for site, probability in probabilities
+        }
+    return modification_probabilities
 
 
 def _extract_protein_ids(entries: list[str]) -> list[str]:
