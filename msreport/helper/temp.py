@@ -161,6 +161,47 @@ def modify_peptide(
     return modified_sequence
 
 
+def extract_window_around_position(protein_sequence: str, position: int) -> str:
+    """Extracts a window around the specified position in the protein sequence.
+
+    Args:
+        protein_sequence: The input protein sequence string.
+        position: The position in the protein sequence to extract the window around.
+            Position is one-indexed, which means that the first amino acid position 1.
+
+    Returns:
+        A string containing the window +/- 5 characters around the specified position.
+        If the position is too close to the beginning or the end of the
+        'protein_sequence', the window is padded with '-' to ensure there are five
+        characters before and after the position.
+
+    Example:
+        >>> protein_sequence = "ABCDEFGHIJKLM"
+        >>> extract_window_around_position(protein_sequence, 7)
+        'BCDEFGHIJKL'
+        >>> extract_window_around_position(protein_sequence, 1)
+        '-----ABCDEF'
+        >>> extract_window_around_position(protein_sequence, 13)
+        'HIJKLM-----'
+    """
+    # TODO: Not tested
+    extension = 5
+    ond_index_correction = -1
+    _position = position + ond_index_correction
+    gap_filler = "-"
+
+    gap_to_end = len(protein_sequence) - (_position + 1)
+    gap_to_start = _position
+    left_pad = extension - gap_to_start if gap_to_start < extension else 0
+    left_right = extension - gap_to_end if gap_to_end < extension else 0
+
+    window_start = max(_position - extension, 0)
+    window_end = min(_position + extension, len(protein_sequence))
+    window = protein_sequence[window_start : window_end + 1]
+    window = "".join([gap_filler * left_pad, window, gap_filler * left_right])
+    return window
+
+
 def _get_updated_fasta_parsers() -> dict[str, pyteomics.fasta.FlavoredMixin]:
     """Returns a dictionary of fasta header parsers.
 
