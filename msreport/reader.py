@@ -27,7 +27,7 @@ import numpy as np
 import pandas as pd
 
 import msreport.helper as helper
-from msreport.helper.temp import Protein
+from msreport.helper.temp import Protein, extract_window_around_position
 from msreport.errors import ProteinsNotInFastaWarning
 import msreport.peptidoform
 
@@ -1440,6 +1440,63 @@ def add_protein_annotation(
     return table
 
 
+def add_site_annotation(
+    table: pd.DataFrame,
+    protein_db: helper.ProteinDatabase,
+    protein_column: str = "Representative protein",
+    site_column: str = "Protein site",
+):
+    """Uses a FASTA protein database to add protein site annotation columns.
+
+    Adds the columns "Modified residue", which corresponds to the amino acid at the
+    protein site position, and "Sequence window", which contains sequence windows of
+    eleven amino acids surrounding the protein site. Sequence windows are centered on
+    the respective protein site; missing amino acids due to the position being close to
+    the beginning or end of the protein sequence are substituted with "-".
+
+    Args:
+        table: Dataframe to which the protein site annotations are added.
+        protein_db: A protein database containing entries from one or multiple FASTA
+            files.
+        protein_column: Column in 'table' that contains protein identifiers, which will
+            be used to look up entries in the 'protein_db'.
+        site_column: Column in 'table' that contains protein sites, which will be used
+            to extract information from the protein sequence. Protein sites are
+            one-indexed, meaining the first amino acid of the protein is position 1.
+
+    Returns:
+        The updated 'table' dataframe.
+    """
+    # TODO not tested
+    proteins = table[protein_column].to_list()
+    proteins_not_in_db = []
+    for protein_id in proteins:
+        if protein_id not in protein_db.proteins:
+            proteins_not_in_db.append(protein_id)
+    if proteins_not_in_db:
+        warnings.warn(
+            f"Some proteins could not be annotated: {repr(proteins_not_in_db)}",
+            ProteinsNotInFastaWarning,
+        )
+
+    annotations = {
+        "Modified residue": [],
+        "Sequence window": [],
+    }
+    for protein, site in zip(table[protein_column], table[site_column]):
+        protein_sequence = protein_db[protein].sequence
+
+        modified_residue = protein_sequence[site - 1]
+        annotations["Modified residue"].append(modified_residue)
+
+        sequence_window = extract_window_around_position(protein_sequence, site)
+        annotations["Sequence window"].append(sequence_window)
+
+    for column, annotation_values in annotations.items():
+        table[column] = annotation_values
+    return table
+
+
 def add_leading_proteins_annotation(
     table: pd.DataFrame,
     protein_db: helper.ProteinDatabase,
@@ -1975,7 +2032,7 @@ def _extract_protein_ids(entries: list[str]) -> list[str]:
     Returns:
         A list of protein IDs
     """
-    # TODO: not tested #
+    # not tested #
     protein_ids = []
     for protein_entry in entries:
         if protein_entry.count("|") >= 2:
