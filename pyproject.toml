@@ -6,9 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "msreport"
 description = "Post processing and analysis of quantitative proteomics data"
 readme = "README.md"
-license = {text = "Apache-2.0"}
+license = { text = "Apache-2.0" }
 authors = [
-    {name = "David M. Hollenstein", email = "hollenstein.david@gmail.com"},
+  { name = "David M. Hollenstein", email = "hollenstein.david@gmail.com" },
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -16,7 +16,12 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
-keywords = ["mass spectrometry", "proteomics", "post processing", "data analysis"]
+keywords = [
+  "mass spectrometry",
+  "proteomics",
+  "post processing",
+  "data analysis",
+]
 requires-python = ">=3.9"
 dependencies = [
   "adjustText",
@@ -40,6 +45,7 @@ packages = [
   "msreport.helper",
   "msreport.rinterface",
   "msreport.rinterface.rscripts",
+  "msreport_scripts.aggregation",
   "msreport_scripts.benchmark",
   "msreport_scripts.excel_report",
 ]
@@ -48,4 +54,4 @@ packages = [
 "msreport.rinterface.rscripts" = ["*.r", "*.R"]
 
 [tool.setuptools.dynamic]
-version = {attr = "msreport.__version__"}
+version = { attr = "msreport.__version__" }
