@@ -2,6 +2,37 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.17 (upcoming) - Generation of identified protein sites table
+
+### Added
+- New module `msreport.peptidoform` for standardized processing of modified peptide
+  information, including modification localization probabilities.
+  - The `Peptide` class represents a modified peptide identified by mass spectrometry,
+    with convenience method for extracting modifications and localization probabilities,
+    and for generating a modified sequence string.
+  - Contains functions to make and read a site localization probabilities string that
+    represents all modifications and their localization probabilities of a peptide. The
+    localization string is used to encode this information in a standardized string
+    during the import of mass spectrometry analysis results from different software.
+  - Contains functions to parse and write a modified peptide sequence.
+- Added the `add_protein_site_annotation` function to the `reader` module, which adds
+  two protein site annotation columns to a table containing protein sites. The column
+  "Modified residue" contains single amino acid characters that correspond to the
+  respective protein site; "Sequence window" contains protein sequence windows of eleven
+  amino acids centered on the respective protein site.
+- The new module `msreport_scripts.aggregation` will provide functions for the user
+  friendly creation of aggregated tables, e.g. protein or a protein site tables, from
+  tables of a lower abstraction level, such as ion or peptide tables.
+  - Added `aggregate_ions_to_site_id_table` function that requires an ion evidence table
+    and a target modification as input and creates an identified protein sites table by
+    aggregation of the ion entries.
+
+### Changed
+- Updated the `import_ion_evidence` method of the `reader.FragPipeReader` to add
+  a column containing standardized localization probabilities strings. 
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.16 - Minimal peptide import from Spectronaut
 
 ### Added
