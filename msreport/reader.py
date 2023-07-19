@@ -1440,7 +1440,7 @@ def add_protein_annotation(
     return table
 
 
-def add_site_annotation(
+def add_protein_site_annotation(
     table: pd.DataFrame,
     protein_db: helper.ProteinDatabase,
     protein_column: str = "Representative protein",
