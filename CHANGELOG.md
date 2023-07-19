@@ -36,9 +36,9 @@
 ## 0.0.16 - Minimal peptide import from Spectronaut
 
 ### Added
-  - Added a method for importing peptide tables to the `SpectronautReader`. Note that
-    currently no processing of peptide entries is performed and the imported peptide
-    table is mainly used for protein sequence coverage calculation.
+- Added a method for importing peptide tables to the `SpectronautReader`. Note that
+  currently no processing of peptide entries is performed and the imported peptide
+  table is mainly used for protein sequence coverage calculation.
 
 ----------------------------------------------------------------------------------------
 
@@ -185,7 +185,6 @@
 - The scitkit learn requirement was wrongly specified as sklearn, and was now replaced
   with Replaced wrong "sklearn" requirement with "scikit-learn>=1.0.0"
 
-
 ----------------------------------------------------------------------------------------
 
 ## 0.0.10 - Fix annotated scatter plot issues
@@ -288,7 +287,7 @@
 - `rinterface.package_version()` to return the version of an installed R package
 - Add `plot.expression_clustermap()` for plotting sample expession values as a
   hierarchically-clustered heatmap.
-- Added two additional arguments for `analyze.add_protein_annotation()`
+- Added two additional arguments for `reader.add_protein_annotation()`
   - `molecular_weight` and `protein_name`
 
 ### Changed
@@ -308,7 +307,7 @@
   - `analyze.two_group_comparison()`
   - `analyze.calculate_multi_group_limma()`
   - `analyze.calculate_two_group_limma()`
-- `analyze.add_protein_annotation()` now returns -1 for missing "Protein length" and
+- `reader.add_protein_annotation()` now returns -1 for missing "Protein length" and
   "iBAQ peptides" entries.
 - "Total" and "Combined", and their lower case variants, are ignored as samples names
   when using `guess_design()`.
@@ -355,27 +354,27 @@
 ## 0.0.4 - Errors and Optional arguments
 
 - Analyze module
-  - Added several additional arguments to impute_missing_values(), which allow
-    specifying a seed for the random number generator, performing imputation
-    column wise or in total, specifying the median downshift and std width
-    for calculation of the normal distribution parameters.
+  - Added several additional arguments to `impute_missing_values()`, which allow
+    specifying a seed for the random number generator, performing imputation column wise
+    or in total, specifying the median downshift and standard deviation width for
+    calculation of the normal distribution parameters.
 
 - Errors and warnings
-  - Added errors module, containing msreport specific errors and warning
-  - Added warning to reader.add_protein_annotations() and
-    reader.add_peptide_positions() when proteins are absent from fasta files.
-  - Added specific errors to the analyze and normalize modules.
+  - Added the `errors` module, containing msreport specific errors and warning
+  - Added warning to `reader.add_protein_annotations()` and 
+    `reader.add_peptide_positions()` when proteins are absent from fasta files.
+  - Added specific errors to the `analyze` and `normalize` modules.
 
 - Normalize module
-  - Normalizer classes got a get_fits() function to retrieve sample fits.
+  - Normalizer classes got a `get_fits()` function to retrieve sample fits.
 
 - Qtable module
   - Added indexing to the Qtable, which allows directly accessing and setting columns
     for qtable.data with [] by calling qtable[column_name].
 
 - Reader module
-  - Added arguments to add_protein_annotations() for specifying whether "Protein length"
-    and "iBAQ peptides" should be added or not.
+  - Added arguments to `add_protein_annotations()` for specifying whether
+    "Protein length" and "iBAQ peptides" should be added or not.
 
 ----------------------------------------------------------------------------------------
 
