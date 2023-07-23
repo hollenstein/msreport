@@ -159,23 +159,45 @@ class TestMakeLocalizationString:
         assert localization_string == expected_string
 
 
-def test_read_localization_string():
-    localization_string = "15.9949@11:1.000;79.9663@3:0.080,4:0.219,5:0.840,13:0.860"
-    expected_localization = {
-        "15.9949": {11: 1.000},
-        "79.9663": {3: 0.080, 4: 0.219, 5: 0.840, 13: 0.860},
-    }
+class TestReadLocalizationString:
+    def test_with_multiple_modifications(self):
+        localization_string = (
+            "15.9949@11:1.000;79.9663@3:0.080,4:0.219,5:0.840,13:0.860"
+        )
+        expected_localization = {
+            "15.9949": {11: 1.000},
+            "79.9663": {3: 0.080, 4: 0.219, 5: 0.840, 13: 0.860},
+        }
 
-    localization = msreport.peptidoform.read_localization_string(localization_string)
-    assert localization == expected_localization
+        localization = msreport.peptidoform.read_localization_string(
+            localization_string
+        )
+        assert localization == expected_localization
+
+    def test_with_empty_localization_string(self):
+        localization_string = ""
+        expected_localization = {}
+
+        localization = msreport.peptidoform.read_localization_string(
+            localization_string
+        )
+        assert localization == expected_localization
 
 
-def test_make_and_read_localization_string():
-    initial_localization = {
-        "15.9949": {11: 1.000},
-        "79.9663": {3: 0.080, 4: 0.219, 5: 0.840, 13: 0.860},
-    }
-    generated_localization = msreport.peptidoform.read_localization_string(
-        msreport.peptidoform.make_localization_string(initial_localization)
-    )
-    assert initial_localization == generated_localization
+class TestMakeAndReadLocalizationStrings:
+    def test_with_multiple_modifications(self):
+        initial_localization = {
+            "15.9949": {11: 1.000},
+            "79.9663": {3: 0.080, 4: 0.219, 5: 0.840, 13: 0.860},
+        }
+        generated_localization = msreport.peptidoform.read_localization_string(
+            msreport.peptidoform.make_localization_string(initial_localization)
+        )
+        assert initial_localization == generated_localization
+
+    def test_with_empty_localization_string(self):
+        initial_localization = {}
+        generated_localization = msreport.peptidoform.read_localization_string(
+            msreport.peptidoform.make_localization_string(initial_localization)
+        )
+        assert initial_localization == generated_localization
