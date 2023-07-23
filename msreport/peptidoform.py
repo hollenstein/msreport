@@ -38,25 +38,20 @@ class Peptide:
             square brackets containing a modification tag. For example
             "PEPT[phospho]IDE"
         """
-        if include is not None:
-            selected_modifications = []
-            for position, mod_tag in self.modified_residues.items():
-                if mod_tag in include:
-                    selected_modifications.append((position, mod_tag))
-            modified_sequence = modify_peptide(
-                self.plain_sequence, selected_modifications
-            )
-        else:
-            modified_sequence = self.modified_sequence
-        return modified_sequence
+        if include is None:
+            return self.modified_sequence
+
+        selected_modifications = []
+        for position, mod_tag in self.modified_residues.items():
+            if mod_tag in include:
+                selected_modifications.append((position, mod_tag))
+        return modify_peptide(self.plain_sequence, selected_modifications)
 
     def count_modification(self, modification: str) -> int:
         """Returns how often the a specified modification occurs."""
-        if modification in self.modification_positions:
-            count = len(self.modification_positions[modification])
-        else:
-            count = 0
-        return count
+        if modification not in self.modification_positions:
+            return 0
+        return len(self.modification_positions[modification])
 
     def get_peptide_site_probability(self, position: int) -> Optional[float]:
         """Return the modification localization probability of the peptide position.
@@ -112,17 +107,16 @@ class Peptide:
         if is_protein_position and self.protein_position is not None:
             position = position - self.protein_position + 1
 
+        if self.localization_probabilities is None:
+            return None
         if position not in self.modified_residues:
-            probability = None
-        elif self.localization_probabilities is None:
-            probability = None
-        else:
-            modification = self.modified_residues[position]
-            try:
-                probability = self.localization_probabilities[modification][position]
-            except KeyError:
-                probability = None
+            return None
 
+        modification = self.modified_residues[position]
+        try:
+            probability = self.localization_probabilities[modification][position]
+        except KeyError:
+            probability = None
         return probability
 
     def _list_modified_sites(
@@ -138,12 +132,12 @@ class Peptide:
         Returns:
             A list of modified positions
         """
-        if modification in self.modification_positions:
-            modified_sites = self.modification_positions[modification]
-            if use_protein_position and self.protein_position is not None:
-                modified_sites = [i + self.protein_position - 1 for i in modified_sites]
-        else:
-            modified_sites = []
+        if modification not in self.modification_positions:
+            return []
+
+        modified_sites = self.modification_positions[modification]
+        if use_protein_position and self.protein_position is not None:
+            modified_sites = [i + self.protein_position - 1 for i in modified_sites]
         return modified_sites
 
 
