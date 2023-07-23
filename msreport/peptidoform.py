@@ -260,6 +260,9 @@ def read_localization_string(localization_string: str) -> dict:
         positions are integers and probabilitiesa are floats ranging from 0 to 1.
     """
     localization = {}
+    if localization_string == "":
+        return localization
+
     for modification_entry in localization_string.split(";"):
         modification, site_entries = modification_entry.split("@")
         site_probabilities = {}
