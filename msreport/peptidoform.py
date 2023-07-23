@@ -1,5 +1,7 @@
 from collections import defaultdict as ddict
-from typing import Optional
+from typing import Optional, Union
+
+import numpy as np
 
 
 class Peptide:
@@ -52,6 +54,20 @@ class Peptide:
         if modification not in self.modification_positions:
             return 0
         return len(self.modification_positions[modification])
+
+    def isoform_probability(self, modification: str) -> Union[float, None]:
+        """Calculates the isoform probability for a given modification.
+
+        Returns:
+            The isoform probability for the combination of the assigned modification
+            sites. Calculated as the product of the single modification localization
+            probabilities. If no localization exist for the specified 'modification',
+            None is returned.
+        """
+        probabilities = []
+        for site in self.list_modified_peptide_sites(modification):
+            probabilities.append(self.get_peptide_site_probability(site))
+        return np.prod(probabilities)
 
     def get_peptide_site_probability(self, position: int) -> Optional[float]:
         """Return the modification localization probability of the peptide position.
