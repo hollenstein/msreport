@@ -12,6 +12,7 @@ from .table import (
     find_columns,
     find_sample_columns,
     keep_rows_by_partial_match,
+    remove_rows_by_partial_match,
     join_tables,
     rename_sample_columns,
     rename_mq_reporter_channels,
