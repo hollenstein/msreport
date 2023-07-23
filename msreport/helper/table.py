@@ -94,7 +94,7 @@ def rename_sample_columns(table: pd.DataFrame, mapping: dict[str, str]) -> pd.Da
         co_occurence_counts[counter].append(name_query)
 
     table_columns = table.columns.tolist()
-    for counts, sample_names in sorted(co_occurence_counts.items(), reverse=False):
+    for _, sample_names in sorted(co_occurence_counts.items(), reverse=False):
         updated_columns = []
         for column in table_columns:
             for sample_name in sample_names:
@@ -150,12 +150,12 @@ def apply_intensity_cutoff(
 
 
 def find_columns(
-    df: pd.DataFrame, substring: str, must_be_substring: bool = False
+    table: pd.DataFrame, substring: str, must_be_substring: bool = False
 ) -> list[str]:
     """Returns a list column names containing the substring.
 
     Args:
-        df: Columns of this datafram are queried.
+        table: Columns of this datafram are queried.
         substring: String that must be part of column names.
         must_be_substring: If true than column names are not reported if they
             are exactly equal to the substring.
@@ -163,20 +163,20 @@ def find_columns(
     Returns:
         A list of column names.
     """
-    matches = [substring in col for col in df.columns]
-    matched_columns = np.array(df.columns)[matches].tolist()
+    matches = [substring in col for col in table.columns]
+    matched_columns = np.array(table.columns)[matches].tolist()
     if must_be_substring:
         matched_columns = [col for col in matched_columns if col != substring]
     return matched_columns
 
 
 def find_sample_columns(
-    df: pd.DataFrame, substring: str, samples: Iterable[str]
+    table: pd.DataFrame, substring: str, samples: Iterable[str]
 ) -> list[str]:
     """Returns column names that contain the substring and any entry of 'samples'.
 
     Args:
-        df: Columns of this dataframe are queried.
+        table: Columns of this dataframe are queried.
         substring: String that must be part of column names.
         samples: List of strings from which at least one must be present in matched
             columns.
@@ -185,7 +185,7 @@ def find_sample_columns(
         A list of sample column names.
     """
     matched_columns = []
-    for column in find_columns(df, substring):
+    for column in find_columns(table, substring):
         if any([sample in column for sample in samples]):
             matched_columns.append(column)
     return matched_columns
