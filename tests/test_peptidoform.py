@@ -82,6 +82,40 @@ class TestPeptide:
         assert probability == 0.800
 
 
+class TestPeptideIsoformProbability:
+    def test_with_simple_probabilities(self):
+        modified_peptide = msreport.peptidoform.Peptide(
+            "PE[mod1]PT[mod2]ID[mod2]ESR",
+            localization_probabilities={"mod2": {4: 0.9, 6: 0.8, 8: 0.3}},
+        )
+        calculated_isoform_probability = modified_peptide.isoform_probability("mod2")
+        expected_isoform_probabilityx = 0.9 * 0.8
+        assert calculated_isoform_probability == expected_isoform_probabilityx
+
+    def test_with_multiple_modifications(self):
+        modified_peptide = msreport.peptidoform.Peptide(
+            "PE[mod1]PT[mod2]ID[mod2]ESR",
+            localization_probabilities={
+                "mod1": {2: 1},
+                "mod2": {4: 0.9, 6: 0.8, 8: 0.3},
+            },
+        )
+        calculated_isoform_probability = modified_peptide.isoform_probability("mod2")
+        expected_isoform_probabilityx = 0.9 * 0.8
+        assert calculated_isoform_probability == expected_isoform_probabilityx
+
+    def test_with_absent_probabilities(self):
+        modified_peptide = msreport.peptidoform.Peptide(
+            "PE[mod1]PT[mod2]ID[mod2]ESR",
+            localization_probabilities={
+                "mod2": {4: 0.9, 6: 0.8, 8: 0.3},
+            },
+        )
+        calculated_isoform_probability = modified_peptide.isoform_probability("mod1")
+        expected_isoform_probabilityx = None
+        assert calculated_isoform_probability == expected_isoform_probabilityx
+
+
 class TestParseModifiedSequence:
     @pytest.mark.parametrize(
         "modified_sequence, expected_plain_sequence",
