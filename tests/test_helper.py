@@ -35,7 +35,7 @@ def test_find_sample_columns():
     assert columns == ["Test Sample_A", "Test Sample_B"]
 
 
-class TestFilterTableByPartialMatch:
+class TestKeepRowsByPartialMatch:
     def test_entries_partially_matched_to_one_value_are_kept(self):
         table = pd.DataFrame(
             {
@@ -63,6 +63,36 @@ class TestFilterTableByPartialMatch:
             table, matching_column, matching_values
         )
         assert filtered["Col2"].tolist() == ["B", "CA"]
+
+
+class TestRemoveRowsByPartialMatch:
+    def test_entries_partially_matched_to_one_value_are_removed(self):
+        table = pd.DataFrame(
+            {
+                "Col1": [1, 2, 3],
+                "Col2": ["A", "B", "CA"],
+            }
+        )
+        matching_values = ["A"]
+        matching_column = "Col2"
+        filtered = msreport.helper.remove_rows_by_partial_match(
+            table, matching_column, matching_values
+        )
+        assert filtered["Col2"].tolist() == ["B"]
+
+    def test_entries_partially_matched_to_multiple_values_are_removed(self):
+        table = pd.DataFrame(
+            {
+                "Col1": [1, 2, 3],
+                "Col2": ["A", "B", "CA"],
+            }
+        )
+        matching_values = ["B", "C"]
+        matching_column = "Col2"
+        filtered = msreport.helper.remove_rows_by_partial_match(
+            table, matching_column, matching_values
+        )
+        assert filtered["Col2"].tolist() == ["A"]
 
 
 class TestJoinTables:
