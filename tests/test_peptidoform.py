@@ -127,17 +127,36 @@ def test_modify_peptide(sequence, modifications, expected_mofified_sequence):
     assert modified_sequence == expected_mofified_sequence
 
 
-def test_make_localization_string():
-    modification_localization_probabilities = {
-        "15.9949": {11: 1.000},
-        "79.9663": {3: 0.080, 4: 0.219, 5: 0.840, 13: 0.860},
-    }
-    expected_string = "15.9949@11:1.000;79.9663@3:0.080,4:0.219,5:0.840,13:0.860"
+class TestMakeLocalizationString:
+    def test_with_single_modifications(self):
+        modification_localization_probabilities = {"15.9949": {11: 1.000}}
+        expected_string = "15.9949@11:1.000"
 
-    localization_string = msreport.peptidoform.make_localization_string(
-        modification_localization_probabilities
-    )
-    assert localization_string == expected_string
+        localization_string = msreport.peptidoform.make_localization_string(
+            modification_localization_probabilities
+        )
+        assert localization_string == expected_string
+
+    def test_with_multiple_modifications(self):
+        modification_localization_probabilities = {
+            "15.9949": {11: 1.000},
+            "79.9663": {3: 0.080, 4: 0.219, 5: 0.840, 13: 0.860},
+        }
+        expected_string = "15.9949@11:1.000;79.9663@3:0.080,4:0.219,5:0.840,13:0.860"
+
+        localization_string = msreport.peptidoform.make_localization_string(
+            modification_localization_probabilities
+        )
+        assert localization_string == expected_string
+
+    def test_with_no_probabilities_in_input_dictionary(self):
+        modification_localization_probabilities = {}
+        expected_string = ""
+
+        localization_string = msreport.peptidoform.make_localization_string(
+            modification_localization_probabilities
+        )
+        assert localization_string == expected_string
 
 
 def test_read_localization_string():
