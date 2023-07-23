@@ -789,8 +789,7 @@ class FragPipeReader(ResultReader):
             df = self._rename_columns(df, prefix_column_tags)
         if rewrite_modifications and rename_columns:
             df = self._add_peptide_modification_entries(df)
-            df = self._add_modification_localization_string(df)
-
+            df = self._add_modification_localization_string(df, prefix_column_tags)
         return df
 
     def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -874,40 +873,62 @@ class FragPipeReader(ResultReader):
         new_df["Modifications"] = mod_entries["Modifications"]
         return new_df
 
-    def _add_modification_localization_string(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Adds a "Modification localization string" column.
+    def _add_modification_localization_string(
+        self,
+        df: pd.DataFrame,
+        prefix_column_tag: bool,
+    ) -> pd.DataFrame:
+        """Adds modification localization string columns.
 
-        Entries in the added column correspond to the standardized modifciation localization
-        string formation used by msreport, e.g. "15.9949@11:1.000;79.9663@3:0.200,4:0.800".
-        See `msreport.peptidoform.make_localization_string` for details.
+        Extracts localization probabilities from "Localization" or "SAMPLE Localization"
+        columns, converts them into the standardized modification localization string
+        format used by msreport, and adds new columns with the tag
+        "Modification localization string". Probabilities are written in the format
+        "Mod1@Site1:Probability1,Site2:Probability2;Mod2@Site3:Probability3",
+        e.g. "15.9949@11:1.000;79.9663@3:0.200,4:0.800". Refer to
+        `msreport.peptidoform.make_localization_string` for details.
 
         Args:
             df: Dataframe containing a "Localization" column.
+            prefix_column_tag: If True, the "Modification localization string" tag is
+                added in front of the sample name. If False, it is added afterwards.
 
         Returns:
             A copy of the input dataframe with updated columns.
         """
         # TODO: not tested
         new_df = df.copy()
-        if not pd.api.types.is_string_dtype(new_df["Localization"].dtype):
-            new_df["Localization"] = (
-                new_df["Localization"].astype(str).replace("nan", "")
-            )
-        localization_strings = []
-        for localization in new_df["Localization"]:
-            localization_probabilities = (
-                msreport.reader.extract_fragpipe_localization_probabilities(
-                    localization
+        column_mapping = {}
+        for column in msreport.helper.find_columns(new_df, "Localization"):
+            if column == "Localization":
+                new_column = "Modification localization string"
+            else:
+                sample = column.replace("Localization", "").strip()
+                if prefix_column_tag:
+                    new_column = f"Modification localization string {sample}"
+                else:
+                    new_column = f"{sample} Modification localization string"
+            column_mapping[column] = new_column
+
+        for localization_column, new_column in column_mapping.items():
+            # FUTURE: Type should be checked and enforced during the import
+            if not pd.api.types.is_string_dtype(new_df[localization_column].dtype):
+                new_df[localization_column] = (
+                    new_df[localization_column].astype(str).replace("nan", "")
                 )
-            )
-            if localization != "":
+
+            localization_strings = []
+            for localization in new_df[localization_column]:
+                localization_probabilities = (
+                    msreport.reader.extract_fragpipe_localization_probabilities(
+                        localization
+                    )
+                )
                 localization_string = msreport.peptidoform.make_localization_string(
                     localization_probabilities
                 )
-            else:
-                localization_string = ""
-            localization_strings.append(localization_string)
-        new_df["Modification localization string"] = localization_strings
+                localization_strings.append(localization_string)
+            new_df[new_column] = localization_strings
         return new_df
 
 
