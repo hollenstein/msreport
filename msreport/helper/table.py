@@ -191,7 +191,7 @@ def find_sample_columns(
     return matched_columns
 
 
-def filter_table_by_partial_match(
+def keep_rows_by_partial_match(
     table: pd.DataFrame, column: str, values: Iterable[str]
 ) -> pd.DataFrame:
     """Filter a table to keep only rows partially matching any of the specified values.
@@ -210,7 +210,7 @@ def filter_table_by_partial_match(
 
     Example:
         >>> df = pd.DataFrame({"Modifications": ["phos", "acetyl;phos", "acetyl"]})
-        >>> filter_table_by_partial_match(df, ["phos"], "Modifications")
+        >>> keep_rows_by_partial_match(df, ["phos"], "Modifications")
           Modifications
         0          phos
         1   acetyl;phos

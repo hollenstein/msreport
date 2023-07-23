@@ -10,7 +10,7 @@ from msreport.aggregate.summarize import (
     join_unique,
 )
 import msreport.peptidoform
-from msreport.helper import filter_table_by_partial_match
+from msreport.helper import keep_rows_by_partial_match
 
 
 def aggregate_ions_to_site_id_table(
@@ -54,7 +54,7 @@ def aggregate_ions_to_site_id_table(
     modifications_column = "Modified sequence"
 
     table = table[(table["Spectral count"] > 0)]
-    table = filter_table_by_partial_match(
+    table = keep_rows_by_partial_match(
         table, modifications_column, [target_modification]
     )
 

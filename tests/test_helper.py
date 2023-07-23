@@ -45,7 +45,7 @@ class TestFilterTableByPartialMatch:
         )
         matching_values = ["A"]
         matching_column = "Col2"
-        filtered = msreport.helper.filter_table_by_partial_match(
+        filtered = msreport.helper.keep_rows_by_partial_match(
             table, matching_column, matching_values
         )
         assert filtered["Col2"].tolist() == ["A", "CA"]
@@ -59,7 +59,7 @@ class TestFilterTableByPartialMatch:
         )
         matching_values = ["B", "C"]
         matching_column = "Col2"
-        filtered = msreport.helper.filter_table_by_partial_match(
+        filtered = msreport.helper.keep_rows_by_partial_match(
             table, matching_column, matching_values
         )
         assert filtered["Col2"].tolist() == ["B", "CA"]
