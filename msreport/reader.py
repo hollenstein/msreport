@@ -714,6 +714,7 @@ class FragPipeReader(ResultReader):
             df = self._rename_columns(df, prefix_column_tags)
         if rewrite_modifications and rename_columns:
             df = self._add_peptide_modification_entries(df)
+            df = self._add_modification_localization_string(df, prefix_column_tags)
         return df
 
     def import_ion_evidence(
