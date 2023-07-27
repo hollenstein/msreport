@@ -2,6 +2,21 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.18 - (Upcoming)
+
+### Added
+- Added two functions to the `helper` module that allow filtering of a dataframe based
+  on partial matches of a string to column values, which either keep or remove matched
+  rows: `keep_rows_by_partial_match` and `remove_rows_by_partial_match`.
+- Added a method to the `peptidoform.Peptide` class that allows calculation of the best
+  isoform probability.
+
+### Changed
+- Updated the `import_ions` method of the `reader.FragPipeReader` to add a column
+  containing standardized localization probabilities strings. 
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.17 (upcoming) - Generation of identified protein sites table
 
 ### Added
