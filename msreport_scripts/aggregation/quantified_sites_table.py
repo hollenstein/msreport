@@ -1,7 +1,15 @@
-from typing import Optional
+from typing import Iterable, Optional
 
 import pandas as pd
 import msreport
+from msreport.aggregate.summarize import (
+    count_unique,
+    join_unique,
+    sum_columns_maxlfq,
+    sum_columns,
+    aggregate_unique_groups,
+)
+import msreport.aggregate.condense as CONDENSE
 
 
 def create_modification_centered_table(
@@ -97,3 +105,115 @@ def create_modification_centered_table(
     for column_name, values in new_columns.items():
         sites_table[column_name] = values
     return sites_table
+
+
+def aggregate_protein_sites_table(
+    protein_sites_table: pd.DataFrame,
+    group_by: str,
+    intensity_tag: str,
+    samples: Iterable[str],
+) -> pd.DataFrame:
+    """Aggregates a protein sites table on unique entries from the 'group_by' column.
+
+    Note that for the aggregation it is essential that values in the intensity and
+    expression columns are not log transformed.
+
+    Requires the following columns in the input table, the column specified with
+    the 'group_by' argument, and columns containing a combination of the 'intensity_tag'
+    and the sample names from the 'samples' argument:
+    - "Representative protein"
+    - "Protein sites"
+    - "Isoform probability"
+    - "Modification count"
+    - "Peptide sequence"
+    - "Modified sequence"
+
+    Args:
+        protein_sites_table: The input table that will be used for aggregation of
+            protein sites to generate a quantitative protein sites table.
+        group_by: The name of the column used to determine unique groups for
+            aggregation. Typically corresponds to a string containing the protein
+            identifier and protein sites identifier.
+        input_tag: Substring of column names, which is used together with the sample
+            names to determine the columns whose values will be used for MaxLFQ
+            calculation of protein sites.
+        samples: List of sample names that appear in columns of the table as substrings.
+
+    Returns:
+        An aggregated protein sites table containing exactly one entry for each
+        combination of modified protein sites. Contains the following columns, the
+        column specified by 'group_by', and columns containing a combination of the
+        'intensity_tag' and the sample names from the 'samples' argument:
+        - "Representative protein": Protein identifier.
+        - "Protein sites": Modified amino acid positions of a protein, with multiple
+          sites being separated with ";".
+        - "Best isoform probability": Best isoform probability.
+        - "Modification count": Number of target modification occurences.
+        - "Sequences": One or multiple unique plain sequences, separated by ";".
+        - "Modified sequences": One or multiple unique modified sequences, separated
+          by ";".
+        - "# Sequences": Number of unique plain sequences.
+        - "# Modified sequences": Number of unique modified sequences.
+    """
+    table = protein_sites_table.sort_values(by=group_by)
+
+    protein_ids = join_unique(table, group_by, "Representative protein", is_sorted=True)
+    protein_ids.columns = ["Representative protein"]
+
+    protein_sites = join_unique(table, group_by, "Protein sites", is_sorted=True)
+    protein_sites.columns = ["Protein sites"]
+
+    aggregation, groups = aggregate_unique_groups(
+        table, group_by, ["Isoform probability"], CONDENSE.maximum, is_sorted=True
+    )
+    best_probabilities = pd.DataFrame(
+        columns=["Best isoform probability"], data=aggregation, index=groups
+    )
+
+    modification_count = join_unique(
+        table, group_by, "Modification count", is_sorted=True
+    )
+    modification_count.columns = ["Modification count"]
+
+    sequences = join_unique(table, group_by, "Peptide sequence", is_sorted=True)
+    sequences.columns = ["Sequences"]
+
+    modified_sequences = join_unique(
+        table, group_by, "Modified sequence", is_sorted=True
+    )
+    modified_sequences.columns = ["Modified sequences"]
+
+    n_sequences = count_unique(table, group_by, "Peptide sequence", is_sorted=True)
+    n_sequences.columns = ["# Sequences"]
+
+    n_modified_sequences = count_unique(
+        table, group_by, "Modified sequence", is_sorted=True
+    )
+    n_modified_sequences.columns = ["# Modified sequences"]
+
+    summed_intensity_columns = sum_columns(
+        table, group_by, samples, intensity_tag, is_sorted=True
+    )
+    expression_columns = sum_columns_maxlfq(
+        table, group_by, samples, intensity_tag, is_sorted=True
+    )
+    missing_lfq = (~expression_columns.isna()).sum(axis=1) == 0
+    expression_columns[missing_lfq] = summed_intensity_columns[missing_lfq].to_numpy()
+
+    aggregated_sub_tables = [
+        protein_ids,
+        protein_sites,
+        best_probabilities,
+        modification_count,
+        sequences,
+        modified_sequences,
+        n_sequences,
+        n_modified_sequences,
+        expression_columns,
+    ]
+    aggregated_table = pd.DataFrame(index=table[group_by].unique())
+    for sub_table in aggregated_sub_tables:
+        aggregated_table = aggregated_table.join(sub_table, how="outer")
+    aggregated_table.index.rename(group_by, inplace=True)
+    aggregated_table.reset_index(inplace=True)
+    return aggregated_table
