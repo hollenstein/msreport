@@ -2,22 +2,34 @@
 
 ----------------------------------------------------------------------------------------
 
-## 0.0.18 - (Upcoming)
+## 0.0.18 - (upcoming) Identified protein sites table from MaxQuant
 
 ### Added
 - Added two functions to the `helper` module that allow filtering of a dataframe based
-  on partial matches of a string to column values, which either keep or remove matched
-  rows: `keep_rows_by_partial_match` and `remove_rows_by_partial_match`.
+  on partial matches of a string to column values, keeping or removing matched rows:
+  `keep_rows_by_partial_match` and `remove_rows_by_partial_match`.
 - Added a method to the `peptidoform.Peptide` class that allows calculation of the best
   isoform probability.
 
 ### Changed
+- Added a "score_column" argument to the functions for generating the site id table
+  in the `msreport_scripts.aggregation` module. Instead of using the columns
+  "Probability" and "Expectation" from the FragPipe output, it is now required to
+  specify the name of the column that is used to extract the best score for a given
+  modified protein site. This change enables the creation of site id tables also from
+  the results of other software, such as MaxQuant.
+- Updated the `import_ion_evidence` method of the `reader.MaxQuantReader` to add a
+  column containing standardized localization probabilities strings.
 - Updated the `import_ions` method of the `reader.FragPipeReader` to add a column
-  containing standardized localization probabilities strings. 
+  containing standardized localization probabilities strings.
+
+### Fixed
+- The "filename" argument was not used when calling the `import_ion_evidence` method of
+  the `reader.MaxQuantReader`.
 
 ----------------------------------------------------------------------------------------
 
-## 0.0.17 (upcoming) - Generation of identified protein sites table
+## 0.0.17 - Generation of identified protein sites table
 
 ### Added
 - New module `msreport.peptidoform` for standardized processing of modified peptide
