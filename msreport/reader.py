@@ -351,7 +351,7 @@ class MaxQuantReader(ResultReader):
             A dataframe containing the processed ion table.
         """
         # TODO: not tested
-        df = self._read_file("ion_evidence")
+        df = self._read_file("ion_evidence" if filename is None else filename)
         df["Protein reported by software"] = _extract_protein_ids(
             df["Leading razor protein"]
         )
