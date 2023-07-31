@@ -1,8 +1,9 @@
 """ Module for reading result tables from various MS analysis tools and converting them
 to a standardized format following the MsReport convention.
 
-Currently MaxQuant and FragPipe protein tables are fully supported, and ion and peptide
-tables are partly supported.
+Currently for MaxQuant and FragPipe protein, peptide, and ion tables are supported, and
+for Spectronaut protein tables are supported when exported with the correct report
+scheme.
 
 New column names:
 - Representative protein
