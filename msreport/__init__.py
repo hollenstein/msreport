@@ -9,4 +9,4 @@ import msreport.normalize
 import msreport.plot
 import msreport.reader
 
-__version__ = "0.0.17"
+__version__ = "0.0.18rc1"
