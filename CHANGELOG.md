@@ -2,7 +2,7 @@
 
 ----------------------------------------------------------------------------------------
 
-## 0.0.18 - (upcoming) Identified protein sites table from MaxQuant
+## 0.0.18 - Identified protein sites table from MaxQuant
 
 ### Added
 - Added two functions to the `helper` module that allow filtering of a dataframe based
