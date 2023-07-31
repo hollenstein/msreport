@@ -357,7 +357,7 @@ class MaxQuantReader(ResultReader):
         df["Protein reported by software"] = _extract_protein_ids(
             df["Leading razor protein"]
         )
-        df["Representative protein"] = df["Leading razor protein"]
+        df["Representative protein"] = df["Protein reported by software"]
         if drop_decoy:
             df = self._drop_decoy(df)
         if rename_columns:
