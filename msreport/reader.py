@@ -2010,6 +2010,30 @@ def _generate_modification_entries(
     return entries
 
 
+def extract_maxquant_localization_probabilities(localization_entry: str) -> dict:
+    """Extract localization probabilites from a MaxQuant "Probabilities" entry.
+
+    Args:
+        localization_entry: Entry from the "Probabilities" columns of a MaxQuant
+            msms.txt, evidence.txt or Sites.txt table.
+
+    Returns:
+        A dictionary of {position: probability} mappings. Positions are one-indexed,
+        which means that the first amino acid position is 1.
+
+    Example:
+    >>> extract_maxquant_localization_probabilities("IRT(0.989)AMNS(0.011)IER")
+    {3: 0.989, 7: 0.011}
+    """
+    _, probabilities = msreport.peptidoform.parse_modified_sequence(
+        localization_entry, "(", ")"
+    )
+    site_probabilities = {
+        site: float(probability) for site, probability in probabilities
+    }
+    return site_probabilities
+
+
 def extract_fragpipe_localization_probabilities(localization_entry: str) -> dict:
     """Extract localization probabilites from a FragPipe "Localization" entry.
 
