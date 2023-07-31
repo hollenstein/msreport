@@ -320,18 +320,20 @@ class MaxQuantReader(ResultReader):
     ) -> pd.DataFrame:
         """Reads an "evidence.txt" file and returns a processed dataframe.
 
-        Adds new columns to comply with the MsReport convention. "Modified sequence"
-        and "Modifications columns". "Protein reported by software" and "Representative
-        protein", both contain the first entry from "Leading razor protein".
+        Adds new columns to comply with the MsReport convention. "Modified sequence",
+        "Modifications columns", "Modification localization string". "Protein reported
+        by software" and "Representative protein", both contain the first entry from
+        "Leading razor protein".
 
         "Modified sequence" entries contain modifications within square brackets.
-        "Modification" entries are strings in the form of "position:modification_text",
+        "Modification" entries are strings in the form of "position:modification_tag",
         multiple modifications are joined by ";". An example for a modified sequence and
         a modification entry: "PEPT[Phospho]IDO[Oxidation]", "4:Phospho;7:Oxidation".
 
-        Note that currently the format of the modification itself, as well as the
-        site localization probability are not modified; and no protein site entries are
-        added.
+        "Modification localization string" contains localization probabilities in the
+        format "Mod1@Site1:Probability1,Site2:Probability2;Mod2@Site3:Probability3",
+        e.g. "15.9949@11:1.000;79.9663@3:0.200,4:0.800". Refer to
+        `msreport.peptidoform.make_localization_string` for details.
 
         Args:
             filename: Allows specifying an alternative filename, otherwise the default
@@ -362,6 +364,7 @@ class MaxQuantReader(ResultReader):
             )  # Actually there are no column tags as the table is in long format
         if rewrite_modifications and rename_columns:
             df = self._add_peptide_modification_entries(df)
+            df = self._add_modification_localization_string(df)
         return df
 
     def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -444,6 +447,51 @@ class MaxQuantReader(ResultReader):
         new_df = df.copy()
         new_df["Modified sequence"] = mod_entries["Modified sequence"]
         new_df["Modifications"] = mod_entries["Modifications"]
+        return new_df
+
+    def _add_modification_localization_string(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Adds modification localization string columns.
+
+        Extracts localization probabilities from all "MODIFICATION Probabilities"
+        columns, converts them into the standardized modification localization string
+        format used by msreport, and adds new columns with the tag
+        "Modification localization string". Probabilities are written in the format
+        "Mod1@Site1:Probability1,Site2:Probability2;Mod2@Site3:Probability3",
+        e.g. "15.9949@11:1.000;79.9663@3:0.200,4:0.800". Refer to
+        `msreport.peptidoform.make_localization_string` for details.
+
+        Args:
+            df: Dataframe containing a "MODIFICATION Probabilities" columns.
+
+        Returns:
+            A copy of the input dataframe with updated columns.
+        """
+        # TODO: not tested
+        new_df = df.copy()
+        mod_probability_columns = msreport.helper.find_columns(new_df, "Probabilities")
+        localization_string_column = "Modification localization string"
+
+        mod_localization_probabilities = [{} for _ in range(new_df.shape[0])]
+        for probability_column in mod_probability_columns:
+            # FUTURE: Type should be checked and enforced during the import
+            if not pd.api.types.is_string_dtype(new_df[probability_column].dtype):
+                new_df[probability_column] = (
+                    new_df[probability_column].astype(str).replace("nan", "")
+                )
+            mod_tag = probability_column.split("Probabilities")[0].strip()
+
+            for row_idx, entry in enumerate(new_df[probability_column]):
+                mod_probabilities = extract_maxquant_localization_probabilities(entry)
+                if mod_probabilities:
+                    mod_localization_probabilities[row_idx][mod_tag] = mod_probabilities
+
+        localization_strings = []
+        for mod_localization_entry in mod_localization_probabilities:
+            localization_string = msreport.peptidoform.make_localization_string(
+                mod_localization_entry
+            )
+            localization_strings.append(localization_string)
+        new_df[localization_string_column] = localization_strings
         return new_df
 
     def _drop_decoy(self, df: pd.DataFrame) -> pd.DataFrame:
