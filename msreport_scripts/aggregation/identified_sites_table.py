@@ -16,7 +16,8 @@ from msreport.helper import keep_rows_by_partial_match
 def aggregate_ions_to_site_id_table(
     ion_table: pd.DataFrame,
     target_modification: str,
-    include_modifications: Optional[list[str]],
+    score_column: str,
+    include_modifications: Optional[list[str]] = None,
 ) -> pd.DataFrame:
     """Aggregates an ion table to an modified sites identification table.
 
@@ -25,6 +26,8 @@ def aggregate_ions_to_site_id_table(
         target_modification: The identifier of the modification that should be used for
             expanding modified protein sites, must occur in the "Modified sequence"
             column.
+        score_column: Column containing peptide identification quality scores, where
+            higher numbers indicate better scores.
         include_modifications: Optional, allows specifying additional modification
             identifiers that will be displayed together with the 'target_modification'
             in "Modified sequence" entries of the generated table.
@@ -46,9 +49,8 @@ def aggregate_ions_to_site_id_table(
           entries, separated by ";".
         - "Best localization probability": Best observed site localization probability.
         - "Spectral count": Sum of spectral counts per protein site.
-        - "Best peptide probability": Best observed peptide probability.
-        - "Best expectation": Best observed peptide expectation score, where lower is
-          better.
+        - The column name specified with the 'score_column' argument, contains the best
+          observed peptide score.
     """
     table = ion_table.copy()
     modifications_column = "Modified sequence"
@@ -59,16 +61,18 @@ def aggregate_ions_to_site_id_table(
     )
 
     expanded_protein_site_table = create_expanded_protein_site_table(
-        table, target_modification, include_modifications
+        table, target_modification, score_column, include_modifications
     )
     aggregated_table = aggregate_expanded_site_table(
-        expanded_protein_site_table, "Site ID"
+        expanded_protein_site_table, "Site ID", score_column
     )
     return aggregated_table
 
 
 def aggregate_expanded_site_table(
-    expanded_site_table: pd.DataFrame, group_by: str
+    expanded_site_table: pd.DataFrame,
+    group_by: str,
+    score_column: str,
 ) -> pd.DataFrame:
     """Aggregates an expanded site table by unique entries from the 'group_by' column.
 
@@ -77,15 +81,13 @@ def aggregate_expanded_site_table(
     in the 'group_by' column, corresponds to one row in the aggregated table.
 
     Requires the following columns in the input table, besides the column specified
-    with the 'group_by' argument:
+    with the 'group_by' and 'score_column' arguments:
     - "Protein site"
     - "Representative protein"
     - "Sequence"
     - "Modified sequence"
     - "Modification count"
     - "Site probability"
-    - "Peptide probability"
-    - "Expectation"
     - "Spectral count" --> This column should be optional for DIA compatibility.
 
     Args:
@@ -94,6 +96,8 @@ def aggregate_expanded_site_table(
         group_by: The name of the column used to determine unique groups for
             aggregation. Typically corresponds to a string containing the protein
             identifier and protein site identifier.
+        score_column: Column containing peptide identification quality scores, where
+            higher numbers indicate better scores.
 
     Returns:
         An aggregated protein sites table containing exactly one entry per protein site.
@@ -111,9 +115,8 @@ def aggregate_expanded_site_table(
           entries, separated by ";".
         - "Best localization probability": Best observed site localization probability.
         - "Spectral count": Sum of spectral counts per protein site.
-        - "Best peptide probability": Best observed peptide probability.
-        - "Best expectation": Best observed peptide expectation score, where lower is
-          better.
+        - The column name specified with the 'score_column' argument, contains the best
+          observed peptide score.
     """
     table = expanded_site_table.sort_values(by=group_by)
 
@@ -157,17 +160,10 @@ def aggregate_expanded_site_table(
     )
 
     aggregation, groups = aggregate_unique_groups(
-        table, group_by, ["Peptide probability"], CONDENSE.maximum, is_sorted=True
+        table, group_by, [score_column], CONDENSE.maximum, is_sorted=True
     )
-    best_peptide_probability = pd.DataFrame(
-        columns=["Best peptide probability"], data=aggregation, index=groups
-    )
-
-    aggregation, groups = aggregate_unique_groups(
-        table, group_by, ["Expectation"], CONDENSE.minimum, is_sorted=True
-    )
-    best_expectation_score = pd.DataFrame(
-        columns=["Best expectation"], data=aggregation, index=groups
+    best_peptide_score = pd.DataFrame(
+        columns=[score_column], data=aggregation, index=groups
     )
 
     aggregated_sub_tables = [
@@ -180,8 +176,7 @@ def aggregate_expanded_site_table(
         multiplicity,
         best_probabilities,
         spectral_counts,
-        best_peptide_probability,
-        best_expectation_score,
+        best_peptide_score,
     ]
     aggregated_table = pd.DataFrame(index=table[group_by].unique())
     for sub_table in aggregated_sub_tables:
@@ -199,6 +194,7 @@ def aggregate_expanded_site_table(
 def create_expanded_protein_site_table(
     table: pd.DataFrame,
     target_modification: str,
+    score_column: str,
     include_modifications: Optional[list[str]] = None,
 ) -> pd.DataFrame:
     """Expand entries into individual protein sites of the target modifications.
@@ -211,19 +207,20 @@ def create_expanded_protein_site_table(
     corresponds to exactly one modified protein site, but multiple rows can occur for
     the same protein site.
 
-    Requires the following columns in the input table:
+    Requires the following columns in the input table, plus the column specified with
+    the 'score_column' argument:
     - "Representative protein"
     - "Modification localization string"
     - "Modified sequence"
     - "Start position"
     - "Spectral count" --> This column should be optional for DIA compatibility.
-    - "Probability" --> This column might rather be called "peptide probability"?
-    - "Expectation" --> Not sure if having this information is useful.
 
     Args:
         table: The input table that will be used for expanding individual protein sites.
         target_modification: The identifier of the modification that should be used for
             expanding modified protein sites.
+        score_column: Column containing peptide identification quality scores, where
+            higher numbers indicate better scores.
         include_modifications: Optional, allows specifying additional modification
             identifiers that will be included in "Modified sequence" entries together
             with the 'target_modification'.
@@ -238,9 +235,8 @@ def create_expanded_protein_site_table(
           enclosed by square brackets, to the right of the modified amino acid.
         - "Modification count": Number of target modification occurences on the peptide.
         - "Site probability": Localization probability of the protein site.
-        - "Expectation": Expectation score of the original peptide entry.
-        - "Peptide probability": Probability of the original peptide entry.
         - "Spectral count": Number of spectral counts for the original peptide entry.
+        - The column specified with the 'score_column' attribute.
     """
     if include_modifications is None:
         include_modifications = []
@@ -255,9 +251,8 @@ def create_expanded_protein_site_table(
         "Modified sequence": [],
         "Site probability": [],
         "Modification count": [],
-        "Expectation": [],
-        "Peptide probability": [],
         "Spectral count": [],
+        score_column: [],
     }
 
     for _, entry in table.iterrows():
@@ -274,8 +269,7 @@ def create_expanded_protein_site_table(
             include=include_modifications
         )
         multiplicity = modified_peptide.count_modification(target_modification)
-        expectation_score = entry["Expectation"]
-        peptide_probability = entry["Probability"]
+        peptide_score = entry[score_column]
         spectral_count = entry["Spectral count"]
         protein_id = entry["Representative protein"]
 
@@ -292,8 +286,7 @@ def create_expanded_protein_site_table(
             site_collection["Modified sequence"].append(modified_sequence)
             site_collection["Modification count"].append(multiplicity)
             site_collection["Site probability"].append(site_probability)
-            site_collection["Expectation"].append(expectation_score)
-            site_collection["Peptide probability"].append(peptide_probability)
+            site_collection[score_column].append(peptide_score)
             site_collection["Spectral count"].append(spectral_count)
             site_collection["Representative protein"].append(protein_id)
     expanded_protein_site_table = pd.DataFrame(site_collection)
