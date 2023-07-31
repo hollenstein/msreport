@@ -88,3 +88,17 @@ class TestMaxQuantReader:
         assert table["Modified sequence"][4] == "[Acetyl (Protein N-term)]AAGPISER"
         assert table["Modifications"][4] == "0:Acetyl (Protein N-term)"
         assert not table["Leading razor protein"].str.contains("REV__").any()
+
+
+class TestExtractMaxquantLocalizationProbabilities:
+    def test_extract_normal_entry(self):
+        localization = msreport.reader.extract_maxquant_localization_probabilities(
+            "IRT(0.989)AMNS(0.011)IER"
+        )
+        expected = {3: 0.989, 7: 0.011}
+        assert localization == expected
+
+    def test_empty_localization_string_returns_empty_dict(self):
+        localization = msreport.reader.extract_maxquant_localization_probabilities("")
+        expected = {}
+        assert localization == expected
