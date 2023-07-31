@@ -21,6 +21,7 @@ Unified column names:
 from collections import OrderedDict, defaultdict
 import os
 from typing import Any, Callable, Iterable, Optional
+import pathlib
 import warnings
 
 import numpy as np
@@ -774,18 +775,20 @@ class FragPipeReader(ResultReader):
     ) -> pd.DataFrame:
         """Reads and concatenates all "ion.tsv" files and returns a processed dataframe.
 
-        Adds new columns to comply with the MsReport convention. "Modified sequence"
-        and "Modifications columns". "Protein reported by software" and "Representative
-        protein", both contain the first entry from "Leading razor protein".
+        Adds new columns to comply with the MsReport convention. "Modified sequence",
+        "Modifications", and "Modification localization string" columns. "Protein
+        reported by software" and "Representative protein", both contain the first entry
+        from "Leading razor protein".
 
         "Modified sequence" entries contain modifications within square brackets.
         "Modification" entries are strings in the form of "position:modification_text",
         multiple modifications are joined by ";". An example for a modified sequence and
         a modification entry: "PEPT[Phospho]IDO[Oxidation]", "4:Phospho;7:Oxidation".
 
-        Note that currently the format of the modification itself, as well as the
-        site localization probability are not modified; and no protein site entries are
-        added.
+        "Modification localization string" contains localization probabilities in the
+        format "Mod1@Site1:Probability1,Site2:Probability2;Mod2@Site3:Probability3",
+        e.g. "15.9949@11:1.000;79.9663@3:0.200,4:0.800". Refer to
+        `msreport.peptidoform.make_localization_string` for details.
 
         Args:
             filename: Allows specifying an alternative filename, otherwise the default
@@ -807,8 +810,6 @@ class FragPipeReader(ResultReader):
         # TODO: not tested #
 
         # --- Get paths of all ion.tsv files --- #
-        import pathlib
-
         if filename is None:
             filename = self.default_filenames["ion_evidence"]
 
