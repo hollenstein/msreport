@@ -215,7 +215,7 @@ def keep_rows_by_partial_match(
         0          phos
         1   acetyl;phos
     """
-    value_masks = [table[column].str.contains(value) for value in values]
+    value_masks = [table[column].str.contains(value, regex=False) for value in values]
     target_mask = np.any(value_masks, axis=0)
     filtered_table = table[target_mask].copy()
     return filtered_table
@@ -244,7 +244,7 @@ def remove_rows_by_partial_match(
           Modifications
         2        acetyl
     """
-    value_masks = [table[column].str.contains(value) for value in values]
+    value_masks = [table[column].str.contains(value, regex=False) for value in values]
     target_mask = ~np.any(value_masks, axis=0)
     filtered_table = table[target_mask].copy()
     return filtered_table
