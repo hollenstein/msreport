@@ -253,6 +253,7 @@ def create_expanded_protein_site_table(
         "Modification count": [],
         "Spectral count": [],
         score_column: [],
+        "Sample": [],
     }
 
     for _, entry in table.iterrows():
@@ -272,6 +273,7 @@ def create_expanded_protein_site_table(
         peptide_score = entry[score_column]
         spectral_count = entry["Spectral count"]
         protein_id = entry["Representative protein"]
+        sample = entry["Sample"]
 
         for protein_site in modified_peptide.list_modified_protein_sites(
             target_modification
@@ -289,5 +291,6 @@ def create_expanded_protein_site_table(
             site_collection[score_column].append(peptide_score)
             site_collection["Spectral count"].append(spectral_count)
             site_collection["Representative protein"].append(protein_id)
+            site_collection["Sample"].append(sample)
     expanded_protein_site_table = pd.DataFrame(site_collection)
     return expanded_protein_site_table
