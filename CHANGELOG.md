@@ -2,6 +2,19 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.19 - Spectral counts per sample for protein sites table
+
+### Added
+- The table created with `msreport_scripts.aggregation.aggregate_ions_to_site_id_table`
+  now contains additional spectral counts columns for each sample.
+
+### Changed
+- During the import of tables with the `reader.MaxQuantReader` the "Experiment" column
+  is now renamed to "Sample" to comply with the MsReport conventions.
+- Renamed "Spectral count" to "Total spectral count" in the aggregated site id table.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.18 - Identified protein sites table from MaxQuant
 
 ### Added
