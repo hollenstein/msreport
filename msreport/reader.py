@@ -175,6 +175,7 @@ class MaxQuantReader(ResultReader):
             ("Sequence", "Peptide sequence"),  # peptides, evidence
             ("Sequence length", "Protein length"),
             ("Mol. weight [kDa]", "Molecular weight [kDa]"),
+            ("Experiment", "Sample"),
         ]
     )
     column_tag_mapping: OrderedDict[str, str] = OrderedDict(
