@@ -9,6 +9,7 @@ from msreport.aggregate.summarize import (
     aggregate_unique_groups,
     count_unique,
     join_unique,
+    sum_columns,
 )
 import msreport.peptidoform
 from msreport.helper import keep_rows_by_partial_match
@@ -49,7 +50,8 @@ def aggregate_ions_to_site_id_table(
           peptides containing the respective site. Can contain one or mulitple
           entries, separated by ";".
         - "Best localization probability": Best observed site localization probability.
-        - "Spectral count": Sum of spectral counts per protein site.
+        - "Total spectral count": Sum of spectral counts per protein site.
+        - "Spectral count SAMPLE": Sum of spectral counts per protein site and sample.
         - The column name specified with the 'score_column' argument, contains the best
           observed peptide score.
     """
@@ -93,6 +95,7 @@ def aggregate_expanded_site_table(
     - "Modification count"
     - "Site probability"
     - "Spectral count" --> This column should be optional for DIA compatibility.
+    - "Sample"
 
     Args:
         expanded_site_table: The input table that will be used for aggregation of
@@ -118,7 +121,8 @@ def aggregate_expanded_site_table(
           peptides containing the respective site. Can contain one or mulitple
           entries, separated by ";".
         - "Best localization probability": Best observed site localization probability.
-        - "Spectral count": Sum of spectral counts per protein site.
+        - "Total spectral count": Sum of spectral counts per protein site.
+        - "Spectral count SAMPLE": Sum of spectral counts per protein site and sample.
         - The column name specified with the 'score_column' argument, contains the best
           observed peptide score.
     """
@@ -162,6 +166,12 @@ def aggregate_expanded_site_table(
     spectral_counts = pd.DataFrame(
         columns=["Spectral count"], data=aggregation, index=groups
     )
+    spectral_counts.columns = ["Total spectral count"]
+
+    samples = expanded_site_table["Sample"].unique()
+    spectral_counts_per_sample = sum_columns(
+        expanded_site_table, group_by, samples, "Spectral count"
+    )
 
     aggregation, groups = aggregate_unique_groups(
         table, group_by, [score_column], CONDENSE.maximum, is_sorted=True
@@ -180,6 +190,7 @@ def aggregate_expanded_site_table(
         multiplicity,
         best_probabilities,
         spectral_counts,
+        spectral_counts_per_sample,
         best_peptide_score,
     ]
     aggregated_table = pd.DataFrame(index=table[group_by].unique())
