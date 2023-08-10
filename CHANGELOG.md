@@ -446,7 +446,7 @@
   - Added support for importing peptide tables to MQReader and FPReader
   - Added support for importing ion tables to MQReader and FPReader. Importing ion
     tables adds a "Modifications" column and changes entries in the "Modified sequence"
-    column to comply with the MsRepport conventions. 
+    column to comply with the MsReport conventions. 
   - Changed the behaviour of 'drop_decoy' and 'drop_idbysite' when importing files
     using the MQReader, which now also removes the "Reverse" and "Only identified by
     site" columns from the table.
