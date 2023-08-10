@@ -4,6 +4,7 @@ from typing import Optional
 import pandas as pd
 
 import msreport.aggregate.condense as CONDENSE
+from msreport.aggregate.pivot import pivot_table
 from msreport.aggregate.summarize import (
     aggregate_unique_groups,
     count_unique,
@@ -62,6 +63,9 @@ def aggregate_ions_to_site_id_table(
 
     expanded_protein_site_table = create_expanded_protein_site_table(
         table, target_modification, score_column, include_modifications
+    )
+    expanded_protein_site_table = add_spectral_count_per_sample(
+        expanded_protein_site_table
     )
     aggregated_table = aggregate_expanded_site_table(
         expanded_protein_site_table, "Site ID", score_column
@@ -294,3 +298,31 @@ def create_expanded_protein_site_table(
             site_collection["Sample"].append(sample)
     expanded_protein_site_table = pd.DataFrame(site_collection)
     return expanded_protein_site_table
+
+
+def add_spectral_count_per_sample(
+    table: pd.DataFrame,
+    sample_column: str = "Sample",
+    spectral_count_column: str = "Spectral count",
+) -> pd.DataFrame:
+    """Adds pivoted spectral count columns per sample to a long table.
+
+    Args:
+        table: Table in long format containing sample and spectral count columns.
+        sample_column: Column used for pivoting the spectral count column.
+        spectral_count_column: Column that contains spectral counts.
+
+    Returns:
+        A table containing columns from the input 'table' and spectral count columns per
+        sample, with column names generated as f"{spectral_count_column} {sample_name}".
+    """
+    spectral_count_table = pivot_table(
+        table.reset_index(),
+        index="index",
+        group_by=sample_column,
+        annotation_columns=[],
+        pivoting_columns=[spectral_count_column],
+    )
+    spectral_count_table.set_index("index", inplace=True)
+    spectral_count_table = spectral_count_table.fillna(0).astype(int)
+    return table.join(spectral_count_table)
