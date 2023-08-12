@@ -273,6 +273,47 @@ def test_rename_mq_reporter_channels_with_count_and_corrected():
     assert table.columns.tolist() == expected_columns
 
 
+class TestRenameSampleColumns:
+    @pytest.fixture(autouse=True)
+    def _init_table(self):
+        self.table = pd.DataFrame(
+            columns=[
+                "Column 1",
+                "Intensity Sample 1",
+                "Intensity Sample 11",
+                "Intensity Sample A",
+                "Intensity Sample B",
+            ]
+        )
+
+    def test_simple_renaming(self):
+        mapping = {"Sample A": "Sample 2", "Sample B": "Sample 3"}
+        renamed_table = msreport.helper.rename_sample_columns(self.table, mapping)
+        expected_columns = [f"Intensity {name}" for name in mapping.values()]
+        removed_columns = [f"Intensity {name}" for name in mapping.keys()]
+
+        assert all([col in renamed_table for col in expected_columns])
+        assert all([col not in renamed_table for col in removed_columns])
+
+    def test_rename_with_original_names_being_substrings_of_orignal_names(self):
+        mapping = {"Sample 1": "Sample C", "Sample 11": "Sample B"}
+        renamed_table = msreport.helper.rename_sample_columns(self.table, mapping)
+        expected_columns = [f"Intensity {name}" for name in mapping.values()]
+        removed_columns = [f"Intensity {name}" for name in mapping.keys()]
+
+        assert all([col in renamed_table for col in expected_columns])
+        assert all([col not in renamed_table for col in removed_columns])
+
+    def test_rename_with_target_names_being_substrings_of_original_names(self):
+        table = pd.DataFrame(columns=["Intensity Sample 1", "Intensity Sample 11"])
+        mapping = {"Sample 1": "Sample 11", "Sample 11": "Sample 1"}
+        renamed_table = msreport.helper.rename_sample_columns(table, mapping)
+        expected_columns = [f"Intensity {name}" for name in mapping.values()]
+
+        assert renamed_table.columns.tolist() == expected_columns
+        assert renamed_table.columns.tolist() != table.columns.tolist()
+
+
 def test_rename_sample_columns():
     mapping = {
         "tes": "another name",
@@ -283,7 +324,7 @@ def test_rename_sample_columns():
         "treatment_test_2": "treatment_2",
     }
     tag = "Intensity"
-    expected_renamed_columns = [f"{tag} {mapping[k]}" for k in mapping.keys()]
+    expected_renamed_columns = [f"{tag} {value}" for value in mapping.values()]
 
     table = pd.DataFrame(columns=[f"{tag} {k}" for k in mapping.keys()])
     renamed_table = msreport.helper.rename_sample_columns(table, mapping)
