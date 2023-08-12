@@ -67,12 +67,16 @@ def intensities_in_logspace(data: Union[pd.DataFrame, np.ndarray, Iterable]) -> 
 
 
 def rename_sample_columns(table: pd.DataFrame, mapping: dict[str, str]) -> pd.DataFrame:
-    """Renames sample names according to the mapping in a cautious way.
+    """Renames sample names according to the mapping in a cautious manner.
 
-    Keys from mapping are ordered and sequentially used to rename columns. This prevents
-    wrong replacement with keys that are substrings of other keys. As none of the keys
-    from the mapping are substrings of other columns that should not be renamed, the
-    renaming will be perforemd correctly.
+    In general, this function allows the use of 'mapping' with keys that are substrings
+    of any other keys, as well as values that are substrings of any of the keys.
+
+    Importantly, if the mapping keys (sample names) are substrings of other column names
+    within the table, unintended renaming of those columns will occur. For instance,
+    when renaming columns ["Abundance", "Intensity A"] with the mapping
+    {"A": "Sample Alpha"}, the columns will be renamed to ["Sample Alphabundance",
+    "Intensity Sample Alpha"].
 
     Args:
         table: Dataframe which columns will be renamed.
