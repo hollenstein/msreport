@@ -1,4 +1,3 @@
-from collections import defaultdict
 import re
 from typing import Iterable, Union
 
@@ -71,9 +70,9 @@ def rename_sample_columns(table: pd.DataFrame, mapping: dict[str, str]) -> pd.Da
     """Renames sample names according to the mapping in a cautious way.
 
     Keys from mapping are ordered and sequentially used to rename columns. This prevents
-    wrong replacement with keys that are substrings of other keys. As long as none of
-    the values from mapping is a substring of another value and none of the keys are
-    substrings of other columns, the renaming will be perforemd correctly.
+    wrong replacement with keys that are substrings of other keys. As none of the keys
+    from the mapping are substrings of other columns that should not be renamed, the
+    renaming will be perforemd correctly.
 
     Args:
         table: Dataframe which columns will be renamed.
@@ -83,27 +82,18 @@ def rename_sample_columns(table: pd.DataFrame, mapping: dict[str, str]) -> pd.Da
     Returns:
         A copy of the table with renamed columns.
     """
-    co_occurence_counts = defaultdict(list)
-    old_names = mapping.keys()
+    sorted_mapping_keys = sorted(mapping, key=len, reverse=True)
 
-    for name_query in old_names:
-        counter = 0
-        for sample_name in old_names:
-            if name_query != sample_name and name_query in sample_name:
-                counter += 1
-        co_occurence_counts[counter].append(name_query)
-
-    table_columns = table.columns.tolist()
-    for _, sample_names in sorted(co_occurence_counts.items(), reverse=False):
-        updated_columns = []
-        for column in table_columns:
-            for sample_name in sample_names:
+    renamed_columns = []
+    for column in table.columns:
+        for sample_name in sorted_mapping_keys:
+            if sample_name in column:
                 column = column.replace(sample_name, mapping[sample_name])
-            updated_columns.append(column)
-        table_columns = updated_columns
+                break
+        renamed_columns.append(column)
 
     renamed_table = table.copy()
-    renamed_table.columns = table_columns
+    renamed_table.columns = renamed_columns
     return renamed_table
 
 
