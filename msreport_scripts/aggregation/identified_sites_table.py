@@ -20,6 +20,8 @@ def aggregate_ions_to_site_id_table(
     target_modification: str,
     score_column: str,
     include_modifications: Optional[list[str]] = None,
+    localization_probability_cutoff: Optional[float] = None,
+    score_cutoff: Optional[float] = None,
 ) -> pd.DataFrame:
     """Aggregates an ion table to an modified sites identification table.
 
@@ -33,6 +35,10 @@ def aggregate_ions_to_site_id_table(
         include_modifications: Optional, allows specifying additional modification
             identifiers that will be displayed together with the 'target_modification'
             in "Modified sequence" entries of the generated table.
+        localization_probability_cutoff: Optional, removes ion entries of protein sites
+            with a modification localization probability below the specified cutoff.
+        score_cutoff: Optional, removes ion entries of protein sites with a peptide
+            score below the specified cutoff.
 
     Returns:
         An aggregated protein sites table containing exactly one entry per protein site.
@@ -69,6 +75,17 @@ def aggregate_ions_to_site_id_table(
     expanded_protein_site_table = add_spectral_count_per_sample(
         expanded_protein_site_table
     )
+
+    if localization_probability_cutoff is not None:
+        expanded_protein_site_table = expanded_protein_site_table[
+            expanded_protein_site_table["Site probability"]
+            > localization_probability_cutoff
+        ]
+    if score_cutoff is not None:
+        expanded_protein_site_table = expanded_protein_site_table[
+            expanded_protein_site_table[score_column] > score_cutoff
+        ]
+
     aggregated_table = aggregate_expanded_site_table(
         expanded_protein_site_table, "Site ID", score_column
     )
