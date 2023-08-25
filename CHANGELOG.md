@@ -2,6 +2,22 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.20 - Minor fixes and tweaks
+
+### Added
+- Added an argument to `msreport_scripts.aggregation.aggregate_ions_to_site_id_table`
+  that allows applying a site localization probability filter on the PSM level.
+
+### Changed
+- More robust renaming of columns when using `helper.rename_sample_columns`.
+
+### Fixed
+- Resolved an issue in the `import_design` method of `reader.SpectronautReader`. This
+  problem occurred when the "Condition" column of the Spectronaut ConditionSetup file
+  contained only numeric values.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.19 - Spectral counts per sample for protein sites table
 
 ### Added
