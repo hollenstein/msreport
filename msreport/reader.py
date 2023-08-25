@@ -1129,7 +1129,7 @@ class SpectronautReader(ResultReader):
             filename = filenames[0]
 
         df = self._read_file(filename)
-        df["Sample"] = df["Condition"] + "_" + df["Replicate"].astype(str)
+        df["Sample"] = df["Condition"].astype(str) + "_" + df["Replicate"].astype(str)
         df = pd.DataFrame(
             {
                 "Sample": df["Sample"],
