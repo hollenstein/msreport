@@ -4,57 +4,52 @@ import pytest
 import msreport.isobar
 
 
-def test_correct_isotope_impurity_contamination():
-    contaminated_intensities = np.array([190.0, 101.0, 98.0, 112.0, 82.0])
-    impurity_matrix = np.array(
-        [
-            [0.90, 0.10, 0.00, 0.00, 0.00],
-            [0.10, 0.80, 0.01, 0.00, 0.00],
-            [0.00, 0.00, 0.95, 0.00, 0.03],
-            [0.00, 0.10, 0.02, 1.00, 0.00],
-            [0.00, 0.00, 0.02, 0.00, 0.80],
-        ]
-    )
-    expected = np.array([200, 100, 100, 100, 100])
-    corrected_intensities = msreport.isobar.correct_isotope_impurity_contamination(
-        contaminated_intensities, impurity_matrix
-    )
-    np.testing.assert_allclose(corrected_intensities, expected)
+class TestCorrectionOfIsotopeImpurities:
+    @pytest.fixture(autouse=True)
+    def _init_matrix_and_intensities(self):
+        self.pure_intensities = np.array([400, 200, 100, 100, 50])
+        # The impurity matrix is a square matrix where each row and column represent a
+        # distinct reporter channel. In this matrix each column describes the isotope
+        # impurity of a specific channel. The values in each row indicate the percentage
+        # of signal from the reporter that is present in each channel.
+        self.impurity_matrix = np.array(
+            [
+                [0.90, 0.10, 0.00, 0.00, 0.00],
+                [0.10, 0.80, 0.01, 0.00, 0.00],
+                [0.00, 0.01, 0.95, 0.01, 0.03],
+                [0.00, 0.09, 0.02, 0.98, 0.10],
+                [0.00, 0.00, 0.02, 0.01, 0.80],
+            ]
+        )
+        # Given the pure intensities and the impurity matrix, one can calculate the
+        # contaminated intensities by multiplying the columns with the pure intensities
+        # and then summing up each row.
+        self.contaminated_intensities = (
+            self.impurity_matrix * self.pure_intensities
+        ).sum(axis=1)
+        np.testing.assert_allclose(
+            self.contaminated_intensities, np.array([380, 201, 99.5, 123, 43])
+        )
 
+    def test_apply_impurity_contamination(self):
+        contaminated_intensities = msreport.isobar.apply_isotope_impurity_contamination(
+            self.pure_intensities, self.impurity_matrix
+        )
+        np.testing.assert_allclose(
+            contaminated_intensities, self.contaminated_intensities
+        )
 
-def test_apply_isotope_impurity_contamination():
-    true_intensities = np.array([200.0, 100.0, 100.0, 100.0, 100.0])
-    impurity_matrix = np.array(
-        [
-            [0.90, 0.10, 0.00, 0.00, 0.00],
-            [0.10, 0.80, 0.01, 0.00, 0.00],
-            [0.00, 0.00, 0.95, 0.00, 0.03],
-            [0.00, 0.10, 0.02, 1.00, 0.00],
-            [0.00, 0.00, 0.02, 0.00, 0.80],
-        ]
-    )
-    expected = np.array([190.0, 101.0, 98.0, 112.0, 82.0])
-    contaminated_intensities = msreport.isobar.apply_isotope_impurity_contamination(
-        true_intensities, impurity_matrix
-    )
-    np.testing.assert_allclose(contaminated_intensities, expected)
+    def test_correct_isotope_impurity_contamination(self):
+        corrected_intensities = msreport.isobar.correct_isotope_impurity_contamination(
+            self.contaminated_intensities, self.impurity_matrix
+        )
+        np.testing.assert_allclose(corrected_intensities, self.pure_intensities)
 
-
-def test_applying_and_correcting_impurity_contamination():
-    true_intensities = np.array([200.0, 100.0, 100.0, 100.0, 100.0])
-    impurity_matrix = np.array(
-        [
-            [0.90, 0.10, 0.00, 0.00, 0.00],
-            [0.10, 0.80, 0.01, 0.00, 0.00],
-            [0.00, 0.00, 0.95, 0.00, 0.03],
-            [0.00, 0.10, 0.02, 1.00, 0.00],
-            [0.00, 0.00, 0.02, 0.00, 0.80],
-        ]
-    )
-    contaminated_intensities = msreport.isobar.apply_isotope_impurity_contamination(
-        true_intensities, impurity_matrix
-    )
-    corrected_intensities = msreport.isobar.correct_isotope_impurity_contamination(
-        contaminated_intensities, impurity_matrix
-    )
-    np.testing.assert_allclose(true_intensities, corrected_intensities)
+    def test_applying_and_correcting_impurity_contamination(self):
+        contaminated_intensities = msreport.isobar.apply_isotope_impurity_contamination(
+            self.pure_intensities, self.impurity_matrix
+        )
+        corrected_intensities = msreport.isobar.correct_isotope_impurity_contamination(
+            contaminated_intensities, self.impurity_matrix
+        )
+        np.testing.assert_allclose(self.pure_intensities, corrected_intensities)
