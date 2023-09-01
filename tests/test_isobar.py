@@ -32,24 +32,24 @@ class TestCorrectionOfIsotopeImpurities:
         )
 
     def test_apply_impurity_contamination(self):
-        contaminated_intensities = msreport.isobar.apply_isotope_impurity_contamination(
+        contaminated_intensities = msreport.isobar._apply_impurity_contamination(
             self.pure_intensities, self.impurity_matrix
         )
         np.testing.assert_allclose(
             contaminated_intensities, self.contaminated_intensities
         )
 
-    def test_correct_isotope_impurity_contamination(self):
-        corrected_intensities = msreport.isobar.correct_isotope_impurity_contamination(
+    def test_correct_impurity_contamination(self):
+        corrected_intensities = msreport.isobar._correct_impurity_contamination(
             self.contaminated_intensities, self.impurity_matrix
         )
         np.testing.assert_allclose(corrected_intensities, self.pure_intensities)
 
     def test_applying_and_correcting_impurity_contamination(self):
-        contaminated_intensities = msreport.isobar.apply_isotope_impurity_contamination(
+        contaminated_intensities = msreport.isobar._apply_impurity_contamination(
             self.pure_intensities, self.impurity_matrix
         )
-        corrected_intensities = msreport.isobar.correct_isotope_impurity_contamination(
+        corrected_intensities = msreport.isobar._correct_impurity_contamination(
             contaminated_intensities, self.impurity_matrix
         )
         np.testing.assert_allclose(self.pure_intensities, corrected_intensities)

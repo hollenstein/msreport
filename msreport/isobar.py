@@ -22,7 +22,7 @@ def correct_isobaric_reporter_impurities(
     """
     # TODO: not tested #
     apply_impurity_correction = functools.partial(
-        correct_isotope_impurity_contamination,
+        _correct_impurity_contamination,
         impurity_matrix=diagonal_impurity_matrix,
     )
 
@@ -39,7 +39,7 @@ def correct_isobaric_reporter_impurities(
     return corrected_table
 
 
-def apply_isotope_impurity_contamination(
+def _apply_impurity_contamination(
     intensities: np.array, impurity_matrix: np.array
 ) -> np.array:
     """Applies reporter isotope impurity interference to an intensity array.
@@ -58,7 +58,7 @@ def apply_isotope_impurity_contamination(
     return np.sum(impurity_matrix * intensities, axis=1)
 
 
-def correct_isotope_impurity_contamination(
+def _correct_impurity_contamination(
     intensities: np.array, impurity_matrix: np.array
 ) -> np.array:
     """Applies reporter isotope impurity interference correction to an intensity array.
