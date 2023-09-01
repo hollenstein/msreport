@@ -16,7 +16,7 @@ def test_correct_isotope_impurity_contamination():
         ]
     )
     expected = np.array([200, 100, 100, 100, 100])
-    corrected_intensities = msreport.isobar._correct_isotope_impurity_contamination(
+    corrected_intensities = msreport.isobar.correct_isotope_impurity_contamination(
         contaminated_intensities, impurity_matrix
     )
     np.testing.assert_allclose(corrected_intensities, expected)
@@ -34,7 +34,7 @@ def test_apply_isotope_impurity_contamination():
         ]
     )
     expected = np.array([190.0, 101.0, 98.0, 112.0, 82.0])
-    contaminated_intensities = msreport.isobar._apply_isotope_impurity_contamination(
+    contaminated_intensities = msreport.isobar.apply_isotope_impurity_contamination(
         true_intensities, impurity_matrix
     )
     np.testing.assert_allclose(contaminated_intensities, expected)
@@ -51,10 +51,10 @@ def test_applying_and_correcting_impurity_contamination():
             [0.00, 0.00, 0.02, 0.00, 0.80],
         ]
     )
-    contaminated_intensities = msreport.isobar._apply_isotope_impurity_contamination(
+    contaminated_intensities = msreport.isobar.apply_isotope_impurity_contamination(
         true_intensities, impurity_matrix
     )
-    corrected_intensities = msreport.isobar._correct_isotope_impurity_contamination(
+    corrected_intensities = msreport.isobar.correct_isotope_impurity_contamination(
         contaminated_intensities, impurity_matrix
     )
     np.testing.assert_allclose(true_intensities, corrected_intensities)
