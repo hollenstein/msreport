@@ -342,3 +342,67 @@ def _value_dependent_fit_lowess(
     return statsmodels.nonparametric.smoothers_lowess.lowess(
         deviations, values, delta=delta, it=iterations
     )
+
+
+class CategoricalNormalizer:
+    """TODO: docstring
+
+    - Cannot contain NaN values
+    - Values must be log transformed
+    - Contains the catgegory_column, and besides that only sample columns
+    """
+
+    def __init__(self, category_column: str):
+        self._fitted_table = None
+        self._category_column = category_column
+
+    def is_fitted(self) -> bool:
+        """Returns True if the FixedValueNormalizer has been fitted."""
+        return self._fitted_table is not None
+
+    def fit(self, reference_table: pd.DataFrame) -> None:
+        """Fits the CategoricalNormalizer.
+
+        Args:
+            table: Dataframe used to calculate normalization factors for each column
+                and category.
+
+        Returns:
+            Returns the instance itself.
+        """
+        if reference_table.isna().values.any():
+            raise ValueError("Input table contains NaN values")
+        reference_table = reference_table.set_index(self._category_column)
+        self._fitted_table = reference_table.sub(reference_table.mean(axis=1), axis=0)
+        return self
+
+    def get_fits(self) -> dict[str, float]:
+        """Returns a dictionary containing the fitted center values per sample."""
+        if not self.is_fitted():
+            raise ValueError("Normalizer is not fitted yet")
+
+        return self._fitted_table.copy()
+
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Applies a fixed value normalization to each column of the table.
+
+        Args:
+            table: The data to normalize. Each column name must correspond to a column
+                name from the table that was used for the fitting.
+
+        Returns:
+            Transformed dataframe.
+        """
+        confirm_is_fitted(self)
+
+        old_index = table.index
+        table = table.set_index(self._category_column, drop=True, inplace=False)
+
+        if not table.columns.isin(self._fitted_table).all():
+            raise KeyError("The `table` contains columns not present in the fits")
+
+        values_for_fitting = self._fitted_table.loc[table.index, table.columns]
+        transformed_table = table.sub(values_for_fitting, axis=1)
+        transformed_table.reset_index(inplace=True)
+        transformed_table.index = old_index
+        return transformed_table
