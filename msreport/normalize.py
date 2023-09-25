@@ -373,7 +373,7 @@ class CategoricalNormalizer:
         if reference_table.isna().values.any():
             raise ValueError("Input table contains NaN values")
         reference_table = reference_table.set_index(self._category_column)
-        self._fitted_table = reference_table.sub(reference_table.mean(axis=1), axis=0)
+        self._fitted_table = reference_table
         return self
 
     def get_fits(self) -> dict[str, float]:
