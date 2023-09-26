@@ -163,6 +163,45 @@ def normalize_expression(
     qtable[expression_columns] = transformed_data[sample_columns]
 
 
+def create_site_to_protein_normalizer(
+    qtable: Qtable, category_column="Representative protein"
+) -> msreport.normalizer.CategoricalNormalizer:
+    """Creates a fitted `CategoricalNormalizer` for site-to-protein normalization.
+
+    The `CategoricalNormalizer` is fitted to protein expression profiles of the provided
+    `qtable`. The protein expression profiles are calculated by subtracting the mean
+    expression value of each protein from the protein expression values. Expression
+    values must be log transformed. The generated `CategoricalNormalizer` can be used to
+    normalize ion, peptide or site qtables based on protein categories.
+
+    Args:
+        qtable: Qtable instance containing protein values for fitting the normalizer.
+        category_column: The name of the column containing the protein categories.
+
+    Returns:
+        A fitted `CategoricalNormalizer` object.
+    """
+    reference_expression = qtable.make_expression_table(
+        samples_as_columns=True,
+        features=[category_column],
+    )
+    completely_quantified = (
+        ~reference_expression[qtable.get_samples()].isna().any(axis=1)
+    )
+    reference_expression = reference_expression[completely_quantified]
+
+    sample_columns = qtable.get_samples()
+    reference_profiles = reference_expression[sample_columns].sub(
+        reference_expression[sample_columns].mean(axis=1), axis=0
+    )
+    reference_profiles[category_column] = reference_expression[category_column]
+
+    normalizer = msreport.normalize.CategoricalNormalizer(category_column)
+    normalizer = normalizer.fit(reference_profiles)
+
+    return normalizer
+
+
 def impute_missing_values(
     qtable: Qtable,
     imputer: Transformer,

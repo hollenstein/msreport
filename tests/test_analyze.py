@@ -249,3 +249,21 @@ def test_two_group_comparison(example_data, example_qtable):
             example_data["data"][column_tag],
             equal_nan=True,
         )
+
+
+class TestCreateSiteToProteinNormalizer:
+    def test_correct_index_set_in_fits_table(self, example_qtable):
+        normalizer = msreport.analyze.create_site_to_protein_normalizer(example_qtable, category_column="Representative protein")  # fmt: skip
+        assert normalizer.get_fits().index.name == "Representative protein"
+
+    def test_correct_samples_present_in_fits_table(self, example_qtable):
+        normalizer = msreport.analyze.create_site_to_protein_normalizer(example_qtable, category_column="Representative protein")  # fmt: skip
+        assert sorted(normalizer.get_fits().columns) == sorted(example_qtable.get_samples())  # fmt: skip
+
+    def test_only_categories_from_reference_table_are_in_fits(self, example_qtable):
+        normalizer = msreport.analyze.create_site_to_protein_normalizer(example_qtable, category_column="Representative protein")  # fmt: skip
+        assert normalizer.get_fits().index.isin(example_qtable["Representative protein"]).all()  # fmt: skip
+
+    def test_fits_contains_rows(self, example_qtable):
+        normalizer = msreport.analyze.create_site_to_protein_normalizer(example_qtable, category_column="Representative protein")  # fmt: skip
+        assert normalizer.get_fits().shape[0] > 0
