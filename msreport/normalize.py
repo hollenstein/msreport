@@ -345,7 +345,7 @@ class CategoricalNormalizer:
         """
         if reference_table.isna().values.any():
             raise ValueError("Input table contains NaN values")
-        reference_table = reference_table.set_index(self._category_column)
+        reference_table = reference_table.set_index(self.get_category_column())
         self._fitted_table = reference_table
         return self
 
@@ -357,6 +357,10 @@ class CategoricalNormalizer:
         """
         confirm_is_fitted(self)
         return self._fitted_table.copy()
+
+    def get_category_column(self) -> str:
+        """Returns the name of the category column."""
+        return self._category_column
 
     def transform(self, table: pd.DataFrame) -> pd.DataFrame:
         """Applies a category dependent normalization to the table.
@@ -375,7 +379,7 @@ class CategoricalNormalizer:
         confirm_is_fitted(self)
 
         original_index = table.index
-        table = table.set_index(self._category_column, drop=True, inplace=False)
+        table = table.set_index(self.get_category_column(), drop=True, inplace=False)
 
         if not table.columns.isin(self._fitted_table).all():
             raise KeyError("The `table` contains columns not present in the fits")

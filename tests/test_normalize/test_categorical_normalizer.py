@@ -42,6 +42,11 @@ def transformed_sample_table():
     return sample_table
 
 
+def test_normalizer_get_category_column_returns_correct_value():
+    normalizer = CategoricalNormalizer("Category")
+    assert normalizer.get_category_column() == "Category"
+
+
 class TestFittingOfNormalizer:
     def test_is_not_fitted_when_created(self):
         normalizer = CategoricalNormalizer("Category")
