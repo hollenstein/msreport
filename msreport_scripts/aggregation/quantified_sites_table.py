@@ -1,5 +1,6 @@
 from typing import Iterable, Optional
 
+import numpy as np
 import pandas as pd
 import msreport
 from msreport.aggregate.summarize import (
@@ -10,6 +11,55 @@ from msreport.aggregate.summarize import (
     aggregate_unique_groups,
 )
 import msreport.aggregate.condense as CONDENSE
+from msreport.helper.table import keep_rows_by_partial_match
+
+
+def aggregate_ions_to_site_quant_table(
+    qtable: msreport.Qtable,
+    target_modification: str,
+    include_modifications: Optional[list[str]],
+) -> pd.DataFrame:
+    """Aggregates an ion qtable to an modified sites quantification table.
+
+    Requires the following columns in the input table:
+    - "Representative protein"
+    - "Modification localization string" for different samples
+    - "Modified sequence"
+    - "Start position"
+    - "Peptide sequence"
+    - "Modified sequence"
+
+    Args:
+        qtable: The ion qtable to aggregate.
+        target_modification: The identifier of the modification that should be used for
+            aggregation to protein sites, must occur in the "Modified sequence" column.
+        include_modifications: Optional, allows specifying additional modification
+            identifiers that will be displayed together with the 'target_modification'
+            in "Modified sequences" entries of the generated table.
+
+    Returns:
+        A quantitative protein sites table containing single or multiple sites.
+    """
+    modifications_column = "Modified sequence"
+    intensity_tag = "Expression"
+    table = qtable.get_data()
+    samples = qtable.get_samples()
+    expression_columns = qtable._expression_columns
+
+    # Undo log transformation
+    if msreport.helper.intensities_in_logspace(table[expression_columns]):
+        table[expression_columns] = np.power(2, table[expression_columns])
+
+    table = keep_rows_by_partial_match(
+        table, modifications_column, [target_modification]
+    )
+    protein_sites_table = create_modification_centered_table(
+        table, target_modification, include_modifications
+    )
+    aggregated_table = aggregate_protein_sites_table(
+        protein_sites_table, "Site ID", intensity_tag, samples
+    )
+    return aggregated_table
 
 
 def create_modification_centered_table(
