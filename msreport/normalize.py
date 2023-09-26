@@ -83,7 +83,12 @@ class FixedValueNormalizer(BaseSampleNormalizer):
         return self._sample_fits is not None
 
     def get_fits(self) -> dict[str, float]:
-        """Returns a dictionary containing the fitted center values per sample."""
+        """Returns a dictionary containing the fitted center values per sample.
+
+        Raises:
+            NotFittedError: If the FixedValueNormalizer has not been fitted yet.
+        """
+        confirm_is_fitted(self)
         return self._sample_fits.copy()
 
     def transform(self, table: pd.DataFrame) -> pd.DataFrame:
@@ -95,6 +100,9 @@ class FixedValueNormalizer(BaseSampleNormalizer):
 
         Returns:
             Transformed dataframe.
+
+        Raises:
+            NotFittedError: If the FixedValueNormalizer has not been fitted yet.
         """
         confirm_is_fitted(self)
 
@@ -189,10 +197,14 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
     def get_fits(self) -> dict[str, Iterable[float, float]]:
         """Returns a dictionary containing lists of fitting data per sample.
 
-        returns:
+        Returns:
             A dictionary mapping sample names to fitting data. Fitting data is sequence
             of [itensity, deviation at this intensity] pairs.
+
+        Raises:
+            NotFittedError: If the ValueDependentNormalizer has not been fitted yet.
         """
+        confirm_is_fitted(self)
         return self._sample_fits.copy()
 
     def transform(self, table: pd.DataFrame) -> pd.DataFrame:
@@ -204,6 +216,9 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
 
         Returns:
             Transformed dataframe.
+
+        Raises:
+            NotFittedError: If the ValueDependentNormalizer has not been fitted yet.
         """
         confirm_is_fitted(self)
 
@@ -287,6 +302,97 @@ class LowessNormalizer(ValueDependentNormalizer):
         super(LowessNormalizer, self).__init__(fit_function=_value_dependent_fit_lowess)
 
 
+class CategoricalNormalizer:
+    """Normalize samples based on category-dependent reference values.
+
+    Values from the reference table are used for normalization of the corresponding
+    categories in the table that will be transformed. The normalization is applied to
+    each column of the input table based on the category of each row.
+
+    The reference table must not contain NaN values and values in the sample columns
+    must be log-transformed. The table to be transformed must contain the same
+    `category_column` as the reference table and only include sample columns that were
+    used for fitting. Values from categories not present in the reference table will be
+    set to NaN. The table sample columns must also be log-transformed.
+    """
+
+    def __init__(self, category_column: str):
+        """Initializes a new instance of the CategoricalNormalizer class.
+
+        Args:
+            category_column: The name of the column containing the categories. This
+                column must be present in the reference table and the table to be
+                transformed.
+        """
+        self._fitted_table = None
+        self._category_column = category_column
+
+    def is_fitted(self) -> bool:
+        """Returns True if the CategoricalNormalizer has been fitted."""
+        return self._fitted_table is not None
+
+    def fit(self, reference_table: pd.DataFrame) -> BaseSampleNormalizer:
+        """Fits the CategoricalNormalizer to a reference table.
+
+        Args:
+            reference_table: The reference table used for fitting.
+
+        Returns:
+            Returns the instance itself.
+
+        Raises:
+            ValueError: If the reference table contains NaN values.
+        """
+        if reference_table.isna().values.any():
+            raise ValueError("Input table contains NaN values")
+        reference_table = reference_table.set_index(self._category_column)
+        self._fitted_table = reference_table
+        return self
+
+    def get_fits(self) -> pd.DataFrame:
+        """Returns a copy of the reference table used for fitting.
+
+        Raises:
+            NotFittedError: If the CategoricalNormalizer has not been fitted yet.
+        """
+        confirm_is_fitted(self)
+        return self._fitted_table.copy()
+
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Applies a category dependent normalization to the table.
+
+        Args:
+            table: The table to normalize.
+
+        Returns:
+            The normalized table.
+
+        Raises:
+            KeyError: If the input table contains columns not present in the reference
+                table.
+            NotFittedError: If the CategoricalNormalizer has not been fitted yet.
+        """
+        confirm_is_fitted(self)
+
+        original_index = table.index
+        table = table.set_index(self._category_column, drop=True, inplace=False)
+
+        if not table.columns.isin(self._fitted_table).all():
+            raise KeyError("The `table` contains columns not present in the fits")
+
+        valid_categories = table.index.isin(self._fitted_table.index)
+        sub_table = table[valid_categories]
+        values_for_fitting = self._fitted_table.loc[sub_table.index, sub_table.columns]
+
+        transformed_table = table.copy()
+        transformed_table[~valid_categories] = np.nan
+        transformed_table[valid_categories] = sub_table.sub(values_for_fitting, axis=1)
+
+        transformed_table.reset_index(inplace=True)
+        transformed_table.index = original_index
+        return transformed_table
+
+
 def confirm_is_fitted(
     normalizer: BaseSampleNormalizer, msg: Optional[str] = None
 ) -> None:
@@ -342,96 +448,3 @@ def _value_dependent_fit_lowess(
     return statsmodels.nonparametric.smoothers_lowess.lowess(
         deviations, values, delta=delta, it=iterations
     )
-
-
-class CategoricalNormalizer:
-    """Normalize samples based on category-dependent reference values.
-
-    Values from the reference table are used for normalization of the corresponding
-    categories in the table that will be transformed. The normalization is applied to
-    each column of the input table based on the category of each row.
-
-    The reference table must not contain NaN values and values in the sample columns
-    must be log-transformed. The table to be transformed must contain the same
-    `category_column` as the reference table and only include sample columns that were
-    used for fitting. Values from categories not present in the reference table will be
-    set to NaN. The table sample columns must also be log-transformed.
-    """
-
-    def __init__(self, category_column: str):
-        """Initializes a new instance of the CategoricalNormalizer class.
-
-        Args:
-            category_column: The name of the column containing the categories. This
-                column must be present in the reference table and the table to be
-                transformed.
-        """
-        self._fitted_table = None
-        self._category_column = category_column
-
-    def is_fitted(self) -> bool:
-        """Returns True if the CategoricalNormalizer has been fitted."""
-        return self._fitted_table is not None
-
-    def fit(self, reference_table: pd.DataFrame) -> BaseSampleNormalizer:
-        """Fits the CategoricalNormalizer to a reference table.
-
-        Args:
-            reference_table: The reference table used for fitting.
-
-        Returns:
-            Returns the instance itself.
-
-        Raises:
-            ValueError: If the reference table contains NaN values.
-        """
-        if reference_table.isna().values.any():
-            raise ValueError("Input table contains NaN values")
-        reference_table = reference_table.set_index(self._category_column)
-        self._fitted_table = reference_table
-        return self
-
-    def get_fits(self) -> pd.DataFrame:
-        """Returns a copy of the reference table used for fitting.
-
-        Raises:
-            ValueError: If the CategoricalNormalizer has not been fitted yet.
-        """
-        if not self.is_fitted():
-            raise ValueError("Normalizer is not fitted yet")
-
-        return self._fitted_table.copy()
-
-    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
-        """Applies a category dependent normalization to the table.
-
-        Args:
-            table: The table to normalize.
-
-        Returns:
-            The normalized table.
-
-        Raises:
-            KeyError: If the input table contains columns not present in the reference
-                table.
-            NotFittedError: If the CategoricalNormalizer has not been fitted yet.
-        """
-        confirm_is_fitted(self)
-
-        original_index = table.index
-        table = table.set_index(self._category_column, drop=True, inplace=False)
-
-        if not table.columns.isin(self._fitted_table).all():
-            raise KeyError("The `table` contains columns not present in the fits")
-
-        valid_categories = table.index.isin(self._fitted_table.index)
-        sub_table = table[valid_categories]
-        values_for_fitting = self._fitted_table.loc[sub_table.index, sub_table.columns]
-
-        transformed_table = table.copy()
-        transformed_table[~valid_categories] = np.nan
-        transformed_table[valid_categories] = sub_table.sub(values_for_fitting, axis=1)
-
-        transformed_table.reset_index(inplace=True)
-        transformed_table.index = original_index
-        return transformed_table
