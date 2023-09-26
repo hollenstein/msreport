@@ -267,3 +267,33 @@ class TestCreateSiteToProteinNormalizer:
     def test_fits_contains_rows(self, example_qtable):
         normalizer = msreport.analyze.create_site_to_protein_normalizer(example_qtable, category_column="Representative protein")  # fmt: skip
         assert normalizer.get_fits().shape[0] > 0
+
+
+class TestNormalizeExpressionByCategory:
+    @pytest.fixture(autouse=True)
+    def _init_normalizer(self):
+        class MockCategoricalNormalizer:
+            def fit(self, _table: pd.DataFrame):
+                return self
+
+            def is_fitted(self):
+                return True
+
+            def transform(self, table: pd.DataFrame):
+                table = table.copy()
+                table.loc[:, :] = 0
+                return table
+
+            def get_category_column(self):
+                return "Representative protein"
+
+        self.normalizer = MockCategoricalNormalizer()
+
+    def test_raises_key_error_when_category_column_is_absent(self, example_qtable):
+        example_qtable.data.rename(columns={"Representative protein": "Absent column"}, inplace=True)  # fmt: skip
+        with pytest.raises(KeyError):
+            msreport.analyze.normalize_expression_by_category(example_qtable, self.normalizer)  # fmt: skip
+
+    def test_expression_values_have_been_set_to_zero_by_mock_normalizer(self, example_qtable):  # fmt: skip
+        msreport.analyze.normalize_expression_by_category(example_qtable, self.normalizer)  # fmt: skip
+        assert example_qtable.make_expression_table().eq(0).values.all()

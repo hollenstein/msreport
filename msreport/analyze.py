@@ -22,6 +22,20 @@ class Transformer(Protocol):
         """Transform values in 'table'."""
 
 
+class CategoryTransformer(Protocol):
+    def fit(self, table: pd.DataFrame) -> Transformer:
+        """Fits the Transformer and returns a fitted Transformer instance."""
+
+    def is_fitted(self) -> bool:
+        """Returns True if the Transformer has been fitted."""
+
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Transform values in 'table'."""
+
+    def get_category_column(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Returns the specified category column."""
+
+
 def analyze_missingness(qtable: Qtable) -> None:
     """Quantifies missing values of expression columns.
 
@@ -200,6 +214,37 @@ def create_site_to_protein_normalizer(
     normalizer = normalizer.fit(reference_profiles)
 
     return normalizer
+
+
+def normalize_expression_by_category(
+    qtable: Qtable, normalizer: CategoryTransformer
+) -> None:
+    """Normalizes expression values in a Qtable based on categories.
+
+    Args:
+        qtable: A Qtable instance, which expression values will be normalized.
+        normalizer: A `CategoryTransformer` object used for normalization.
+
+    Raises:
+        KeyError: If the category column of the `CategoryTransformer` object is not
+            found in the `qtable.data`.
+    """
+    category_column = normalizer.get_category_column()
+    if category_column not in qtable.data.columns:
+        raise KeyError(
+            f'The category column "{category_column}" in the normalizer '
+            f"is not found in `qtable.data`."
+        )
+
+    table = qtable.make_expression_table(
+        samples_as_columns=True, features=[category_column]
+    )
+    sample_columns = table.columns.drop(category_column)
+    expression_columns = [qtable.get_expression_column(s) for s in sample_columns]
+
+    raw_data = table[sample_columns.append(pd.Index([category_column]))]
+    transformed_data = normalizer.transform(raw_data)
+    qtable.data[expression_columns] = transformed_data[sample_columns]
 
 
 def impute_missing_values(
