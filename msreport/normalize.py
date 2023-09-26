@@ -347,9 +347,13 @@ def _value_dependent_fit_lowess(
 class CategoricalNormalizer:
     """TODO: docstring
 
-    - Cannot contain NaN values
-    - Values must be log transformed
-    - Contains the catgegory_column, and besides that only sample columns
+    - For fitting
+      - Cannot contain NaN values
+      - Values must be log transformed
+    - For transformation
+      - contains the catgegory_column and only sample columns that were used for fitting
+      - Values from categories not present in the reference table are set to NaN
+      - Values must be log transformed
     """
 
     def __init__(self, category_column: str):
@@ -384,7 +388,7 @@ class CategoricalNormalizer:
         return self._fitted_table.copy()
 
     def transform(self, table: pd.DataFrame) -> pd.DataFrame:
-        """Applies a fixed value normalization to each column of the table.
+        """Applies a category dependent normalization to each column of the table.
 
         Args:
             table: The data to normalize. Each column name must correspond to a column
@@ -395,14 +399,20 @@ class CategoricalNormalizer:
         """
         confirm_is_fitted(self)
 
-        old_index = table.index
+        original_index = table.index
         table = table.set_index(self._category_column, drop=True, inplace=False)
 
         if not table.columns.isin(self._fitted_table).all():
             raise KeyError("The `table` contains columns not present in the fits")
 
-        values_for_fitting = self._fitted_table.loc[table.index, table.columns]
-        transformed_table = table.sub(values_for_fitting, axis=1)
+        valid_categories = table.index.isin(self._fitted_table.index)
+        sub_table = table[valid_categories]
+        values_for_fitting = self._fitted_table.loc[sub_table.index, sub_table.columns]
+
+        transformed_table = table.copy()
+        transformed_table[~valid_categories] = np.nan
+        transformed_table[valid_categories] = sub_table.sub(values_for_fitting, axis=1)
+
         transformed_table.reset_index(inplace=True)
-        transformed_table.index = old_index
+        transformed_table.index = original_index
         return transformed_table

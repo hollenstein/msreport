@@ -125,3 +125,15 @@ class TestNormalizerTransform:
 
         transformed_table = normalizer.transform(sample_table)
         pd.testing.assert_frame_equal(transformed_table, transformed_sample_table)
+
+    def test_transform_creates_nan_for_categories_not_present_in_the_fits(self, reference_table, sample_table):  # fmt: skip
+        normalizer = CategoricalNormalizer("Category").fit(reference_table)
+
+        sample_table.loc[[0, 1], "Category"] = "Missing category"
+        transformed_table = normalizer.transform(sample_table)
+
+        transformed_table.set_index("Category", inplace=True)
+        all_missing_category_values_are_nan = (
+            transformed_table.loc["Missing category"].isna().values.all()
+        )
+        assert all_missing_category_values_are_nan
