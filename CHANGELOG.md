@@ -2,6 +2,41 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.21 - Generation of quantified protein sites table
+
+### Added
+- Added the `aggregate_ions_to_site_quant_table` function to the
+  `msreport_scripts.aggregation` module. This function allows the generation of a
+  quantiative protein sites table from a qtable containing quantitative ion or peptide
+  data.
+- Added a `CategoricalNormalizer` to the `normalize` module, which forms the basis for
+  site to protein normalization.
+- Added `create_site_to_protein_normalizer` and `normalize_expression_by_category` to
+  the `analyze` module, which can be used to create a fitted site to protein normalizer
+  from a protein containing qtable, and apply the normalization to a qtable containing
+  ion, peptide or site data.
+
+### Changed
+- Added a `cluster_method` argument to `plot.expression_clustermap` that allows
+  selecting the preferred linkage method to use for calculating clusters.
+- Changed the default linkage method used in `plot.expression_clustermap` for
+  calculating clusters from "median" to "average", which in some cases greatly improves
+  the quality of the formed clusters.
+
+### Fixed
+- Fixed an issue in `msreport_scripts.excel_report.proteins.write_protein_report` that
+  prevented config files outside of the xlsxreport appdata directory to be found when
+  passing the `config` argument.
+- Add missing "[-log10]" to the y-label of the `volcano_ma` plot
+- Resolved an issue in the `import_design` method of `reader.SpectronautReader`. This
+  problem occurred when the "Run Label" column of the Spectronaut ConditionSetup file
+  contained only numeric values. Now `import_design` converts all columns to string.
+- Resolved an issue in the `import_protein` method of `reader.FragPipeReader` that was
+  caused by an empty "Indistinguishable Proteins" column in the "combined_protein.tsv"
+  file.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.20 - Minor fixes and tweaks
 
 ### Added
