@@ -714,7 +714,7 @@ def volcano_ma(
         )
 
         ax.set_xlabel(x_variable)
-        ax.set_ylabel(y_variable)
+        ax.set_ylabel(f"{y_variable} [-log10]")
 
     fig.tight_layout()
     return fig, axes
