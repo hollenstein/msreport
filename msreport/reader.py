@@ -885,7 +885,7 @@ class FragPipeReader(ResultReader):
         """
         leading_protein_entries = []
         for protein_entry, indist_protein_entry in zip(
-            df["Protein"], df["Indistinguishable Proteins"]
+            df["Protein"], df["Indistinguishable Proteins"].fillna("").astype(str)
         ):
             protein_entries = [protein_entry]
             if indist_protein_entry:
