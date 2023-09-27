@@ -1,3 +1,4 @@
+import os
 from typing import Callable, Iterable, Optional
 
 import pandas as pd
@@ -46,7 +47,13 @@ def write_protein_report(
         inplace=True,
     )
 
-    config_path = xlsxreport.get_config_file(config)
+    if os.path.isfile(config):
+        config_path = config
+    elif xlsxreport.get_config_file(config) is not None:
+        config_path = xlsxreport.get_config_file(config)
+    else:
+        raise FileNotFoundError(f"The specified config file {config} does not exist.")
+
     with xlsxreport.Reportbook(outpath) as reportbook:
         _write_design(reportbook, design)
         _write_proteins(reportbook, table, config_path)
