@@ -1132,11 +1132,11 @@ class SpectronautReader(ResultReader):
         df["Sample"] = df["Condition"].astype(str) + "_" + df["Replicate"].astype(str)
         df = pd.DataFrame(
             {
-                "Sample": df["Sample"],
+                "Sample": df["Sample"].astype(str),
                 "Replicate": df["Replicate"].astype(str),
-                "Experiment": df["Condition"],
-                "Filename": df["File Name"],
-                "Run label": df["Run Label"],
+                "Experiment": df["Condition"].astype(str),
+                "Filename": df["File Name"].astype(str),
+                "Run label": df["Run Label"].astype(str),
             }
         )
         return df
