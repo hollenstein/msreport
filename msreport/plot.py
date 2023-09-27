@@ -948,6 +948,7 @@ def box_and_bars(
 def expression_clustermap(
     qtable: Qtable,
     exclude_invalid: bool = True,
+    cluster_method: str = "average",
 ) -> sns.matrix.ClusterGrid:
     """Plot sample expression values as a hierarchically-clustered heatmap.
 
@@ -959,6 +960,8 @@ def expression_clustermap(
         qtable: A `Qtable` instance, which data is used for plotting.
         exclude_invalid: If True, rows are filtered according to the Boolean entries of
             the "Valid" column.
+        cluster_method: Linkage method to use for calculating clusters. See
+            `scipy.cluster.hierarchy.linkage` documentation for more information.
 
     Returns:
         A seaborn ClusterGrid instance. Note that ClusterGrid has a `savefig` method
@@ -991,7 +994,7 @@ def expression_clustermap(
         mask=imputed_values,
         figsize=figsize,
         metric="euclidean",
-        method="median",
+        method=cluster_method,
     )
     cluster_grid.ax_row_dendrogram.set_visible(False)
 
