@@ -20,7 +20,6 @@ def correct_isobaric_reporter_impurities(
             and the values in each row indicate the percentage of signal from the
             reporter that is present in each channel.
     """
-    # TODO: not tested #
     apply_impurity_correction = functools.partial(
         _correct_impurity_contamination,
         impurity_matrix=diagonal_impurity_matrix,

@@ -53,3 +53,11 @@ class TestCorrectionOfIsotopeImpurities:
             contaminated_intensities, self.impurity_matrix
         )
         np.testing.assert_allclose(self.pure_intensities, corrected_intensities)
+
+    def test_correct_isobaric_reporter_impurities(self):
+        intensity_table = self.contaminated_intensities.reshape(1, -1)
+        expected_corrected_table = self.pure_intensities.reshape(1, -1)
+        corrected_table = msreport.isobar.correct_isobaric_reporter_impurities(
+            intensity_table, self.impurity_matrix
+        )
+        np.testing.assert_allclose(corrected_table, expected_corrected_table)
