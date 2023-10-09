@@ -2,6 +2,20 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.22 - Isotope impurity correction
+
+### Added
+- Added a new module, `msreport.isobar`, which contains logic specific for datasets
+  utilizing isobaric labeling for quantification.
+- Added an `IsotopeImpurityCorrecter` transformer to the `isobar` module that can be
+  used together with `analyze.normalize_expression` to perform reporter isotope impurity
+  correction.
+- Added an `import_ion_evidence` method to the `reader.SpectronautReader` for reading
+  ion evidence files in long format. Note that modified sequence and modification
+  localization probabilities are currently not processed.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.21 - Generation of quantified protein sites table
 
 ### Added
