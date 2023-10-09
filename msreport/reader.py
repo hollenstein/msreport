@@ -1023,14 +1023,36 @@ class SpectronautReader(ResultReader):
     protected_columns: list[str] = []
     column_mapping: dict[str, str] = dict(
         [
+            ("R.FileName", "Filename"),
+            ("R.Label", "Sample"),
+            ("PG.Qvalue", "Protein qvalue"),
             ("PG.Cscore", "Protein cscore"),
             ("PG.NrOfStrippedSequencesIdentified (Experiment-wide)", "Total peptides"),
             ("PG.NrOfPrecursorsIdentified (Experiment-wide)", "Total ions"),
             ("PG.Cscore", "Cscore"),
-            ("PEP.StrippedSequence", "Peptide sequence"),  # Ions
-            ("PEP.AllOccurringProteinAccessions", "Mapped proteins")  # Ions
+            ("PEP.StrippedSequence", "Peptide sequence"),
+            ("PEP.AllOccurringProteinAccessions", "Mapped proteins"),
+            ("EG.ModifiedSequence", "Modified sequence"),
+            ("EG.CompensationVoltage", "Compensation voltage"),
+            ("EG.Qvalue", "Qvalue"),
+            ("EG.ApexRT", "Apex retention time"),
+            ("EG.DatapointsPerPeak", "Datapoints per peak"),
+            ("EG.FWHM", "FWHM"),
+            ("EG.SignalToNoise", "Signal to noise"),
+            ("FG.FragmentCount", "Fragment count"),
+            ("FG.Charge", "Charge"),
+            ("FG.MS1Quantity", "MS1 intensity"),
+            ("FG.MS1RawQuantity", "MS1 raw intensity"),
+            ("FG.MS2Quantity", "MS2 intensity"),
+            ("FG.MS2RawQuantity", "MS2 raw intensity"),
+            ("FG.MeasuredMz", "Observed m/z"),
+            ("FG.TheoreticalMz", "Theoretical m/z"),
+            ("FG.CalibratedMz", "Calibrated m/z"),
+            # ("PG.ProteinAccessions", ""),
+            # ("EG.HasLocalizationInformation", ""),
+            # ("EG.PTMLocalizationProbabilities", ""),
+            # ("EG.UsedForProteinGroupQuantity", ""),
             # Modified peptides need to be parsed and rewritten
-            # ("EG.ModifiedSequence", "Modified sequence"),  # Ions
         ]
     )
     sample_column_tags: list[str] = [
@@ -1280,8 +1302,55 @@ class SpectronautReader(ResultReader):
     def import_ions(self) -> None:
         raise NotImplementedError
 
-    def import_ion_evidence(self) -> None:
-        raise NotImplementedError
+    def import_ion_evidence(
+        self,
+        filename: Optional[str] = None,
+        filetag: Optional[str] = None,
+        rename_columns: bool = True,
+    ) -> None:
+        """Reads an ion evidence file (long format) and returns a processed dataframe.
+
+        Adds new columns to comply with the MsReport convention. "Protein reported
+        by software" and "Representative protein", both contain the first entry from
+        "PG.ProteinAccessions".
+
+        (!) Note that the modified sequence and modification localization probabilities
+        are currently not processed.
+
+        Args:
+            filename: Optional, allows specifying a specific file that will be imported.
+            filetag: Optional, can be used to select a file that contains the filetag as
+                a substring, instead of specifying a filename.
+            rename_columns: If True, columns are renamed according to the MsReport
+                convention; default True.
+
+        Returns:
+            A dataframe containing the processed ion table.
+        """
+        filenames = _find_matching_files(
+            self.data_directory,
+            filename=filename,
+            filetag=filetag,
+            extensions=["xls", "tsv", "csv"],
+        )
+        if len(filenames) == 0:
+            raise FileNotFoundError("No matching file found.")
+        elif len(filenames) > 1:
+            exception_message_lines = [
+                f"Multiple matching files found in: {self.data_directory}",
+                "One of the report filenames must be specified manually:",
+            ]
+            exception_message_lines.extend(filenames)
+            exception_message = "\n".join(exception_message_lines)
+            raise ValueError(exception_message)
+        else:
+            filename = filenames[0]
+        df = self._read_file(filename)
+        df = self._tidy_up_sample_columns(df)
+        df = self._add_protein_entries(df)
+        if rename_columns:
+            df = self._rename_columns(df, True)
+        return df
 
     def _tidy_up_sample_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Removes leading brackets, such as "[1]", from columns."""
