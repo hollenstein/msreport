@@ -397,6 +397,48 @@ class CategoricalNormalizer:
         return transformed_table
 
 
+class ZscoreScaler(BaseSampleNormalizer):
+    """Normalize samples by z-score scaling."""
+
+    def __init__(self, with_mean: bool = True, with_std: bool = True):
+        """Initializes a new instance of the ZscoreScaler class.
+
+        Args:
+            with_mean: If True, center row values by subtracting the row mean.
+            with_std: If True, scale row values by dividing by the row std.
+        """
+        self._with_mean = with_mean
+        self._with_std = with_std
+
+    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer:
+        """Returns the instance itself."""
+        return self
+
+    def is_fitted(self) -> bool:
+        """Always returns True because the ZscoreScaler does not need to be fitted."""
+        return True
+
+    def get_fits(self) -> dict:
+        """Returns a dictionary containing the parameters 'with_mean' and 'with_std'."""
+        return {"with_mean": self._with_mean, "with_std": self._with_std}
+
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Applies a z-score normalization to each column of the table.
+
+        Args:
+            table: The table used to scale row values.
+
+        Returns:
+            A copy of the table containing the scaled values.
+        """
+        scaled_table = table.copy()
+        if self._with_mean:
+            scaled_table = scaled_table.subtract(scaled_table.mean(axis=1), axis=0)
+        if self._with_std:
+            scaled_table = scaled_table.divide(scaled_table.std(axis=1, ddof=0), axis=0)
+        return scaled_table
+
+
 def confirm_is_fitted(
     normalizer: BaseSampleNormalizer, msg: Optional[str] = None
 ) -> None:

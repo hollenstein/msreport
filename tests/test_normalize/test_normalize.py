@@ -133,3 +133,46 @@ class TestNormalizers:
         fitted_A = normalizer.get_fits()["A"]
         expected_A = -0.5608569864240109
         np.testing.assert_allclose(fitted_A, expected_A, rtol=1e-07, atol=1e-07)
+
+
+class TestZscoreScaler:
+    def test_is_always_fitted(self):
+        scaler = msreport.normalize.ZscoreScaler()
+        assert scaler.is_fitted()
+
+    def test_after_transform_row_mean_is_zero_std_is_one(self):
+        scaler = msreport.normalize.ZscoreScaler()
+        table = pd.DataFrame({"A": [10, 11], "B": [11, 12], "C": [12, 13]})
+        table_scaled = scaler.transform(table)
+        assert np.allclose(table_scaled.mean(axis=1), 0)
+        assert np.allclose(table_scaled.std(axis=1, ddof=0), 1)
+
+    def test_after_transform_only_with_mean_row_mean_is_zero_std_is_not_one(self):
+        scaler = msreport.normalize.ZscoreScaler(with_mean=True, with_std=False)
+        table = pd.DataFrame({"A": [10, 11], "B": [11, 12], "C": [12, 13]})
+        table_scaled = scaler.transform(table)
+        assert np.allclose(table_scaled.mean(axis=1), 0)
+        assert not np.allclose(table_scaled.std(axis=1, ddof=0), 1)
+
+    def test_after_transform_only_with_std_row_mean_is_not_zero_std_is_one(self):
+        scaler = msreport.normalize.ZscoreScaler(with_mean=False, with_std=True)
+        table = pd.DataFrame({"A": [10, 11], "B": [11, 12], "C": [12, 13]})
+        table_scaled = scaler.transform(table)
+        assert not np.allclose(table_scaled.mean(axis=1), 0)
+        assert np.allclose(table_scaled.std(axis=1, ddof=0), 1)
+
+    def test_nan_values_are_ignored_during_scaling(self):
+        scaler = msreport.normalize.ZscoreScaler()
+        table = pd.DataFrame(
+            {"A": [11, np.nan], "B": [11, np.nan], "C": [12, 11], "D": [12, 12]}
+        )
+        table_scaled = scaler.transform(table)
+        assert np.allclose(table_scaled.mean(axis=1), 0)
+        assert np.allclose(table_scaled.std(axis=1, ddof=0), 1)
+        # Check explicitly that NaN values are ignored and preserved
+        assert np.allclose(
+            table_scaled["A"].to_numpy(), np.array([-1.0, np.nan]), equal_nan=True
+        )
+        assert np.allclose(
+            table_scaled["D"].to_numpy(), np.array([1.0, 1.0]), equal_nan=True
+        )
