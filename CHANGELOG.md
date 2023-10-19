@@ -2,6 +2,19 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.23 - iBAQ transformer and zscore scaler
+
+### Added
+- Added `analyze.create_ibaq_transformer` function that creates a `CategoricalNormalizer`
+  object for converting protein intensity values to iBAQ values. The created normalizer
+  can be passed to `analyze.normalize_expression_by_category` together with a `Qtable`
+  to apply the iBAQ transformation on the expression values.
+- Added a new normalizer, `normalize.ZscoreScaler`, to apply z-score transformation to
+  a table. As other normalizer, it can be passed to `analyze.normalize_expression` to
+  apply the normalization to the expression values in a `Qtable`.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.22 - Isotope impurity correction
 
 ### Added
