@@ -2,6 +2,7 @@
 from __future__ import annotations
 from typing import Iterable, Optional, Protocol
 import warnings
+from attr import ib
 
 import numpy as np
 import pandas as pd
@@ -178,7 +179,7 @@ def normalize_expression(
 
 
 def create_site_to_protein_normalizer(
-    qtable: Qtable, category_column="Representative protein"
+    qtable: Qtable, category_column: str = "Representative protein"
 ) -> msreport.normalizer.CategoricalNormalizer:
     """Creates a fitted `CategoricalNormalizer` for site-to-protein normalization.
 
@@ -212,6 +213,45 @@ def create_site_to_protein_normalizer(
 
     normalizer = msreport.normalize.CategoricalNormalizer(category_column)
     normalizer = normalizer.fit(reference_profiles)
+
+    return normalizer
+
+
+def create_ibaq_transformer(
+    qtable: Qtable,
+    category_column: str = "Representative protein",
+    ibaq_column: str = "iBAQ peptides",
+) -> msreport.normalizer.CategoricalNormalizer:
+    """Creates a fitted `CategoricalNormalizer` for iBAQ transformation.
+
+    The `CategoricalNormalizer` is fitted to iBAQ peptide counts of the provided
+    `qtable`, and can be used to transform protein intensities by dividing them by the
+    corresponding iBAQ peptide counts. Missing iBAQ peptide counts are replaced by 1 and
+    values smaller than 1 are replaced by 1. iBAQ peptide counts are then log2
+    transformed because the `CategoryTransformer` expects log2 transformed values.
+
+    Args:
+        qtable: Qtable instance containing iBAQ peptide counts for fitting the
+            normalizer.
+        category_column: The name of the column containing the protein categories.
+        ibaq_column: The name of the column containing the iBAQ peptide counts.
+
+    Returns:
+        A fitted `CategoricalNormalizer` object.
+    """
+    category_values = qtable[category_column].copy()
+    ibaq_factor_values = qtable[ibaq_column].copy()
+    sample_columns = qtable.get_samples()
+
+    ibaq_factor_values = ibaq_factor_values.fillna(1)
+    ibaq_factor_values[ibaq_factor_values < 1] = 1
+    ibaq_factor_values = np.log2(ibaq_factor_values)
+
+    reference_table = pd.DataFrame({c: ibaq_factor_values for c in sample_columns})
+    reference_table[category_column] = category_values
+
+    normalizer = msreport.normalize.CategoricalNormalizer(category_column)
+    normalizer = normalizer.fit(reference_table)
 
     return normalizer
 

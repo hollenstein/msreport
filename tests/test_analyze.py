@@ -1,3 +1,4 @@
+from attr import ib
 import numpy as np
 import pandas as pd
 import pytest
@@ -29,6 +30,7 @@ def example_data():
             "Mean Experiment_B": [13, np.nan, 10.3],  # <- Adjust to Sample_A1/A2
             "Ratio [log2]": [-3, np.nan, 0],  # <- Experiment_A/Experiment_B
             "Average expression": [11.5, np.nan, 10.3],  # <- Experiment_A/Experiment_B
+            "iBAQ peptides": [2, -1, np.nan],
         }
     )
     missing_values = pd.DataFrame(
@@ -267,6 +269,39 @@ class TestCreateSiteToProteinNormalizer:
     def test_fits_contains_rows(self, example_qtable):
         normalizer = msreport.analyze.create_site_to_protein_normalizer(example_qtable, category_column="Representative protein")  # fmt: skip
         assert normalizer.get_fits().shape[0] > 0
+
+
+class TestCreateIbaqTransformer:
+    @pytest.fixture(autouse=True)
+    def _init_normalizer_and_qtable(self, example_qtable):
+        self.qtable = example_qtable
+        self.normalizer = msreport.analyze.create_ibaq_transformer(
+            self.qtable,
+            category_column="Representative protein",
+            ibaq_column="iBAQ peptides",
+        )
+
+    def test_correct_index_set_in_fits_table(self):
+        assert self.normalizer.get_fits().index.name == "Representative protein"
+
+    def test_correct_samples_present_in_fits_table(self):
+        assert sorted(self.normalizer.get_fits().columns) == sorted(self.qtable.get_samples())  # fmt: skip
+
+    def test_only_categories_from_reference_table_are_in_fits(self):
+        assert self.normalizer.get_fits().index.isin(self.qtable["Representative protein"]).all()  # fmt: skip
+
+    def test_all_ibaq_counts_are_numbers_greater_or_equal_than_zero(self):
+        assert np.isfinite(self.normalizer.get_fits().values).all()
+        assert (self.normalizer.get_fits().values >= 0).all()
+
+    def test_ibaq_counts_have_been_log2_transformed(self):
+        ibaq_peptides = [1, 2, 4]
+        self.qtable["iBAQ peptides"] = ibaq_peptides
+        normalizer = msreport.analyze.create_ibaq_transformer(
+            self.qtable, category_column="Representative protein", ibaq_column="iBAQ peptides",  # fmt: skip
+        )
+        for sample in self.qtable.get_samples():
+            assert np.allclose(normalizer.get_fits()[sample], np.log2(ibaq_peptides))
 
 
 class TestNormalizeExpressionByCategory:
