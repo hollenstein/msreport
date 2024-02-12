@@ -3,17 +3,40 @@ import pandas as pd
 import pytest
 
 import msreport.reader
-from msreport.helper.temp import ProteinDatabase
 
 
 @pytest.fixture
 def example_protein_db():
-    db = ProteinDatabase()
-    db.add_fasta_entry(
-        header="sp|P60709|ACTB_HUMAN Actin, cytoplasmic 1 OS=Homo sapiens OX=9606 GN=ACTB PE=1 SV=1",
-        sequence="MDDDIAALVVDNGSGMCKAGFAGDDAPRAVFPSIVGRPRHQGVMVGMGQK",
-    )
-    return db
+    class Protein:
+        def __init__(self):
+            self.fastaHeader = "sp|P60709|ACTB_HUMAN Actin, cytoplasmic 1 OS=Homo sapiens OX=9606 GN=ACTB PE=1 SV=1"
+            self.sequence = "MDDDIAALVVDNGSGMCKAGFAGDDAPRAVFPSIVGRPRHQGVMVGMGQK"
+            self.headerInfo = {
+                "GN": "ACTB",
+                "gene_id": "ACTB",
+                "name": "Actin, cytoplasmic 1",
+                "entry": "ACTB_HUMAN",
+                "db": "sp",
+            }
+
+    class ProteinDatabase:
+        def __init__(self):
+            self.proteins = {"P60709": Protein()}
+
+        def __getitem__(self, protein_id: str):
+            return self.proteins[protein_id]
+
+        def __contains__(self, protein_id: str):
+            return True if protein_id in self.proteins else False
+
+    # self.sequence_length = len(self.protein_entry.sequence)
+    # self.fasta_header = self.protein_entry.fastaHeader
+    # self.gene_name = self.protein_entry.headerInfo["gene_id"]
+    # self.protein_name = self.protein_entry.headerInfo["name"]
+    # self.entry_name = self.protein_entry.headerInfo["entry"]
+    # self.db_origin = self.protein_entry.headerInfo["db"]
+
+    return ProteinDatabase()
 
 
 def test_extract_sample_names():

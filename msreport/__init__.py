@@ -1,6 +1,7 @@
 from msreport.qtable import Qtable
 from msreport.reader import MaxQuantReader, FragPipeReader, SpectronautReader
-from msreport.helper import importProteinDatabase, import_protein_database
+
+from msreport.fasta import import_protein_database
 
 import msreport.analyze
 import msreport.export

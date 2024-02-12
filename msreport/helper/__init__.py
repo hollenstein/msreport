@@ -18,9 +18,6 @@ from .table import (
     rename_mq_reporter_channels,
 )
 from .temp import (
-    ProteinDatabase,
-    importProteinDatabase,
-    import_protein_database,
     extract_modifications,
     modify_peptide,
 )

@@ -12,9 +12,10 @@ Index([
     'Sequence coverage',
 ], dtype='object')
 """
+
 from collections import defaultdict as ddict
 import os
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Protocol
 import warnings
 
 import numpy as np
@@ -23,6 +24,18 @@ import pandas as pd
 import msreport.helper as helper
 import msreport.reader
 from msreport.qtable import Qtable
+
+
+class Protein(Protocol):
+    """Abstract protein entry"""
+
+    fastaHeader: str
+    sequence: str
+    headerInfo: dict[str, str]
+
+
+class ProteinDatabase(Protocol):
+    proteins: dict[str, Protein]
 
 
 def contaminants_to_clipboard(qtable: Qtable) -> None:
@@ -165,7 +178,7 @@ def write_html_coverage_map(
     filepath: str,
     protein_id: str,
     peptide_table: pd.DataFrame,
-    protein_db: helper.ProteinDatabase,
+    protein_db: ProteinDatabase,
     displayed_name: Optional[str] = None,
     coverage_color: str = "#E73C40",
     highlight_positions: Optional[Iterable[int]] = None,

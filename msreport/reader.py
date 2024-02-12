@@ -19,9 +19,10 @@ Unified column names:
 - LFQ intensity "sample name"
 - iBAQ intensity "sample name"
 """
+
 from collections import OrderedDict, defaultdict
 import os
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional, Protocol
 import pathlib
 import warnings
 
@@ -29,9 +30,23 @@ import numpy as np
 import pandas as pd
 
 import msreport.helper as helper
-from msreport.helper.temp import Protein, extract_window_around_position
+from msreport.helper.temp import extract_window_around_position
 from msreport.errors import ProteinsNotInFastaWarning
 import msreport.peptidoform
+
+
+class Protein(Protocol):
+    """Abstract protein entry"""
+
+    fastaHeader: str
+    sequence: str
+    headerInfo: dict[str, str]
+
+
+class ProteinDatabase(Protocol):
+    proteins: dict[str, Protein]
+
+    def __getitem__(self, protein_id: str) -> Protein: ...
 
 
 class ResultReader:
@@ -1494,7 +1509,7 @@ def sort_leading_proteins(
 
 def add_protein_annotation(
     table: pd.DataFrame,
-    protein_db: helper.ProteinDatabase,
+    protein_db: ProteinDatabase,
     id_column: str = "Representative protein",
     gene_name: bool = False,
     protein_name: bool = False,
@@ -1584,7 +1599,7 @@ def add_protein_annotation(
 
 def add_protein_site_annotation(
     table: pd.DataFrame,
-    protein_db: helper.ProteinDatabase,
+    protein_db: ProteinDatabase,
     protein_column: str = "Representative protein",
     site_column: str = "Protein site",
 ):
@@ -1641,7 +1656,7 @@ def add_protein_site_annotation(
 
 def add_leading_proteins_annotation(
     table: pd.DataFrame,
-    protein_db: helper.ProteinDatabase,
+    protein_db: ProteinDatabase,
     id_column: str = "Leading proteins",
     gene_name: bool = False,
     protein_entry: bool = False,
@@ -1816,7 +1831,7 @@ def add_ibaq_intensities(
 
 def add_peptide_positions(
     table: pd.DataFrame,
-    protein_db: helper.ProteinDatabase,
+    protein_db: ProteinDatabase,
     peptide_column: str = "Peptide sequence",
     protein_column: str = "Representative protein",
 ) -> None:
@@ -2225,7 +2240,7 @@ def _mark_contaminants(entries: list[str], tag: str) -> list[bool]:
 
 def _create_protein_annotations_from_db(
     protein_ids: Iterable[str],
-    protein_db: helper.ProteinDatabase,
+    protein_db: ProteinDatabase,
     query_function: Callable,
     default_value: Any,
 ) -> list[str]:
@@ -2263,7 +2278,7 @@ def _create_protein_annotations_from_db(
 
 def _create_multi_protein_annotations_from_db(
     protein_entries: Iterable[str],
-    protein_db: helper.ProteinDatabase,
+    protein_db: ProteinDatabase,
     query_function: Callable,
 ) -> list[str]:
     """Returns a list of multi protein entry annotations.
