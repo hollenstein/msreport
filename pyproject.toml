@@ -45,9 +45,6 @@ packages = [
   "msreport.helper",
   "msreport.rinterface",
   "msreport.rinterface.rscripts",
-  "msreport_scripts.aggregation",
-  "msreport_scripts.benchmark",
-  "msreport_scripts.excel_report",
 ]
 
 [tool.setuptools.package-data]

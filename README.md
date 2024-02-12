@@ -98,11 +98,3 @@ look similar to "C:\Program Files\R\R-4.2.1" on windows.
 ```
 normalizePath(R.home("home"))
 ```
-
-In order to use the `msreport_scripts.excel_report` module the XlsxReport library
-(version 0.0.5) must be installed and the Appdata directory containing configuration
-files must be setup by running the command:
-
-```
-xlsxreport_setup
-```
