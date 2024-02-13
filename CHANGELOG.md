@@ -2,6 +2,24 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.24 - upcoming version
+
+### Changed
+- Replaced the FASTA parsing functionality from the `helper.temp` module with
+  the `profasta` library.
+- Added a `fasta` module which now contains the `import_protein_database` function,
+  which previously was located in the `helper.temp` module.
+
+### Removed
+- Removed the `msreport_scripts` package, which is now an independent package.
+- Removed the deprecated `helper.temp.importProteinDatabase` function.
+
+### Dependencies
+- Removed the `xslxreport` as a dependency.
+- Added `profasta` as a dependency.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.23 - iBAQ transformer and zscore scaler
 
 ### Added
