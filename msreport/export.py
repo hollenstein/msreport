@@ -29,13 +29,17 @@ from msreport.qtable import Qtable
 class Protein(Protocol):
     """Abstract protein entry"""
 
-    fastaHeader: str
+    header: str
     sequence: str
-    headerInfo: dict[str, str]
+    header_fields: dict[str, str]
 
 
 class ProteinDatabase(Protocol):
-    proteins: dict[str, Protein]
+    """Abstract protein database"""
+
+    def __getitem__(self, protein_id: str) -> Protein: ...
+
+    def __contains__(self, protein_id: str) -> bool: ...
 
 
 def contaminants_to_clipboard(qtable: Qtable) -> None:
@@ -217,7 +221,7 @@ def write_html_coverage_map(
         FutureWarning,
     )
     # Get protein information from the protein database
-    protein_entry = protein_db.proteins[protein_id]
+    protein_entry = protein_db[protein_id]
     sequence = protein_entry.sequence
     protein_length = len(sequence)
 

@@ -28,6 +28,7 @@ dependencies = [
   "matplotlib",
   "numpy",
   "pandas",
+  "profasta>=0.0.2",
   "pyteomics",
   "rpy2>=3.5.3",
   "scipy",

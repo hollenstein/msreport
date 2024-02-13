@@ -38,15 +38,17 @@ import msreport.peptidoform
 class Protein(Protocol):
     """Abstract protein entry"""
 
-    fastaHeader: str
+    header: str
     sequence: str
-    headerInfo: dict[str, str]
+    header_fields: dict[str, str]
 
 
 class ProteinDatabase(Protocol):
-    proteins: dict[str, Protein]
+    """Abstract protein database"""
 
     def __getitem__(self, protein_id: str) -> Protein: ...
+
+    def __contains__(self, protein_id: str) -> bool: ...
 
 
 class ResultReader:
@@ -1551,7 +1553,7 @@ def add_protein_annotation(
 
     proteins_not_in_db = []
     for protein_id in proteins:
-        if protein_id not in protein_db.proteins:
+        if protein_id not in protein_db:
             proteins_not_in_db.append(protein_id)
     if proteins_not_in_db:
         warnings.warn(
@@ -1628,7 +1630,7 @@ def add_protein_site_annotation(
     proteins = table[protein_column].to_list()
     proteins_not_in_db = []
     for protein_id in proteins:
-        if protein_id not in protein_db.proteins:
+        if protein_id not in protein_db:
             proteins_not_in_db.append(protein_id)
     if proteins_not_in_db:
         warnings.warn(
@@ -1694,7 +1696,7 @@ def add_leading_proteins_annotation(
     proteins_not_in_db = []
     for leading_entry in leading_protein_entries:
         for protein_id in leading_entry.split(";"):
-            if protein_id not in protein_db.proteins:
+            if protein_id not in protein_db:
                 proteins_not_in_db.append(protein_id)
     if proteins_not_in_db:
         warnings.warn(
@@ -1854,7 +1856,7 @@ def add_peptide_positions(
     peptide_positions = {"Start position": [], "End position": []}
     proteins_not_in_db = []
     for peptide, protein_id in zip(table[peptide_column], table[protein_column]):
-        if protein_id in protein_db.proteins:
+        if protein_id in protein_db:
             sequence = protein_db[protein_id].sequence
             start = sequence.find(peptide) + 1
             end = start + len(peptide) - 1
@@ -2323,26 +2325,25 @@ def _get_annotation_sequence_length(protein_entry: Protein, default_value: Any) 
 
 
 def _get_annotation_fasta_header(protein_entry: Protein, default_value: Any) -> Any:
-    return protein_entry.fastaHeader
+    return protein_entry.header
 
 
 def _get_annotation_gene_name(protein_entry: Protein, default_value: Any) -> Any:
-    return protein_entry.headerInfo.get("GN", default_value)
+    return protein_entry.header_fields.get("gene_name", default_value)
 
 
 def _get_annotation_protein_name(protein_entry: Protein, default_value: Any) -> Any:
-    return protein_entry.headerInfo.get("name", default_value)
+    return protein_entry.header_fields.get("protein_name", default_value)
 
 
 def _get_annotation_protein_entry_name(
-    protein_entry: Protein,
-    default_value: Any,
+    protein_entry: Protein, default_value: Any
 ) -> Any:
-    return protein_entry.headerInfo.get("entry", default_value)
+    return protein_entry.header_fields.get("entry_name", default_value)
 
 
 def _get_annotation_db_origin(protein_entry: Protein, default_value: Any) -> Any:
-    return protein_entry.headerInfo.get("db", default_value)
+    return protein_entry.header_fields.get("db", default_value)
 
 
 def _get_annotation_ibaq_peptides(protein_entry: Protein, default_value: Any) -> Any:

@@ -9,13 +9,12 @@ import msreport.reader
 def example_protein_db():
     class Protein:
         def __init__(self):
-            self.fastaHeader = "sp|P60709|ACTB_HUMAN Actin, cytoplasmic 1 OS=Homo sapiens OX=9606 GN=ACTB PE=1 SV=1"
+            self.header = "sp|P60709|ACTB_HUMAN Actin, cytoplasmic 1 OS=Homo sapiens OX=9606 GN=ACTB PE=1 SV=1"
             self.sequence = "MDDDIAALVVDNGSGMCKAGFAGDDAPRAVFPSIVGRPRHQGVMVGMGQK"
-            self.headerInfo = {
-                "GN": "ACTB",
-                "gene_id": "ACTB",
-                "name": "Actin, cytoplasmic 1",
-                "entry": "ACTB_HUMAN",
+            self.header_fields = {
+                "gene_name": "ACTB",
+                "protein_name": "Actin, cytoplasmic 1",
+                "entry_name": "ACTB_HUMAN",
                 "db": "sp",
             }
 
@@ -28,13 +27,6 @@ def example_protein_db():
 
         def __contains__(self, protein_id: str):
             return True if protein_id in self.proteins else False
-
-    # self.sequence_length = len(self.protein_entry.sequence)
-    # self.fasta_header = self.protein_entry.fastaHeader
-    # self.gene_name = self.protein_entry.headerInfo["gene_id"]
-    # self.protein_name = self.protein_entry.headerInfo["name"]
-    # self.entry_name = self.protein_entry.headerInfo["entry"]
-    # self.db_origin = self.protein_entry.headerInfo["db"]
 
     return ProteinDatabase()
 
@@ -387,11 +379,11 @@ class TestGetAnnotationFunctions:
         self.tryptic_ibaq_peptides = 4
         self.molecular_weight_kda = 5.14
         self.sequence_length = len(self.protein_entry.sequence)
-        self.fasta_header = self.protein_entry.fastaHeader
-        self.gene_name = self.protein_entry.headerInfo["gene_id"]
-        self.protein_name = self.protein_entry.headerInfo["name"]
-        self.entry_name = self.protein_entry.headerInfo["entry"]
-        self.db_origin = self.protein_entry.headerInfo["db"]
+        self.fasta_header = self.protein_entry.header
+        self.gene_name = self.protein_entry.header_fields["gene_name"]
+        self.protein_name = self.protein_entry.header_fields["protein_name"]
+        self.entry_name = self.protein_entry.header_fields["entry_name"]
+        self.db_origin = self.protein_entry.header_fields["db"]
         self.default_value = "Default"
 
     # fmt: off
