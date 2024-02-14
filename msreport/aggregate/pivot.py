@@ -124,8 +124,8 @@ def join_unique(
         A           A1
         B           B1
     """
-    series = table.groupby(index).apply(
-        lambda x: CONDENSE.join_unique_str(x[values].to_numpy())
+    series = table.groupby(index)[values].agg(
+        lambda x: CONDENSE.join_unique_str(x.to_numpy())
     )
     new_df = pd.DataFrame(series)
     new_df.columns = [values]
