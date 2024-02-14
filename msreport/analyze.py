@@ -1,4 +1,5 @@
 """ The analyze module contains methods for analysing quantification results. """
+
 from __future__ import annotations
 from typing import Iterable, Optional, Protocol
 import warnings
@@ -490,7 +491,7 @@ def calculate_multi_group_limma(
     for exp1, exp2 in experiment_pairs:
         r_experiment_pairs.append(f"{experiment_to_r[exp1]}-{experiment_to_r[exp2]}")
 
-    design["Experiment"].replace(experiment_to_r, inplace=True)
+    design.replace({"Experiment": experiment_to_r}, inplace=True)
 
     # Run limma and join results for all comparison groups
     limma_results = msreport.rinterface.multi_group_limma(
