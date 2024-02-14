@@ -24,7 +24,7 @@ keywords = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-  "adjustText",
+  "adjustText<1.0.0",
   "matplotlib",
   "numpy",
   "pandas",
