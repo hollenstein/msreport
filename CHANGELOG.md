@@ -17,6 +17,10 @@
 ### Dependencies
 - Removed the `xslxreport` as a dependency.
 - Added `profasta` as a dependency.
+- Set required version for adjustText < 1.0.0 to avoid breaking changes.
+
+### Fixed
+- Fixed non-breaking issues with seaborn version >= 0.13.0
 
 ----------------------------------------------------------------------------------------
 
