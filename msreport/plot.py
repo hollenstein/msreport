@@ -185,6 +185,10 @@ def missing_values_horizontal(
     sns.barplot(y="exp", x="max", data=data, label="All missing", color="#EB3952")
     sns.barplot(y="exp", x="some", data=data, label="Some missing", color="#FAB74E")
     sns.barplot(y="exp", x="min", data=data, label="None missing", color="#31A590")
+    # Manually remove axis labels and axis legend required for seaborn > 0.13
+    ax.set_ylabel(None)
+    ax.set_xlabel(None)
+    ax.legend().remove()
 
     ax.set_xlim(0, total)
     ax.set_title("Completeness of protein quantification per experiment")
