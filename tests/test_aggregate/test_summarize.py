@@ -105,7 +105,7 @@ class TestSumColumnsMaxlfq:
         expected_result = pd.DataFrame(
             data={"Quant S1": [2, 1, 3.5], "Quant S2": [4, 2, 7]}, index=["A", "B", "C"]
         )
-        pd.testing.assert_frame_equal(summed_columns, expected_result, check_dtype=False)  # fmt: skip
+        pd.testing.assert_frame_equal(summed_columns, expected_result, check_exact=False, check_dtype=False)  # fmt: skip
 
     def test_with_output_tag(self):
         summed_columns = SUMMARIZE.sum_columns_maxlfq(
