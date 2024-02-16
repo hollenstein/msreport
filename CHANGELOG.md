@@ -15,12 +15,14 @@
 - Removed the deprecated `helper.temp.importProteinDatabase` function.
 
 ### Dependencies
+- Added minimal required versions for all package dependencies
 - Removed the `xslxreport` as a dependency.
 - Added `profasta` as a dependency.
-- Set required version for adjustText < 1.0.0 to avoid breaking changes.
+- Set required version of `adjustText` < 1.0.0 to avoid breaking changes.
 
 ### Fixed
 - Fixed non-breaking issues with seaborn version >= 0.13.0
+- Fixed future warnings caused by using pandas >= 2.0.0 and >= 2.2.0
 
 ----------------------------------------------------------------------------------------
 
