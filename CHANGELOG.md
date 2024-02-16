@@ -2,7 +2,7 @@
 
 ----------------------------------------------------------------------------------------
 
-## 0.0.24 - upcoming version
+## 0.0.24 - Removed msreport_scripts and dependency updates
 
 ### Changed
 
