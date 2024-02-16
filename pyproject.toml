@@ -30,6 +30,7 @@ dependencies = [
   "pandas >= 1.4.4",
   "profasta >= 0.0.3",
   "pyteomics >= 4.6.0",
+  "pyyaml >= 6.0.0",
   "rpy2 >= 3.5.3",
   "scikit-learn >= 1.0.0",
   "scipy >= 1.9.1",
