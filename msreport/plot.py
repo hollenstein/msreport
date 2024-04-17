@@ -1078,13 +1078,13 @@ def pvalue_histogram(
         )
 
         # Adjust x- and y-axis
-        ax.set_xlabel(None)
         ax.set_xticks(np.arange(0, 1.01, 0.5))
         ax.tick_params(labelsize=9)
         if plot_number > 0:
             ax.tick_params(axis="y", color="none")
 
-        # Add second label
+        # Add x-label and second y-label
+        ax.set_xlabel(pvalue_tag, fontsize=9)
         ax2 = ax.twinx()
         ax2.set_yticks([])
         ax2.set_ylabel(comparison_group, fontsize=9)
