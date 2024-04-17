@@ -718,7 +718,10 @@ def volcano_ma(
         )
 
         ax.set_xlabel(x_variable)
-        ax.set_ylabel(f"{y_variable} [-log10]")
+        if y_variable == pvalue_tag:
+            ax.set_ylabel(f"{y_variable} [-log10]")
+        else:
+            ax.set_ylabel(f"{y_variable} [log2]")
 
     fig.tight_layout()
     return fig, axes
