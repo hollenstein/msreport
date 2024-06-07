@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Optional
+from typing import Any, Iterable, Optional
 import os
 import warnings
 
@@ -196,8 +196,9 @@ class Qtable:
         columns = helper.find_sample_columns(self.data, tag, samples)
         table = self.get_data(exclude_invalid=exclude_invalid)[columns]
         if samples_as_columns:
-            mapping = _str_to_substr_mapping(columns, samples)
-            table.rename(columns=mapping, inplace=True)
+            sample_to_columns = _match_samples_to_tag_columns(samples, columns, tag)
+            columns_to_samples = {v: k for k, v in sample_to_columns.items()}
+            table.rename(columns=columns_to_samples, inplace=True)
         return table
 
     def make_expression_table(
@@ -502,15 +503,30 @@ def _exclude_invalid(df: pd.DataFrame) -> pd.DataFrame:
     return df[df["Valid"]].copy()
 
 
-def _str_to_substr_mapping(strings, substrings) -> dict[str, str]:
-    """Mapping of strings to substrings.
+def _match_samples_to_tag_columns(
+    samples: Iterable[str],
+    columns: Iterable[str],
+    tag: str,
+) -> dict:
+    """Mapping of samples to columns which contain the sample and the tag.
 
-    Strings point to a matching substring. If multiple substrings are found in a string,
-    only one is reported.
+    Args:
+        samples: A list of sample names.
+        columns: A list of column names.
+        tag: A string that must be present in the column names.
+
+    Returns:
+        A dictionary that maps sample names to column names that contain the sample
+        name and the tag.
     """
+    WHITESPACE_CHARS = " ."
+
     mapping = dict()
-    for sub in substrings:
-        mapping.update({s: sub for s in strings if sub in s})
+    for sample in samples:
+        for col in columns:
+            if col.replace(tag, "").replace(sample, "").strip(WHITESPACE_CHARS) == "":
+                mapping[sample] = col
+                break
     return mapping
 
 

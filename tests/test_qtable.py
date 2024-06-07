@@ -84,15 +84,24 @@ class TestExcludeInvalid:
             msreport.qtable._exclude_invalid(df)
 
 
-def test_str_to_substr_mapping():
-    strings = ["Tag SampleB_1", "Tag SampleA_1", "Tag SampleA_2"]
-    substrs = ["SampleA_1", "SampleB_1", "SampleA_2"]
-    true_mapping = {
-        "Tag SampleA_1": "SampleA_1",
-        "Tag SampleA_2": "SampleA_2",
-        "Tag SampleB_1": "SampleB_1",
-    }
-    assert msreport.qtable._str_to_substr_mapping(strings, substrs) == true_mapping
+class TestMatchSamplesToTagColumns:
+    def test_match_samples_to_tag_columns(self):
+        samples = ["SampleA_1", "SampleA_2", "SampleB_1"]
+        columns = ["Tag SampleA_1", "Tag SampleA_2", "Tag SampleB_1"]
+        true_mapping = {
+            "SampleA_1": "Tag SampleA_1",
+            "SampleA_2": "Tag SampleA_2",
+            "SampleB_1": "Tag SampleB_1",
+        }
+        observed_mapping = msreport.qtable._match_samples_to_tag_columns(samples, columns, "Tag")  # fmt:skip
+        assert observed_mapping == true_mapping
+
+    def test_correct_mapping_with_samples_that_are_substrings(self):
+        samples = ["B_1", "SampleB_1"]
+        columns = ["Tag B_1", "Tag SampleB_1"]
+        true_mapping = {"B_1": "Tag B_1", "SampleB_1": "Tag SampleB_1"}
+        observed_mapping = msreport.qtable._match_samples_to_tag_columns(samples, columns, "Tag")  # fmt:skip
+        assert observed_mapping == true_mapping
 
 
 def test_qtable_setup():
