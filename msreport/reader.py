@@ -2196,9 +2196,11 @@ def extract_fragpipe_localization_probabilities(localization_entry: str) -> dict
         _, probabilities = msreport.peptidoform.parse_modified_sequence(
             probability_sequence, "(", ")"
         )
-        modification_probabilities[modification] = {
-            site: float(probability) for site, probability in probabilities
-        }
+        if modification not in modification_probabilities:
+            modification_probabilities[modification] = {}
+        modification_probabilities[modification].update(
+            {site: float(probability) for site, probability in probabilities}
+        )
     return modification_probabilities
 
 

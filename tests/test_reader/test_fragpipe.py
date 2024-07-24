@@ -129,18 +129,27 @@ class TestImportIonEvidence:
 
 
 class TestExtractFragpipeLocalizationProbabilities:
-    def test_extract_single_modification(self):
+    def test_extract_single_modification_with_merged_amino_acid_entries(self):
+        # Test case for FragPipe before version 22.0
         localization = msreport.reader.extract_fragpipe_localization_probabilities(
-            "STY:79.9663@FIMT(0.334)PT(0.666)LK;"
+            "STY:79.9663@FIMS(0.334)PT(0.666)LK;"
+        )
+        expected = {"79.9663": {4: 0.334, 6: 0.666}}
+        assert localization == expected
+
+    def test_extract_single_modifications_with_split_amino_aicd_entries(self):
+        # Test case for FragPipe version 22.0
+        localization = msreport.reader.extract_fragpipe_localization_probabilities(
+            "S:79.9663@FIMS(0.334)PTLK;T:79.9663@FIMSPT(0.666)LK;"
         )
         expected = {"79.9663": {4: 0.334, 6: 0.666}}
         assert localization == expected
 
     def test_extract_multiple_modifications(self):
         localization = msreport.reader.extract_fragpipe_localization_probabilities(
-            "M:15.9949@FIM(1.000)TPTLK;STY:79.9663@FIMT(0.334)PT(0.666)LK;"
+            "M:15.9949@FIM(1.000)SPTLK;S:79.9663@FIMS(0.334)PTLK"
         )
-        expected = {"15.9949": {3: 1.0}, "79.9663": {4: 0.334, 6: 0.666}}
+        expected = {"15.9949": {3: 1.0}, "79.9663": {4: 0.334}}
         assert localization == expected
 
     def test_empty_localization_string_returns_empty_dict(self):
