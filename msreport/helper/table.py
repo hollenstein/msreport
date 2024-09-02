@@ -176,12 +176,22 @@ def find_sample_columns(
             columns.
 
     Returns:
-        A list of sample column names.
+        A list of column names containing the substring and any entry of 'samples'.
+        Columns are returned in the order of entries in 'samples'.
     """
+    WHITESPACE_CHARS = " ."
+
     matched_columns = []
-    for column in find_columns(table, substring):
-        if any([sample in column for sample in samples]):
-            matched_columns.append(column)
+    substring_columns = find_columns(table, substring)
+    for sample in samples:
+        sample_columns = [c for c in substring_columns if sample in c]
+        for col in sample_columns:
+            column_remainder = (
+                col.replace(substring, "").replace(sample, "").strip(WHITESPACE_CHARS)
+            )
+            if column_remainder == "":
+                matched_columns.append(col)
+                break
     return matched_columns
 
 

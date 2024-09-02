@@ -19,20 +19,35 @@ class TestFindColumns:
         assert columns == ["Test A", "Test B"]
 
 
-def test_find_sample_columns():
-    df = pd.DataFrame(
-        columns=[
-            "Test",
-            "Test Not_a_sample",
-            "Test Sample_A",
-            "Test Sample_B",
-            "Something else",
-        ]
-    )
-    samples = ["Sample_A", "Sample_B"]
-    tag = "Test"
-    columns = msreport.helper.find_sample_columns(df, tag, samples)
-    assert columns == ["Test Sample_A", "Test Sample_B"]
+class TestFindSampleColumns:
+    def test_find_sample_columns(self):
+        df = pd.DataFrame(
+            columns=[
+                "Tag",
+                "Tag Not_a_sample",
+                "Tag Sample_A",
+                "Tag Sample_B",
+                "Something else",
+            ]
+        )
+        samples = ["Sample_A", "Sample_B"]
+        tag = "Tag"
+        columns = msreport.helper.find_sample_columns(df, tag, samples)
+        assert columns == ["Tag Sample_A", "Tag Sample_B"]
+
+    def test_columns_are_returned_in_order_of_samples(self):
+        df = pd.DataFrame(columns=["Tag Sample_B", "Tag Sample_A"])
+        samples = ["Sample_A", "Sample_B"]
+        tag = "Tag"
+        columns = msreport.helper.find_sample_columns(df, tag, samples)
+        assert columns == ["Tag Sample_A", "Tag Sample_B"]
+
+    def test_correct_mapping_with_samples_that_are_substrings(self):
+        df = pd.DataFrame(columns=["Tag SampleB_1", "Tag B_1"])
+        samples = ["B_1"]
+        tag = "Tag"
+        columns = msreport.helper.find_sample_columns(df, tag, samples)
+        assert columns == ["Tag B_1"]
 
 
 class TestKeepRowsByPartialMatch:

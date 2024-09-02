@@ -2,6 +2,18 @@
 
 ----------------------------------------------------------------------------------------
 
+## Upcoming release
+
+### Changed
+- `msreport.helper.table.find_sample_columns` now returns the list of sample columns in the same order as in the sample argument.
+
+### Fixed
+
+- Fixed issue of wrong column selection with `msreport.helper.table.find_sample_columns` when samples contain a substring of another sample name.
+
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.25 - Minor fixes
 
 ### Fixed
