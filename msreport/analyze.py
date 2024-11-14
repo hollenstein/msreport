@@ -75,6 +75,7 @@ def analyze_missingness(qtable: Qtable) -> None:
 def validate_proteins(
     qtable: Qtable,
     min_peptides: int = 0,
+    min_spectral_counts: int = 0,
     remove_contaminants: bool = True,
     min_events: Optional[int] = None,
     max_missing: Optional[int] = None,
@@ -84,12 +85,13 @@ def validate_proteins(
     Adds an additional column "Valid" to the qtable, containing Boolean values.
 
     Requires expression columns to be set. Depending on the arguments requires the
-    columns "Total peptides", "Potential contaminant", and the experiment columns
-    "Missing experiment_name" and "Events experiment_name".
+    columns "Total peptides", "Spectral count Combined", "Potential contaminant", and
+    the experiment columns "Missing experiment_name" and "Events experiment_name".
 
     Args:
         qtable: A Qtable instance.
         min_peptides: Minimum number of unique peptides, default 0.
+        min_spectral_counts: Minimum number of combined spectral counts, default 0.
         remove_contaminants: If true, the "Potential contaminant" column is used to
             remove invalid entries, default True. If no "Potential contaminant" column
             is present 'remove_contaminants' is ignored.
@@ -105,6 +107,16 @@ def validate_proteins(
             raise KeyError("'Total peptides' column not present in qtable.data")
         valid_entries = np.all(
             [valid_entries, qtable["Total peptides"] >= min_peptides], axis=0
+        )
+
+    if min_spectral_counts > 0:
+        if "Spectral count Combined" not in qtable:
+            raise KeyError(
+                "'Spectral count Combined' column not present in qtable.data"
+            )
+        valid_entries = np.all(
+            [valid_entries, qtable["Spectral count Combined"] >= min_spectral_counts],
+            axis=0,
         )
 
     # TODO: not tested from here #
