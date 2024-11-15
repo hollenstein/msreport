@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Any
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,7 @@ class FixedValueImputer:
     def __init__(
         self,
         strategy: str,
-        fill_value: Optional[float] = None,
+        fill_value: float = 0.0,
         column_wise: bool = True,
     ):
         """Initializes the FixedValueImputer.
@@ -51,13 +51,11 @@ class FixedValueImputer:
             Returns the fitted FixedValueImputer instance.
         """
         if self.strategy == "constant":
-            # if not isinstance(self.fill_value, (float, int)):
-            #     raise Excpetion()
             fill_values = {column: self.fill_value for column in table.columns}
         elif self.strategy == "below":
             if self.column_wise:
                 fill_values = {}
-                for column in table:
+                for column in table.columns:
                     fill_values[column] = _calculate_integer_below_min(table[column])
             else:
                 int_below_min = _calculate_integer_below_min(table)
@@ -240,7 +238,7 @@ class PerseusImputer:
         return _table
 
 
-def confirm_is_fitted(imputer: any, msg: Optional[str] = None) -> None:
+def confirm_is_fitted(imputer: Any, msg: Optional[str] = None) -> None:
     """Perform is_fitted validation for imputer instances.
 
     Checks if the imputer is fitted by verifying the presence of fitted attributes

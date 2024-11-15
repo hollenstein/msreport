@@ -33,8 +33,8 @@ class CategoryTransformer(Protocol):
     def transform(self, table: pd.DataFrame) -> pd.DataFrame:
         """Transform values in 'table'."""
 
-    def get_category_column(self, table: pd.DataFrame) -> pd.DataFrame:
-        """Returns the specified category column."""
+    def get_category_column(self) -> str:
+        """Returns the name of the category column."""
 
 
 def analyze_missingness(qtable: Qtable) -> None:
@@ -224,11 +224,9 @@ def normalize_expression(
     raw_data = table[sample_columns]
     if not normalizer.is_fitted():
         if exclude_invalid:
-            valid_mask = table["Valid"]
+            normalizer.fit(raw_data[table["Valid"]])
         else:
-            valid_mask = np.ones_like(table["Valid"], dtype=bool)
-        fit_data = raw_data[valid_mask]
-        normalizer = normalizer.fit(fit_data)
+            normalizer = normalizer.fit(raw_data)
 
     transformed_data = normalizer.transform(raw_data)
     qtable[expression_columns] = transformed_data[sample_columns]
@@ -477,7 +475,7 @@ def two_group_comparison(
 
 def calculate_multi_group_limma(
     qtable: Qtable,
-    experiment_pairs: list[list[str, str]],
+    experiment_pairs: Iterable[Iterable[str]],
     exclude_invalid: bool = True,
     batch: bool = False,
     limma_trend: bool = True,
@@ -560,7 +558,7 @@ def calculate_multi_group_limma(
         limma_result.rename(columns=mapping, inplace=True)
 
     limma_table = pd.DataFrame(index=table.index)
-    limma_table = limma_table.join(limma_results.values())
+    limma_table = limma_table.join(list(limma_results.values()))
     limma_table.fillna(np.nan, inplace=True)
     qtable.add_expression_features(limma_table)
 
@@ -572,7 +570,7 @@ def calculate_multi_group_limma(
 
 def calculate_two_group_limma(
     qtable: Qtable,
-    experiment_pair: list[str, str],
+    experiment_pair: list[str],
     exclude_invalid: bool = True,
     limma_trend: bool = True,
 ) -> None:
@@ -638,5 +636,3 @@ def calculate_two_group_limma(
     mapping = {col: f"{col} {comparison_group}" for col in limma_table.columns}
     limma_table.rename(columns=mapping, inplace=True)
     qtable.add_expression_features(limma_table)
-
-    return limma_result

@@ -1,7 +1,6 @@
 from __future__ import annotations
-import abc
-import itertools
-from typing import Callable, Iterable, Optional
+from typing import Callable, Iterable, Optional, Protocol
+from typing_extensions import Self
 
 import numpy as np
 import pandas as pd
@@ -12,23 +11,18 @@ import msreport.helper.maxlfq as MAXLFQ
 from msreport.errors import NotFittedError
 
 
-class BaseSampleNormalizer(abc.ABC):
-    """Base class for all sample normalizers."""
+class AbstractTransformer(Protocol):
+    def fit(self, table: pd.DataFrame) -> Self:
+        """Fits the Transformer and returns a fitted Transformer instance."""
 
-    @abc.abstractmethod
-    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer: ...
+    def is_fitted(self) -> bool:
+        """Returns True if the Transformer has been fitted."""
 
-    @abc.abstractmethod
-    def is_fitted(self) -> bool: ...
-
-    @abc.abstractmethod
-    def get_fits(self) -> dict[...]: ...
-
-    @abc.abstractmethod
-    def transform(self, table: pd.DataFrame) -> pd.DataFrame: ...
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Transform values in table."""
 
 
-class FixedValueNormalizer(BaseSampleNormalizer):
+class FixedValueNormalizer:
     """Normalization by a constant normalization factor for each sample.
 
     Expects log transformed intensity values.
@@ -54,11 +48,11 @@ class FixedValueNormalizer(BaseSampleNormalizer):
                 f'"comparison" = {comparison} not allowed. '
                 'Must be either "paired" or "reference".'
             )
-        self._comparison_mode = comparison
-        self._fit_function = center_function
-        self._sample_fits = None
+        self._comparison_mode: str = comparison
+        self._fit_function: Callable = center_function
+        self._sample_fits: dict[str, float] = {}
 
-    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer:
+    def fit(self, table: pd.DataFrame) -> Self:
         """Fits the FixedValueNormalizer.
 
         Args:
@@ -76,7 +70,7 @@ class FixedValueNormalizer(BaseSampleNormalizer):
 
     def is_fitted(self) -> bool:
         """Returns True if the FixedValueNormalizer has been fitted."""
-        return self._sample_fits is not None
+        return True if self._sample_fits else False
 
     def get_fits(self) -> dict[str, float]:
         """Returns a dictionary containing the fitted center values per sample.
@@ -155,13 +149,13 @@ class FixedValueNormalizer(BaseSampleNormalizer):
             self._sample_fits[sample] = sample_fit
 
 
-class ValueDependentNormalizer(BaseSampleNormalizer):
+class ValueDependentNormalizer:
     """Normalization with a value dependent fit for each sample.
 
     Expects log transformed intensity values.
     """
 
-    def __init__(self, fit_function: Callable):
+    def __init__(self, fit_function: Callable[[Iterable, Iterable], np.ndarray]):
         """Initializes the ValueDependentNormalizer.
 
         Args:
@@ -171,10 +165,10 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
                 with two columns. The first column contains the values and the second
                 column the fitted deviations.
         """
-        self._sample_fits = None
+        self._sample_fits: dict[str, np.ndarray] = {}
         self._fit_function = fit_function
 
-    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer:
+    def fit(self, table: pd.DataFrame) -> Self:
         """Fits the ValueDependentNormalizer.
 
         Args:
@@ -188,9 +182,9 @@ class ValueDependentNormalizer(BaseSampleNormalizer):
 
     def is_fitted(self) -> bool:
         """Returns True if the ValueDependentNormalizer has been fitted."""
-        return self._sample_fits is not None
+        return True if self._sample_fits else False
 
-    def get_fits(self) -> dict[str, Iterable[float, float]]:
+    def get_fits(self) -> dict[str, np.ndarray]:
         """Returns a dictionary containing lists of fitting data per sample.
 
         Returns:
@@ -320,14 +314,14 @@ class CategoricalNormalizer:
                 column must be present in the reference table and the table to be
                 transformed.
         """
-        self._fitted_table = None
-        self._category_column = category_column
+        self._fitted_table: pd.DataFrame = pd.DataFrame()
+        self._category_column: str = category_column
 
     def is_fitted(self) -> bool:
         """Returns True if the CategoricalNormalizer has been fitted."""
-        return self._fitted_table is not None
+        return not self._fitted_table.empty
 
-    def fit(self, reference_table: pd.DataFrame) -> BaseSampleNormalizer:
+    def fit(self, reference_table: pd.DataFrame) -> Self:
         """Fits the CategoricalNormalizer to a reference table.
 
         Args:
@@ -393,10 +387,10 @@ class CategoricalNormalizer:
         return transformed_table
 
 
-class PercentageScaler(BaseSampleNormalizer):
+class PercentageScaler:
     """Transform column values to percentages by dividing them with the column sum."""
 
-    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer:
+    def fit(self, table: pd.DataFrame) -> Self:
         """Returns the instance itself."""
         return self
 
@@ -420,7 +414,7 @@ class PercentageScaler(BaseSampleNormalizer):
         return table.divide(table.sum(axis=0), axis=1)
 
 
-class ZscoreScaler(BaseSampleNormalizer):
+class ZscoreScaler:
     """Normalize samples by z-score scaling."""
 
     def __init__(self, with_mean: bool = True, with_std: bool = True):
@@ -433,7 +427,7 @@ class ZscoreScaler(BaseSampleNormalizer):
         self._with_mean = with_mean
         self._with_std = with_std
 
-    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer:
+    def fit(self, table: pd.DataFrame) -> Self:
         """Returns the instance itself."""
         return self
 
@@ -463,7 +457,7 @@ class ZscoreScaler(BaseSampleNormalizer):
 
 
 def confirm_is_fitted(
-    normalizer: BaseSampleNormalizer, msg: Optional[str] = None
+    normalizer: AbstractTransformer, msg: Optional[str] = None
 ) -> None:
     """Perform is_fitted validation for normalizer instances.
 
