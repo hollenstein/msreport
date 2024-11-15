@@ -16,20 +16,16 @@ class BaseSampleNormalizer(abc.ABC):
     """Base class for all sample normalizers."""
 
     @abc.abstractmethod
-    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer:
-        ...
+    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer: ...
 
     @abc.abstractmethod
-    def is_fitted(self) -> bool:
-        ...
+    def is_fitted(self) -> bool: ...
 
     @abc.abstractmethod
-    def get_fits(self) -> dict[...]:
-        ...
+    def get_fits(self) -> dict[...]: ...
 
     @abc.abstractmethod
-    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
-        ...
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame: ...
 
 
 class FixedValueNormalizer(BaseSampleNormalizer):
@@ -395,6 +391,33 @@ class CategoricalNormalizer:
         transformed_table.reset_index(inplace=True)
         transformed_table.index = original_index
         return transformed_table
+
+
+class PercentageScaler(BaseSampleNormalizer):
+    """Transform column values to percentages by dividing them with the column sum."""
+
+    def fit(self, table: pd.DataFrame) -> BaseSampleNormalizer:
+        """Returns the instance itself."""
+        return self
+
+    def is_fitted(self) -> bool:
+        """Always returns True because the ZscoreScaler does not need to be fitted."""
+        return True
+
+    def get_fits(self) -> dict:
+        """Returns a dictionary containing the parameters 'with_mean' and 'with_std'."""
+        return {}
+
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Transforms column values into percentages by devision with the column sum.
+
+        Args:
+            table: The table used to scale row values.
+
+        Returns:
+            A copy of the table containing the scaled values.
+        """
+        return table.divide(table.sum(axis=0), axis=1)
 
 
 class ZscoreScaler(BaseSampleNormalizer):

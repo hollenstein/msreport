@@ -135,6 +135,18 @@ class TestNormalizers:
         np.testing.assert_allclose(fitted_A, expected_A, rtol=1e-07, atol=1e-07)
 
 
+class TestPercentageScaler:
+    def test_is_always_fitted(self):
+        scaler = msreport.normalize.PercentageScaler()
+        assert scaler.is_fitted()
+
+    def test_after_transform_column_sum_is_one(self):
+        scaler = msreport.normalize.PercentageScaler()
+        table = pd.DataFrame({"A": [10, np.nan], "B": [11, 12], "C": [12, 13]})
+        table_scaled = scaler.transform(table)
+        assert np.allclose(table_scaled.sum(axis=0), 1)
+
+
 class TestZscoreScaler:
     def test_is_always_fitted(self):
         scaler = msreport.normalize.ZscoreScaler()
