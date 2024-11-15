@@ -9,7 +9,7 @@ import pandas as pd
 
 import msreport.normalize
 import msreport.rinterface
-from msreport.qtable import Qtable
+from msreport.helper import find_sample_columns
 
 
 class Transformer(Protocol):
@@ -148,6 +148,50 @@ def validate_proteins(
         valid_entries = min_events_valid & valid_entries
 
     qtable["Valid"] = valid_entries
+
+
+def apply_transformer(
+    qtable: msreport.Qtable,
+    transformer: Transformer,
+    tag: str,
+    exclude_invalid: bool,
+    remove_invalid: bool,
+    new_tag: Optional[str] = None,
+) -> None:
+    """Applies a transformer to the values of a Qtable selected with the tag parameter.
+
+    Args:
+        qtable: A Qtable instance, to which the transformer is applied.
+        transformer: The transformer to apply.
+        tag: The tag used to identify the columns for applying the transformer.
+        exclude_invalid: Exclude invalid values from the transformation.
+        remove_invalid: Remove invalid values from the table after the transformation.
+        new_tag: Optional, if specified than the tag is replaced with this value in the
+            column names and the transformed data is stored to these new columns.
+    """
+    valid = qtable.data["Valid"]
+    samples = qtable.get_samples()
+    sample_columns = find_sample_columns(qtable.data, tag, samples)
+
+    if not sample_columns:
+        raise ValueError(f"No sample columns found for tag '{tag}'.")
+
+    if new_tag is not None:
+        sample_columns = [c.replace(tag, new_tag) for c in sample_columns]
+    column_mapping = dict(zip(samples, sample_columns))
+
+    data_table = qtable.make_sample_table(tag, samples_as_columns=True)
+
+    if exclude_invalid:
+        data_table[valid] = transformer.transform(data_table[valid])
+    else:
+        data_table = transformer.transform(data_table)
+
+    if remove_invalid:
+        data_table[~valid] = np.nan
+
+    data_table.columns = [column_mapping[s] for s in data_table.columns]
+    qtable.data[data_table.columns] = data_table
 
 
 def normalize_expression(

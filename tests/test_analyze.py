@@ -110,6 +110,48 @@ class TestValidateProteins:
         assert expected_valid == self.qtable.data["Valid"].sum()
 
 
+class TestApplyTransformer:
+    @pytest.fixture(autouse=True)
+    def _init_imputer(self, example_qtable):
+        class MockTransformer:
+            def fit(self, table: pd.DataFrame):
+                return self
+
+            def is_fitted(self):
+                return True
+
+            def transform(self, table: pd.DataFrame):
+                _table = table.copy()
+                _table[_table.columns] = 1.0
+                return _table
+
+        self.transformer = MockTransformer()
+
+    def test_transformation_applied_to_all_values_with_no_exclusion_and_removal(self, example_qtable):  # fmt: skip
+        msreport.analyze.apply_transformer(example_qtable, self.transformer, "Expression", exclude_invalid=False, remove_invalid=False)  # fmt: skip
+        table = example_qtable.make_expression_table()
+        assert table.eq(1.0).all().all()
+
+    def test_invalid_values_are_set_to_nan_with_remove_invalid(self, example_qtable):
+        example_qtable.data.loc[0, "Valid"] = False
+        msreport.analyze.apply_transformer(example_qtable, self.transformer, "Expression", exclude_invalid=False, remove_invalid=True)  # fmt: skip
+        table = example_qtable.make_expression_table()
+        assert table.loc[0, :].isna().all()
+
+    def test_invalid_values_are_not_transformed_with_exclude_invalid(self, example_qtable):  # fmt: skip
+        example_qtable.data.loc[0, "Valid"] = False
+        msreport.analyze.apply_transformer(example_qtable, self.transformer, "Expression", exclude_invalid=True, remove_invalid=False)  # fmt: skip
+        table = example_qtable.make_expression_table()
+        assert not table.loc[0, :].eq(1.0).all().all()
+        assert table.loc[1:, :].eq(1.0).all().all()
+
+    # Further test if the transformer creates a new set of columns and leaves the old set untouched
+    def test_new_columns_are_created_with_new_tag_parameter(self, example_qtable):
+        msreport.analyze.apply_transformer(example_qtable, self.transformer, "Expression", new_tag="New", exclude_invalid=False, remove_invalid=False)  # fmt: skip
+        new_column_samples = example_qtable.make_sample_table("New", samples_as_columns=True).columns.tolist()  # fmt: skip
+        assert new_column_samples == example_qtable.get_samples()
+
+
 class TestNormalizeExpression:
     def test_normalization_with_fitted_normalizer(self, example_qtable):
         shift = 1
@@ -315,7 +357,7 @@ class TestNormalizeExpressionByCategory:
 
             def transform(self, table: pd.DataFrame):
                 table = table.copy()
-                table.loc[:, :] = 0
+                table[table.columns] = 0
                 return table
 
             def get_category_column(self):
