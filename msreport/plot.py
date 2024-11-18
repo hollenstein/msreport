@@ -703,16 +703,18 @@ def volcano_ma(
         y_col = " ".join([y_variable, comparison_group])
         x_values = data[x_col]
         y_values = data[y_col]
+        xy_labels = data[annotation_column]
+
+        valid_values = np.isfinite(x_values) & np.isfinite(y_values)
+        mask_default = masks["default"] & valid_values
+        mask_special = masks["highlight"] & valid_values
+
         ax.grid(axis="both", linestyle="dotted", linewidth=1)
-
-        mask = masks["default"]
-        ax.scatter(x_values[mask], y_values[mask], **params["default"])
-
-        mask = masks["highlight"]
+        ax.scatter(x_values[mask_default], y_values[mask_default], **params["default"])
         _annotated_scatter(
-            x_values=data[x_col][mask],
-            y_values=data[y_col][mask],
-            labels=data[annotation_column][mask],
+            x_values=x_values[mask_special],
+            y_values=y_values[mask_special],
+            labels=xy_labels[mask_special],
             ax=ax,
             scatter_kws=params["highlight"],
         )
