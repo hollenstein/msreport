@@ -508,6 +508,14 @@ def calculate_multi_group_limma(
         limma_trend: If true, an intensity-dependent trend is fitted to the prior
             variance during calculation of the moderated t-statistics, refer to
             limma.eBayes for details; default True.
+
+    Raises:
+        KeyError: If the "Batch" column is not present in the qtable.design when
+            'batch' is set to True.
+        ValueError: If all values from qtable.design["Batch"] are identical when 'batch'
+            is set to True.
+        ValueError: If the same experiment pair has been specified multiple times in
+            'experiment_pairs'.
     """
     # TODO: not tested #
     if batch and "Batch" not in qtable.get_design():
@@ -519,6 +527,11 @@ def calculate_multi_group_limma(
         raise ValueError(
             "When using calculate_multi_group_limma(batch=True), not all values from"
             ' qtable.design["Batch"] are allowed to be identical.'
+        )
+    if len(list(experiment_pairs)) != len(set(experiment_pairs)):
+        raise ValueError(
+            "The same experiment pair has been specified multiple times."
+            " Each entry in the `experiment_pairs` argument must be unique."
         )
 
     design = qtable.get_design()
