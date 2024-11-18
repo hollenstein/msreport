@@ -131,8 +131,8 @@ class TestNormalizers:
         )
         normalizer = msreport.normalize.ModeNormalizer().fit(table)
         fitted_A = normalizer.get_fits()["A"]
-        expected_A = -0.5608569864240109
-        np.testing.assert_allclose(fitted_A, expected_A, rtol=1e-07, atol=1e-07)
+        expected_A = -0.56085
+        np.testing.assert_allclose(fitted_A, expected_A, rtol=1e-04)
 
 
 class TestPercentageScaler:

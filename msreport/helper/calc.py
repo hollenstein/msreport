@@ -19,22 +19,28 @@ def mode(values: Iterable) -> float:
     Returns:
         The estimated mode. If no finite values are present, returns nan.
     """
-    values = np.array(values)
+    values = np.asarray(values)
     finite_values = values[np.isfinite(values)]
     if len(finite_values) == 0:
-        mode = np.nan
+        return np.nan
     elif len(np.unique(finite_values)) == 1:
-        mode = np.unique(finite_values)[0]
-    else:
-        median = np.median(finite_values)
-        bounds = (median - 1.5, median + 1.5)
-        kde = scipy.stats.gaussian_kde(finite_values)
-        optimize_result = scipy.optimize.minimize_scalar(
-            lambda x: -kde(x)[0], method="Bounded", bounds=bounds
-        )
-        mode = optimize_result.x
-        # Maybe add fallback function if optimize was not successful
-    return mode
+        return np.unique(finite_values)[0]
+
+    kde = scipy.stats.gaussian_kde(finite_values)
+    minimum_function = lambda x: -kde(x)[0]
+
+    min_slice, max_sclice = np.percentile(finite_values, (2, 98))
+    slice_step = 0.2
+    brute_optimize_result = scipy.optimize.brute(
+        minimum_function, [slice(min_slice, max_sclice + slice_step, slice_step)]
+    )
+    rough_minimum = brute_optimize_result[0]
+
+    local_optimize_result = scipy.optimize.minimize(
+        minimum_function, x0=rough_minimum, method="BFGS"
+    )
+    fine_minimum = local_optimize_result.x[0]
+    return fine_minimum
 
 
 def calculate_tryptic_ibaq_peptides(protein_sequence: str) -> int:
