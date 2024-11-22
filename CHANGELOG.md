@@ -2,6 +2,20 @@
 
 ----------------------------------------------------------------------------------------
 
+## 0.0.27 - PercentageScaler, minor features and fixes
+
+### Added
+- Added a new normalizer, `normalize.PercentageScaler`, which scales the data to transform the values to percentages of the sum of the values in each column. This is useful for calculating relative iBAQ values.
+- Added `analyze.apply_transformer`, a universal function for applying fitted transformers (such as normalizers or imputers) to a qtable.
+- Added the option to validate proteins based on total spectral counts by adding a `min_spectral_count` argument to the `analyze.validate_proteins` function.
+
+### Fixed
+- Fixed an issue in the `plot.volcano_ma` function that occured when plotting special proteins with missing values.
+- Fixed a rare issue with the `mode` calculation function, which caused it to not return a local maximum instead of the global maximum.
+- Improved error messages for `analyze.calculate_multi_group_limma`
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.26 - Minor fixes
 
 ### Changed
@@ -10,7 +24,6 @@
 ### Fixed
 
 - Fixed issue of wrong column selection with `msreport.helper.table.find_sample_columns` when samples contain a substring of another sample name.
-
 
 ----------------------------------------------------------------------------------------
 
