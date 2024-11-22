@@ -2,29 +2,6 @@
 
 ----------------------------------------------------------------------------------------
 
-## Upcoming release
-
-### Changed
-- `msreport.helper.table.find_sample_columns` now returns the list of sample columns in the same order as in the sample argument.
-
-### Fixed
-
-- Fixed issue of wrong column selection with `msreport.helper.table.find_sample_columns` when samples contain a substring of another sample name.
-
-
-----------------------------------------------------------------------------------------
-
-## 0.0.25 - Minor fixes
-
-### Fixed
-
-- Added missing x-label to the pvalue histogram.
-- Fixed wrong y-label in volcano-ma plot.
-- Fixed issue of wrong column renaming when calling `Qtable.make_sample_table` with `samples_as_columns=True` when the design contained sample names that are substrings of other sample names.
-- Fixed faulty modification site probability extraction for peptides with multiple modifications from FragPipe results, which was caused by a change in the site localization format in FragPipe version 22.0
-
-----------------------------------------------------------------------------------------
-
 ## 0.0.27 - PercentageScaler, minor features and fixes
 
 ### Added
