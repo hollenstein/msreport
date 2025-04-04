@@ -1,4 +1,4 @@
-""" The analyze module contains methods for analysing quantification results. """
+"""The analyze module contains methods for analysing quantification results."""
 
 from __future__ import annotations
 from typing import Iterable, Optional, Protocol
@@ -254,8 +254,8 @@ def create_site_to_protein_normalizer(
         samples_as_columns=True,
         features=[category_column],
     )
-    completely_quantified = (
-        ~reference_expression[qtable.get_samples()].isna().any(axis=1)
+    completely_quantified = ~reference_expression[qtable.get_samples()].isna().any(
+        axis=1
     )
     reference_expression = reference_expression[completely_quantified]
 
@@ -422,7 +422,15 @@ def calculate_multi_group_comparison(
             correspond to entries from qtable.design["Experiment"].
         exclude_invalid: If true, the column "Valid" is used to determine which rows are
             used for calculating the group comparisons; default True.
+
+    Raises:
+        ValueError: If 'experiment_pairs' contains invalid entries. Each experiment pair
+            must have exactly two entries and the two entries must not be the same. All
+            experiments must be present in qtable.design. No duplicate experiment pairs
+            are allowed.
     """
+    _validate_experiment_pairs(qtable, experiment_pairs)
+
     table = qtable.make_expression_table(samples_as_columns=True, features=["Valid"])
     comparison_tag = " vs "
 
@@ -510,13 +518,17 @@ def calculate_multi_group_limma(
             limma.eBayes for details; default True.
 
     Raises:
+        ValueError: If 'experiment_pairs' contains invalid entries. Each experiment pair
+            must have exactly two entries and the two entries must not be the same. All
+            experiments must be present in qtable.design. No duplicate experiment pairs
+            are allowed.
         KeyError: If the "Batch" column is not present in the qtable.design when
             'batch' is set to True.
         ValueError: If all values from qtable.design["Batch"] are identical when 'batch'
             is set to True.
-        ValueError: If the same experiment pair has been specified multiple times in
-            'experiment_pairs'.
     """
+    _validate_experiment_pairs(qtable, experiment_pairs)
+
     # TODO: not tested #
     if batch and "Batch" not in qtable.get_design():
         raise KeyError(
@@ -527,11 +539,6 @@ def calculate_multi_group_limma(
         raise ValueError(
             "When using calculate_multi_group_limma(batch=True), not all values from"
             ' qtable.design["Batch"] are allowed to be identical.'
-        )
-    if len(list(experiment_pairs)) != len(set(experiment_pairs)):
-        raise ValueError(
-            "The same experiment pair has been specified multiple times."
-            " Each entry in the `experiment_pairs` argument must be unique."
         )
 
     design = qtable.get_design()
@@ -608,8 +615,14 @@ def calculate_two_group_limma(
             used for the differential expression analysis; default True.
         limma_trend: If true, an intensity-dependent trend is fitted to the prior
             variances; default True.
+    Raises:
+        ValueError: If 'experiment_pair' contains invalid entries. The experiment pair
+            must have exactly two entries and the two entries must not be the same. Both
+            experiments must be present in qtable.design.
     """
-    # TODO: not tested #
+    _validate_experiment_pair(qtable, experiment_pair)
+
+    # TODO: LIMMA function not tested #
     expression_table = qtable.make_expression_table(
         samples_as_columns=True, features=["Representative protein"]
     )
@@ -649,3 +662,63 @@ def calculate_two_group_limma(
     mapping = {col: f"{col} {comparison_group}" for col in limma_table.columns}
     limma_table.rename(columns=mapping, inplace=True)
     qtable.add_expression_features(limma_table)
+
+
+def _validate_experiment_pairs(
+    qtable: Qtable, exp_pairs: Iterable[Iterable[str]]
+) -> None:
+    """Validates that experiment pairs are valid and raises an error if not.
+
+    - All 'exp_pairs' entries must have a length of exactly 2.
+    - All experiments must be present in the qtable.design.
+    - No duplicate experiments are allowed in a pair.
+    - No duplicate experiment pairs are allowed.
+
+    Args:
+        qtable: Qtable instance containing experiment data.
+        exp_pairs: Iterable of experiment pairs to validate.
+
+    Raises:
+        ValueError: If any of the validation checks fail.
+    """
+    all_experiments = set(exp for pair in exp_pairs for exp in pair)
+    missing_experiments = all_experiments - set(qtable.get_experiments())
+    if missing_experiments:
+        raise ValueError(
+            f"Experiments '{missing_experiments}' not found in qtable.design."
+        )
+    for experiment_pair in exp_pairs:
+        _validate_experiment_pair(qtable, experiment_pair)
+
+    if len(list(exp_pairs)) != len(set(tuple(pair) for pair in exp_pairs)):
+        raise ValueError(
+            f"Some experiment pairs in {exp_pairs} have been specified multiple "
+            "times. Each pair must occur only once."
+        )
+
+
+def _validate_experiment_pair(qtable: Qtable, exp_pair: Iterable[str]) -> None:
+    """Validates the experiment pair is valid and raises an error if not.
+
+    - The experiment pair must contain exactly two entries
+    - The two entries of the experiment pair must be different.
+    - Both  experiments must be present in the qtable.design.
+
+    Args:
+        qtable: Qtable instance containing experiment data.
+        experiment_pairs: Iterable of experiment pairs to validate.
+
+    Raises:
+        ValueError: If any of the validation checks fail.
+    """
+    if len(list(exp_pair)) != 2:
+        raise ValueError(
+            f"Experiment pair '{exp_pair}' contains more than two entries."
+        )
+    if len(list(exp_pair)) != len(set(exp_pair)):
+        raise ValueError(f"Experiment pair '{exp_pair}' contains the same entry twice.")
+    if set(exp_pair) - set(qtable.get_experiments()):
+        raise ValueError(
+            f"Experiments '{set(exp_pair) - set(qtable.get_experiments())}' "
+            "not found in qtable.design."
+        )

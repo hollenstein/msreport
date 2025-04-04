@@ -278,20 +278,75 @@ class TestCalculateMultiGroupComparison:
                 equal_nan=True,
             )
 
+    @pytest.mark.parametrize(
+        "experiment_pairs",
+        [
+            [("Experiment_A", "Experiment_B", "Experiment_C")],
+            [("Experiment_A", "None")],
+            [("Experiment_A", "Experiment_B"), ("Experiment_A", "Experiment_B")],
+            [("Experiment_A", "Experiment_A")],
+        ],
+    )
+    def test_invalid_experiment_pairs_raises_value_error(self, example_qtable, experiment_pairs):  # fmt: skip
+        with pytest.raises(ValueError):
+            msreport.analyze.calculate_multi_group_comparison(example_qtable, experiment_pairs)  # fmt: skip
 
-def test_two_group_comparison(example_data, example_qtable):
-    experiment_pair = ["Experiment_A", "Experiment_B"]
-    exp1, exp2 = experiment_pair
-    msreport.analyze.two_group_comparison(example_qtable, experiment_pair)
 
-    qtable_columns = example_qtable.data.columns.to_list()
-    for column_tag in ["Average expression", "Ratio [log2]"]:
-        assert f"{column_tag} {exp1} vs {exp2}" in qtable_columns
-        assert np.allclose(
-            example_qtable.data[f"{column_tag} {exp1} vs {exp2}"],
-            example_data["data"][column_tag],
-            equal_nan=True,
-        )
+class TestTwoGroupComparison:
+    def test_two_group_comparison_is_calculated_correctly(self, example_data, example_qtable):  # fmt: skip
+        experiment_pair = ["Experiment_A", "Experiment_B"]
+        exp1, exp2 = experiment_pair
+        msreport.analyze.two_group_comparison(example_qtable, experiment_pair)
+
+        qtable_columns = example_qtable.data.columns.to_list()
+        for column_tag in ["Average expression", "Ratio [log2]"]:
+            assert f"{column_tag} {exp1} vs {exp2}" in qtable_columns
+            assert np.allclose(
+                example_qtable.data[f"{column_tag} {exp1} vs {exp2}"],
+                example_data["data"][column_tag],
+                equal_nan=True,
+            )
+
+    @pytest.mark.parametrize(
+        "experiment_pair",
+        [
+            ["Experiment_A", "Experiment_B", "Experiment_C"],
+            ["Experiment_A", "None"],
+            ["Experiment_A", "Experiment_A"],
+        ],
+    )
+    def test_invalid_experiment_pair_raises_value_error(self, example_qtable, experiment_pair):  # fmt: skip
+        with pytest.raises(ValueError):
+            msreport.analyze.two_group_comparison(example_qtable, experiment_pair)
+
+
+class TestCalculateMultiGroupLimma:
+    @pytest.mark.parametrize(
+        "experiment_pairs",
+        [
+            [("Experiment_A", "Experiment_B", "Experiment_C")],
+            [("Experiment_A", "None")],
+            [("Experiment_A", "Experiment_B"), ("Experiment_A", "Experiment_B")],
+            [("Experiment_A", "Experiment_A")],
+        ],
+    )
+    def test_invalid_experiment_pairs_raises_value_error(self, example_qtable, experiment_pairs):  # fmt: skip
+        with pytest.raises(ValueError):
+            msreport.analyze.calculate_multi_group_limma(example_qtable, experiment_pairs)  # fmt: skip
+
+
+class TestTwoGroupLimma:
+    @pytest.mark.parametrize(
+        "experiment_pair",
+        [
+            ["Experiment_A", "Experiment_B", "Experiment_C"],
+            ["Experiment_A", "None"],
+            ["Experiment_A", "Experiment_A"],
+        ],
+    )
+    def test_invalid_experiment_pair_raises_value_error(self, example_qtable, experiment_pair):  # fmt: skip
+        with pytest.raises(ValueError):
+            msreport.analyze.calculate_two_group_limma(example_qtable, experiment_pair)
 
 
 class TestCreateSiteToProteinNormalizer:
@@ -339,8 +394,8 @@ class TestCreateIbaqTransformer:
         ibaq_peptides = [1, 2, 4]
         self.qtable["iBAQ peptides"] = ibaq_peptides
         normalizer = msreport.analyze.create_ibaq_transformer(
-            self.qtable, category_column="Representative protein", ibaq_column="iBAQ peptides",  # fmt: skip
-        )
+            self.qtable, category_column="Representative protein", ibaq_column="iBAQ peptides"
+        )  # fmt: skip
         for sample in self.qtable.get_samples():
             assert np.allclose(normalizer.get_fits()[sample], np.log2(ibaq_peptides))
 
