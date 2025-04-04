@@ -40,6 +40,11 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.5",
+]
+
 [tool.setuptools]
 packages = [
   "msreport",
