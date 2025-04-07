@@ -1,4 +1,5 @@
-""" Python interface to custome R scripts. """
+"""Python interface to custome R scripts."""
+
 import os
 
 import pandas as pd

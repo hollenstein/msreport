@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import Any, Iterable, Optional
+
 import os
 import warnings
+from typing import Any, Iterable, Optional
 
 import numpy as np
 import pandas as pd
@@ -78,7 +79,7 @@ class Qtable:
                 [
                     "The design table must at least contain the columns: ",
                     ", ".join(f'"{c}"' for c in required_columns),
-                    ". " "It only contains the columns: ",
+                    ". It only contains the columns: ",
                     ", ".join(f'"{c}"' for c in columns),
                     ".",
                 ]
@@ -417,7 +418,7 @@ class Qtable:
         samples = list(columns_to_samples.values())
 
         if not expression_columns:
-            raise KeyError(f"No expression columns matched in qtable")
+            raise KeyError("No expression columns matched in qtable")
         if not all([e in data_columns for e in expression_columns]):
             exception_message = (
                 f"Not all specified columns {expression_columns} are present in the"
@@ -431,8 +432,8 @@ class Qtable:
             raise ValueError(exception_message)
         if not all([s in samples for s in self.get_samples()]):
             exception_message = (
-                f"Not all samples from qtable.design are also present in the specified"
-                f"samples."
+                "Not all samples from qtable.design are also present in the specified"
+                "samples."
             )
             raise ValueError(exception_message)
 

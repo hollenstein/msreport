@@ -177,9 +177,9 @@ class TestAggfuncSumPerColumn:
             (np.array([[1, 10], [2, 20]]), np.array([3, 30])),
             (np.array([[1, 10], [2, np.nan]]), np.array([3, 10])),
             (np.array([[1, np.nan], [2, np.nan]]), np.array([3, np.nan])),
-            (np.array([[np.nan, np.nan], [np.nan, np.nan]]), np.array([np.nan, np.nan])),  # fmt: skip
+            (np.array([[np.nan, np.nan], [np.nan, np.nan]]), np.array([np.nan, np.nan])),
         ],
-    )
+    )  # fmt: skip
     def test_with_multiple_columns(self, array, expected_result):
         result = CONDENSE.sum_per_column(array)
         np.testing.assert_equal(result, expected_result)
@@ -220,9 +220,9 @@ class TestAggfuncMaxPerColumn:
             (np.array([[1, 10], [2, 20]]), np.array([2, 20])),
             (np.array([[1, 10], [2, np.nan]]), np.array([2, 10])),
             (np.array([[1, np.nan], [2, np.nan]]), np.array([2, np.nan])),
-            (np.array([[np.nan, np.nan], [np.nan, np.nan]]), np.array([np.nan, np.nan])),  # fmt: skip
+            (np.array([[np.nan, np.nan], [np.nan, np.nan]]), np.array([np.nan, np.nan])),
         ],
-    )
+    )  # fmt: skip
     def test_with_multiple_columns(self, array, expected_result):
         result = CONDENSE.maximum_per_column(array)
         np.testing.assert_equal(result, expected_result)
@@ -265,7 +265,7 @@ class TestAggfuncMinPerColumn:
             (np.array([[1, np.nan], [2, np.nan]]), np.array([1, np.nan])),
             (np.array([[np.nan, np.nan], [np.nan, np.nan]]), np.array([np.nan, np.nan])),  # fmt: skip
         ],
-    )
+    )  # fmt: skip
     def test_with_multiple_columns(self, array, expected_result):
         result = CONDENSE.minimum_per_column(array)
         np.testing.assert_equal(result, expected_result)

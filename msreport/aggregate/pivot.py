@@ -1,6 +1,7 @@
 from typing import Iterable, Union
 
 import pandas as pd
+
 import msreport.aggregate.condense as CONDENSE
 import msreport.helper
 

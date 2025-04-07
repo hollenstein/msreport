@@ -1,20 +1,20 @@
-from collections.abc import Iterable
-from collections import UserDict
 import itertools
-from typing import Optional
 import re
+from collections import UserDict
+from collections.abc import Iterable
+from typing import Optional
 
 import adjustText
 import numpy as np
-from matplotlib import pyplot as plt
 import pandas as pd
 import seaborn as sns
-import sklearn.preprocessing
 import sklearn.decomposition
+import sklearn.preprocessing
+from matplotlib import pyplot as plt
 
+import msreport.helper
 from msreport.errors import MsreportError
 from msreport.qtable import Qtable
-import msreport.helper
 
 
 def set_dpi(dpi: int) -> None:
@@ -555,7 +555,7 @@ def sample_pca(
         data=components, columns=component_labels, index=sample_index
     )
     variance = pca.explained_variance_ratio_ * 100
-    variance_lookup = dict(zip(component_labels, variance))
+    variance_lookup = dict(zip(component_labels, variance, strict=True))
 
     # Prepare colors
     color_wheel = ColorWheelDict()
@@ -617,7 +617,7 @@ def sample_pca(
 
     # Add legend
     handles, labels = axes[0].get_legend_handles_labels()
-    by_label = dict(zip(labels, handles))
+    by_label = dict(zip(labels, handles, strict=True))
     handles, labels = by_label.values(), by_label.keys()
     fig.legend(
         handles,
@@ -812,9 +812,9 @@ def expression_comparison(
     ax = axes[1]
     values = qtable_data[mask_both]
     s = scattersize(values, total_scatter_area)
-    x_variable = f"Ratio [log2]"
+    x_variable = "Ratio [log2]"
     y_variable = (
-        f"Average expression" if plot_average_expression else f"Maximum expression"
+        "Average expression" if plot_average_expression else "Maximum expression"
     )
     x_col = " ".join([x_variable, comparison_group])
     y_col = " ".join([y_variable, comparison_group])
@@ -932,7 +932,7 @@ def box_and_bars(
         widths=width,
         medianprops={"color": "#000000"},
     )
-    for color, box in zip(colors, boxplots["boxes"]):
+    for color, box in zip(colors, boxplots["boxes"], strict=True):
         box.set(facecolor=color)
     ylim = ax.get_ylim()
     ax.set_ylim(min(-0.4, ylim[0]), max(0.401, ylim[1]))
@@ -1126,7 +1126,7 @@ def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None) ->
     }
 
     texts = []
-    for x, y, text in zip(x_values, y_values, labels):
+    for x, y, text in zip(x_values, y_values, labels, strict=True):
         texts.append(ax.text(x, y, text, fontdict={"fontsize": 9}))
 
     if texts:

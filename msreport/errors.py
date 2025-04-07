@@ -1,5 +1,4 @@
-class MsreportError(Exception):
-    ...
+class MsreportError(Exception): ...
 
 
 class NotFittedError(ValueError, AttributeError):
