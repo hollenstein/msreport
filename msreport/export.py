@@ -16,7 +16,7 @@ Index([
 import os
 import warnings
 from collections import defaultdict as ddict
-from typing import Iterable, Optional, Protocol
+from typing import Iterable, Optional, Protocol, Sequence
 
 import numpy as np
 import pandas as pd
@@ -88,7 +88,7 @@ def contaminants_to_clipboard(qtable: Qtable) -> None:
 
     for column_tag in column_tags:
         columns.extend(helper.find_sample_columns(data, column_tag, samples))
-    columns = np.array(columns)[[c in data.columns for c in columns]]
+    columns = [c for c in columns if c in data.columns]
 
     contaminants = qtable["Potential contaminant"]
     data = data.loc[contaminants, columns]
@@ -135,7 +135,7 @@ def to_perseus_matrix(
     numeric_columns = set(numeric_columns).difference(expression_columns)
     numeric_columns = set(numeric_columns).difference(categorical_columns)
 
-    column_categories = ddict(lambda: default_category)
+    column_categories: ddict[str, str] = ddict(lambda: default_category)
     column_categories.update(dict.fromkeys(numeric_columns, "N"))
     column_categories.update(dict.fromkeys(categorical_columns, "C"))
     column_categories.update(dict.fromkeys(expression_columns, "E"))
@@ -315,8 +315,8 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
         sample_columns = helper.find_sample_columns(
             amica_table, tag, qtable.get_samples()
         )
-        non_sample_columns = set(columns).difference(set(sample_columns))
-        amica_table.drop(non_sample_columns, inplace=True, axis=1)
+        non_sample_columns = list(set(columns).difference(set(sample_columns)))
+        amica_table.drop(columns=non_sample_columns, inplace=True, axis=1)
 
     # Log transform columns if necessary
     for tag in intensity_column_tags:
@@ -438,7 +438,7 @@ def _generate_html_sequence_map(
     highlights = highlights if highlights is not None else {}
     sequence_length = len(sequence)
 
-    def write_row_index(pos: int, strings: list) -> str:
+    def write_row_index(pos: int, strings: list):
         ndigits = len(str(sequence_length))
         row_index = str(pos + 1).rjust(ndigits)
         html_entry = '<FONT COLOR="#000000">' + row_index + "   " + "</FONT>"
@@ -490,7 +490,9 @@ def _generate_html_sequence_map(
     return html_sequence_block
 
 
-def _find_covered_region_boundaries(coverage_mask: Iterable[bool]) -> list[tuple[int]]:
+def _find_covered_region_boundaries(
+    coverage_mask: Sequence[bool],
+) -> list[tuple[int, int]]:
     """Returns a list of boundaries from continuously covered regions in a protein.
 
     Args:

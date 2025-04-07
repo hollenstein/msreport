@@ -67,12 +67,24 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "W", "C", "B"]
-ignore = ["B905"]
+ignore = ["B905", "C901"]
 unfixable = ["F401"]  # Disable fix for unused imports (`F401`).
-
-[tool.ruff.lint.mccabe]
-max-complexity = 12
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[[tool.mypy.overrides]]
+module = [
+  "adjustText.*",
+  "numpy.*",
+  "pandas.*",
+  "profasta.*",
+  "pyteomics.*",
+  "scipy.*",
+  "seaborn.*",
+  "sklearn.*",
+  "statsmodels.*",
+  "yaml.*",
+]
+follow_untyped_imports = true

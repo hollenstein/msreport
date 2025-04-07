@@ -23,5 +23,7 @@ def import_protein_database(
     database = ProteinDatabase()
     paths = [fasta_path] if isinstance(fasta_path, (str, pathlib.Path)) else fasta_path
     for path in paths:
+        if isinstance(path, pathlib.Path):
+            path = path.as_posix()
         database.add_fasta(path, header_parser=header_parser, overwrite=True)
     return database

@@ -3,7 +3,7 @@ import rpy2.robjects.packages as rpackages
 from rpy2.robjects.packages import importr
 
 
-def r_package_version(package_name: str) -> (str, str):
+def r_package_version(package_name: str) -> str:
     """Returns the version number of an installed R package."""
     with robjects.conversion.localconverter(robjects.default_converter):
         utils = importr("utils")

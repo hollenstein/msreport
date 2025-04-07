@@ -67,7 +67,9 @@ class Peptide:
         probabilities = []
         for site in self.list_modified_peptide_sites(modification):
             probabilities.append(self.get_peptide_site_probability(site))
-        return np.prod(probabilities)
+        if None in probabilities:
+            return None
+        return float(np.prod(probabilities))
 
     def get_peptide_site_probability(self, position: int) -> Optional[float]:
         """Return the modification localization probability of the peptide position.
@@ -161,7 +163,7 @@ def parse_modified_sequence(
     modified_sequence: str,
     tag_open: str,
     tag_close: str,
-) -> tuple[str, list]:
+) -> tuple[str, list[tuple[int, str]]]:
     """Returns the plain sequence and a list of modification positions and tags.
 
     Args:
@@ -253,7 +255,7 @@ def make_localization_string(
     return localization_string
 
 
-def read_localization_string(localization_string: str) -> dict:
+def read_localization_string(localization_string: str) -> dict[str, dict[int, float]]:
     """Converts a site localization probability string into a dictionary.
 
     Args:
@@ -269,7 +271,7 @@ def read_localization_string(localization_string: str) -> dict:
         A dictionary in the form {"modification tag": {position: probability}}, where
         positions are integers and probabilitiesa are floats ranging from 0 to 1.
     """
-    localization = {}
+    localization: dict[str, dict[int, float]] = {}
     if localization_string == "":
         return localization
 

@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Sequence
 
 import numpy as np
 import pyteomics.mass
@@ -7,7 +7,7 @@ import scipy.optimize
 import scipy.stats
 
 
-def mode(values: Iterable) -> float:
+def mode(values: Sequence) -> float:
     """Calculate the mode by using kernel-density estimation.
 
     Args:
@@ -17,8 +17,7 @@ def mode(values: Iterable) -> float:
     Returns:
         The estimated mode. If no finite values are present, returns nan.
     """
-    values = np.asarray(values)
-    finite_values = values[np.isfinite(values)]
+    finite_values = np.asarray(values)[np.isfinite(values)]
     if len(finite_values) == 0:
         return np.nan
     elif len(np.unique(finite_values)) == 1:
@@ -91,8 +90,8 @@ def calculate_monoisotopic_mass(protein_sequence: str) -> float:
 
 
 def make_coverage_mask(
-    protein_length: int, peptide_positions: list[(int, int)]
-) -> np.array:
+    protein_length: int, peptide_positions: Iterable[Iterable[int]]
+) -> np.ndarray:
     """Returns a Boolean array with True for positions present in 'peptide_positions'.
 
     Args:
@@ -109,8 +108,8 @@ def make_coverage_mask(
 
 
 def calculate_sequence_coverage(
-    protein_length: int, peptide_positions: list[(int, int)], ndigits: int = 1
-) -> np.array:
+    protein_length: int, peptide_positions: Iterable[Iterable[int]], ndigits: int = 1
+) -> float:
     """Calculates the protein sequence coverage given a list of peptide positions.
 
     Args:

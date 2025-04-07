@@ -218,7 +218,7 @@ def aggregate_unique_groups(
     columns_to_aggregate: Union[str, Iterable],
     condenser: Callable,
     is_sorted: bool,
-) -> (np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     """Aggregates column(s) by applying a condenser function to unique groups.
 
     The function returns two arrays containing the aggregated values and the
@@ -256,7 +256,7 @@ def aggregate_unique_groups(
 
 def _prepare_grouping_indices(
     table: pd.DataFrame, group_by: str, is_sorted: bool
-) -> (np.ndarray, np.ndarray, pd.DataFrame):
+) -> tuple[np.ndarray, np.ndarray, pd.DataFrame]:
     """Prepares start indices and names of unique groups from a sorted dataframe.
 
     Args:

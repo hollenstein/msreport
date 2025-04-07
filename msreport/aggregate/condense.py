@@ -71,7 +71,7 @@ def maximum_per_column(array: np.ndarray) -> np.ndarray:
     return np.array([maximum(i) for i in array.transpose()])
 
 
-def minimum(array: np.ndarray) -> int:
+def minimum(array: np.ndarray) -> float:
     """Returns the lowest finite value from one or multiple columns."""
     array = array.flatten()
     if np.isfinite(array).any():

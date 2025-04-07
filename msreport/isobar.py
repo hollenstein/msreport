@@ -28,7 +28,7 @@ class IsotopeImpurityCorrecter:
     def __init__(self):
         self._impurity_matrix = None
 
-    def fit(self, impurity_matrix: np.array) -> IsotopeImpurityCorrecter:
+    def fit(self, impurity_matrix: np.ndarray) -> IsotopeImpurityCorrecter:
         """Fits the isotope impurity correcter to a given impurity matrix.
 
         Args:
@@ -52,7 +52,7 @@ class IsotopeImpurityCorrecter:
         """Returns True if the IsotopeImpurityCorrecter has been fitted."""
         return self._impurity_matrix is not None
 
-    def get_fits(self) -> np.array:
+    def get_fits(self) -> np.ndarray:
         """Returns a copy of the fitted impurity matrix.
 
         returns:
@@ -90,9 +90,9 @@ class IsotopeImpurityCorrecter:
 
 
 def correct_isobaric_reporter_impurities(
-    intensity_table: np.array,
-    diagonal_impurity_matrix: np.array,
-) -> np.array:
+    intensity_table: np.ndarray,
+    diagonal_impurity_matrix: np.ndarray,
+) -> np.ndarray:
     """Performs isotope impurity correction on isobaric reporter expression values.
 
     Args:
@@ -123,8 +123,8 @@ def correct_isobaric_reporter_impurities(
 
 
 def _apply_impurity_contamination(
-    intensities: np.array, impurity_matrix: np.array
-) -> np.array:
+    intensities: np.ndarray, impurity_matrix: np.ndarray
+) -> np.ndarray:
     """Applies reporter isotope impurity interference to an intensity array.
 
     Args:
@@ -142,8 +142,8 @@ def _apply_impurity_contamination(
 
 
 def _correct_impurity_contamination(
-    intensities: np.array, impurity_matrix: np.array
-) -> np.array:
+    intensities: np.ndarray, impurity_matrix: np.ndarray
+) -> np.ndarray:
     """Applies reporter isotope impurity interference correction to an intensity array.
 
     Args:

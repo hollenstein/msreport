@@ -54,6 +54,8 @@ class ProteinDatabase(Protocol):
 class ResultReader:
     """Base Reader class, is by itself not functional."""
 
+    data_directory: str
+    filenames: dict[str, str]
     default_filenames: dict[str, str]
     protected_columns: list[str]
     column_mapping: dict[str, str]
@@ -61,8 +63,8 @@ class ResultReader:
     sample_column_tags: list[str]
 
     def __init__(self):
-        self.data_directory: str = ""
-        self.filenames: dict[str, str] = {}
+        self.data_directory = ""
+        self.filenames = {}
 
     def _read_file(self, which: str, sep: str = "\t") -> pd.DataFrame:
         """Read a result table.
@@ -1312,7 +1314,7 @@ class SpectronautReader(ResultReader):
         filename: Optional[str] = None,
         filetag: Optional[str] = None,
         rename_columns: bool = True,
-    ) -> None:
+    ) -> pd.DataFrame:
         """Reads an ion evidence file (long format) and returns a processed dataframe.
 
         Adds new columns to comply with the MsReport convention. "Protein reported
@@ -1628,7 +1630,7 @@ def add_protein_site_annotation(
             stacklevel=2,
         )
 
-    annotations = {
+    annotations: dict[str, list[str]] = {
         "Modified residue": [],
         "Sequence window": [],
     }
@@ -1844,7 +1846,7 @@ def add_peptide_positions(
             find matching entries in the FASTA files.
     """
     # not tested #
-    peptide_positions = {"Start position": [], "End position": []}
+    peptide_positions: dict[str, list[int]] = {"Start position": [], "End position": []}
     proteins_not_in_db = []
     for peptide, protein_id in zip(table[peptide_column], table[protein_column]):
         if protein_id in protein_db:
@@ -1886,10 +1888,10 @@ def add_protein_modifications(table: pd.DataFrame):
             for peptide_site, mod in [m.split(":") for m in mod_entry.split(";")]:
                 protein_site = int(peptide_site) + start_pos - 1
                 protein_mods.append([str(protein_site), mod])
-            protein_mods = ";".join([f"{pos}:{mod}" for pos, mod in protein_mods])
+            protein_mod_string = ";".join([f"{pos}:{mod}" for pos, mod in protein_mods])
         else:
-            protein_mods = ""
-        protein_modification_entries.append(protein_mods)
+            protein_mod_string = ""
+        protein_modification_entries.append(protein_mod_string)
     table["Protein modifications"] = protein_modification_entries
 
 
@@ -2066,7 +2068,7 @@ def _process_protein_entries(
         A dataframe containing the columns "Protein reported by software",
         "Leading proteins", "Representative protein", and "Potential contaminant".
     """
-    new_entries = {
+    new_entries: dict[str, list[str | bool]] = {
         "Protein reported by software": [],
         "Representative protein": [],
         "Potential contaminant": [],
@@ -2181,7 +2183,7 @@ def extract_fragpipe_localization_probabilities(localization_entry: str) -> dict
     ... )
     {'15.9949': {3: 1.0}, '79.9663': {4: 0.334, 6: 0.666}}
     """
-    modification_probabilities = {}
+    modification_probabilities: dict[str, dict[int, float]] = {}
     for modification_entry in filter(None, localization_entry.split(";")):
         specified_modification, probability_sequence = modification_entry.split("@")
         _, modification = specified_modification.split(":")
@@ -2239,7 +2241,7 @@ def _create_protein_annotations_from_db(
     protein_db: ProteinDatabase,
     query_function: Callable,
     default_value: Any,
-) -> list[str]:
+) -> list[Any]:
     """Returns a list of multi protein entry annotations.
 
     Used to generate protein annotations for protein entries. For each protein id an
@@ -2266,9 +2268,9 @@ def _create_protein_annotations_from_db(
         if protein_id in protein_db:
             db_entry = protein_db[protein_id]
             query_result = query_function(db_entry, default_value)
+            annotation_values.append(query_result)
         else:
-            query_result = default_value
-        annotation_values.append(query_result)
+            annotation_values.append(default_value)
     return annotation_values
 
 

@@ -125,7 +125,7 @@ def calculate_pairwise_mode_log_ratio_matrix(
 
 def prepare_coefficient_matrix(
     ratio_matrix: np.ndarray,
-) -> (np.ndarray, np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Prepares coefficients, ratios, and initial row indices from a log ratio matrix.
 
     Args:

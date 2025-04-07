@@ -1,7 +1,7 @@
 import itertools
 import re
 from collections import UserDict
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from typing import Optional
 
 import adjustText
@@ -86,7 +86,7 @@ class ColorWheelDict(UserDict):
 def missing_values_vertical(
     qtable: Qtable,
     exclude_invalid: bool = True,
-) -> (plt.Figure, list[plt.Axes]):
+) -> tuple[plt.Figure, list[plt.Axes]]:
     """Vertical bar plot to analyze the completeness of quantification.
 
     Requires the columns "Missing experiment_name" and "Events experiment_name", which
@@ -143,7 +143,7 @@ def missing_values_vertical(
 def missing_values_horizontal(
     qtable: Qtable,
     exclude_invalid: bool = True,
-) -> (plt.Figure, plt.Axes):
+) -> tuple[plt.Figure, plt.Axes]:
     """Horizontal bar plot to analyze the completeness of quantification.
 
     Requires the columns "Missing experiment_name" and "Events experiment_name", which
@@ -161,7 +161,7 @@ def missing_values_horizontal(
     num_experiments = len(experiments)
     qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
 
-    data = {"exp": [], "max": [], "some": [], "min": []}
+    data: dict[str, list] = {"exp": [], "max": [], "some": [], "min": []}
     for exp in experiments:
         exp_missing = qtable_data[f"Missing {exp}"]
         total = len(exp_missing)
@@ -186,8 +186,8 @@ def missing_values_horizontal(
     sns.barplot(y="exp", x="some", data=data, label="Some missing", color="#FAB74E")
     sns.barplot(y="exp", x="min", data=data, label="None missing", color="#31A590")
     # Manually remove axis labels and axis legend required for seaborn > 0.13
-    ax.set_ylabel(None)
-    ax.set_xlabel(None)
+    ax.set_ylabel("")
+    ax.set_xlabel("")
     ax.legend().remove()
 
     ax.set_xlim(0, total)
@@ -195,11 +195,13 @@ def missing_values_horizontal(
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles, labels, bbox_to_anchor=(1, 0), ncol=3)
     figure_space_for_legend = 1 - (legendheight / figheight)
-    fig.tight_layout(rect=[0, 0, 1, figure_space_for_legend])
+    fig.tight_layout(rect=(0, 0, 1, figure_space_for_legend))
     return fig, ax
 
 
-def contaminants(qtable: Qtable, tag: str = "iBAQ intensity") -> (plt.Figure, plt.Axes):
+def contaminants(
+    qtable: Qtable, tag: str = "iBAQ intensity"
+) -> tuple[plt.Figure, plt.Axes]:
     """A bar plot that displays relative contaminant amounts (iBAQ) per sample.
 
     Requires "iBAQ intensity" columns for each sample, and a "Potential contaminant"
@@ -266,7 +268,7 @@ def contaminants(qtable: Qtable, tag: str = "iBAQ intensity") -> (plt.Figure, pl
 
 def sample_intensities(
     qtable: Qtable, tag: str = "Intensity", exclude_invalid: bool = True
-) -> (plt.Figure, list[plt.Axes]):
+) -> tuple[plt.Figure, list[plt.Axes]]:
     """Figure to compare the overall quantitative similarity of samples.
 
     Generates two subplots to compare the intensities of multiple samples. For the top
@@ -322,7 +324,7 @@ def replicate_ratios(
     qtable: Qtable,
     exclude_invalid: bool = True,
     xlim: Iterable[float] = (-2, 2),
-) -> (plt.Figure, list[plt.Axes]):
+) -> tuple[plt.Figure, list[plt.Axes]]:
     """Figure to compare the similarity of expression values between replicates.
 
     Intended to evaluate the bulk distribution of expression values within experiments,
@@ -409,8 +411,8 @@ def experiment_ratios(
     qtable: Qtable,
     experiments: Optional[str] = None,
     exclude_invalid: bool = True,
-    ylim: Iterable[float] = (-2, 2),
-) -> (plt.Figure, list[plt.Axes]):
+    ylim: Sequence[float] = (-2, 2),
+) -> tuple[plt.Figure, list[plt.Axes]]:
     """Figure to compare the similarity of expression values between experiments.
 
     Intended to evaluate the bulk distribution of expression values after normalization.
@@ -487,7 +489,7 @@ def experiment_ratios(
 
     axes[0].set_ylabel("Protein ratios [log2]\nto pseudo reference")
     axes[0].set_ylim(ylim)
-    for ax_pos, ax in enumerate(axes):
+    for ax in axes:
         for spine in ["bottom", "left"]:
             ax.spines[spine].set_color("#000000")
             ax.spines[spine].set_linewidth(0.5)
@@ -505,7 +507,7 @@ def sample_pca(
     pc_x: str = "PC1",
     pc_y: str = "PC2",
     exclude_invalid: bool = True,
-) -> (plt.Figure, list[plt.Axes]):
+) -> tuple[plt.Figure, list[plt.Axes]]:
     """Figure to compare sample similarities with a principle component analysis.
 
     On the left subplots two PCA components of log2 transformed, mean centered intensity
@@ -596,7 +598,7 @@ def sample_pca(
     adjustText.adjust_text(
         texts,
         force_text=0.15,
-        arrowprops=dict(arrowstyle="-", color="#ebae34", lw=0.5),
+        arrowprops={"arrowstyle": "-", "color": "#ebae34", "lw": 0.5},
         lim=20,
         ax=ax,
     )
@@ -629,19 +631,19 @@ def sample_pca(
     )
     legend_space = legendheight / figheight
     fig.suptitle(f'PCA of "{tag}" columns')
-    fig.tight_layout(rect=[0, legend_space, 1, 1])
+    fig.tight_layout(rect=(0, legend_space, 1, 1))
 
     return fig, axes
 
 
 def volcano_ma(
     qtable: Qtable,
-    experiment_pair: list[str],
+    experiment_pair: Iterable[str],
     comparison_tag: str = " vs ",
     pvalue_tag: str = "P-value",
     special_proteins: Optional[list[str]] = None,
     exclude_invalid: bool = True,
-) -> (plt.Figure, list[plt.Axes]):
+) -> tuple[plt.Figure, list[plt.Axes]]:
     """Generates a volcano and an MA plot for the comparison of two experiments.
 
     Args:
@@ -736,7 +738,7 @@ def expression_comparison(
     plot_average_expression: bool = False,
     special_proteins: Optional[list[str]] = None,
     exclude_invalid: bool = True,
-) -> (plt.Figure, list[plt.Axes]):
+) -> tuple[plt.Figure, list[plt.Axes]]:
     """Generates an expression comparison plot for two experiments.
 
     The subplot in the middle displays the average expression of the two experiments on
@@ -879,11 +881,11 @@ def expression_comparison(
 
 
 def box_and_bars(
-    box_values: Iterable[Iterable[float]],
-    bar_values: Iterable[float],
+    box_values: Sequence[Iterable[float]],
+    bar_values: Sequence[float],
     group_names: list[str],
     colors: Optional[list[str]] = None,
-) -> (plt.Figure, list[plt.Axes]):
+) -> tuple[plt.Figure, list[plt.Axes]]:
     """Generates a figure with horizontally aligned box and bar subplots.
 
     In the top subplot the 'box_values' are displayed as box plots, in lower subplot the
@@ -941,7 +943,7 @@ def box_and_bars(
     ax = axes[1]
     ax.bar(x_values, bar_values, width=width, color=colors, edgecolor="#000000")
     ax.set_xticklabels(group_names, rotation=90)
-    for ax_pos, ax in enumerate(axes):
+    for ax in axes:
         for spine in ["bottom", "left"]:
             ax.spines[spine].set_color("#000000")
             ax.spines[spine].set_linewidth(1)
@@ -1019,9 +1021,9 @@ def pvalue_histogram(
     qtable: Qtable,
     pvalue_tag: str = "P-value",
     comparison_tag: str = " vs ",
-    experiment_pairs: Optional[Iterable[Iterable[str]]] = None,
+    experiment_pairs: Optional[Sequence[Iterable[str]]] = None,
     exclude_invalid: bool = True,
-) -> (plt.Figure, list[plt.Axes]):
+) -> tuple[plt.Figure, list[plt.Axes]]:
     """Generates p-value histograms for one or multiple experiment comparisons.
 
     Histograms are generated with 20 bins of size 0.05. The p-value distribution of each
@@ -1065,7 +1067,7 @@ def pvalue_histogram(
     fig.subplots_adjust(wspace=0.5)
 
     bins = np.arange(0, 1.01, 0.05)
-    for plot_number, experiment_pair in enumerate(experiment_pairs):
+    for plot_number, experiment_pair in enumerate(experiment_pairs):  # type: ignore
         ax = axes[plot_number]
         comparison_group = comparison_tag.join(experiment_pair)
         comparison_column = f"{pvalue_tag} {comparison_group}"
@@ -1119,9 +1121,12 @@ def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None) ->
         }
     text_params = {
         "force_text": 0.15,
-        "arrowprops": dict(
-            arrowstyle="-", color=scatter_kws["color"], lw=0.75, alpha=0.5
-        ),
+        "arrowprops": {
+            "arrowstyle": "-",
+            "color": scatter_kws["color"],
+            "lw": 0.75,
+            "alpha": 0.5,
+        },
         "lim": 100,
     }
 
@@ -1130,5 +1135,5 @@ def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None) ->
         texts.append(ax.text(x, y, text, fontdict={"fontsize": 9}))
 
     if texts:
-        adjustText.adjust_text(texts, ax=ax, **text_params)
+        adjustText.adjust_text(texts, ax=ax, **text_params)  # type: ignore
         ax.scatter(x_values, y_values, **scatter_kws)

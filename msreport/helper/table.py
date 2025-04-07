@@ -1,5 +1,5 @@
 import re
-from typing import Iterable, Union
+from typing import Iterable, Sequence, Union
 
 import numpy as np
 import pandas as pd
@@ -63,7 +63,7 @@ def intensities_in_logspace(data: Union[pd.DataFrame, np.ndarray, Iterable]) -> 
     """
     data = np.array(data, dtype=float)
     mask = np.isfinite(data)
-    return np.all(data[mask].flatten() <= 64)
+    return bool(np.all(data[mask].flatten() <= 64))
 
 
 def rename_sample_columns(table: pd.DataFrame, mapping: dict[str, str]) -> pd.DataFrame:
@@ -102,7 +102,7 @@ def rename_sample_columns(table: pd.DataFrame, mapping: dict[str, str]) -> pd.Da
 
 
 def rename_mq_reporter_channels(
-    table: pd.DataFrame, channel_names: Iterable[str]
+    table: pd.DataFrame, channel_names: Sequence[str]
 ) -> None:
     """Renames reporter channel numbers with sample names.
 
@@ -157,8 +157,7 @@ def find_columns(
     Returns:
         A list of column names.
     """
-    matches = [substring in col for col in table.columns]
-    matched_columns = np.array(table.columns)[matches].tolist()
+    matched_columns = [col for col in table.columns if substring in col]
     if must_be_substring:
         matched_columns = [col for col in matched_columns if col != substring]
     return matched_columns
@@ -255,7 +254,7 @@ def remove_rows_by_partial_match(
 
 
 def join_tables(
-    tables: Iterable[pd.DataFrame], reset_index: bool = False
+    tables: Sequence[pd.DataFrame], reset_index: bool = False
 ) -> pd.DataFrame:
     """Returns a joined dataframe.
 

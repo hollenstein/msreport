@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Iterable, Optional, Protocol
+from typing import Iterable, Optional, Protocol, Sequence
 
 import numpy as np
 import pandas as pd
@@ -236,7 +236,7 @@ def normalize_expression(
 
 def create_site_to_protein_normalizer(
     qtable: Qtable, category_column: str = "Representative protein"
-) -> msreport.normalizer.CategoricalNormalizer:
+) -> msreport.normalize.CategoricalNormalizer:
     """Creates a fitted `CategoricalNormalizer` for site-to-protein normalization.
 
     The `CategoricalNormalizer` is fitted to protein expression profiles of the provided
@@ -277,7 +277,7 @@ def create_ibaq_transformer(
     qtable: Qtable,
     category_column: str = "Representative protein",
     ibaq_column: str = "iBAQ peptides",
-) -> msreport.normalizer.CategoricalNormalizer:
+) -> msreport.normalize.CategoricalNormalizer:
     """Creates a fitted `CategoricalNormalizer` for iBAQ transformation.
 
     The `CategoricalNormalizer` is fitted to iBAQ peptide counts of the provided
@@ -485,7 +485,7 @@ def two_group_comparison(
 
 def calculate_multi_group_limma(
     qtable: Qtable,
-    experiment_pairs: Iterable[Iterable[str]],
+    experiment_pairs: Sequence[Iterable[str]],
     exclude_invalid: bool = True,
     batch: bool = False,
     limma_trend: bool = True,
@@ -563,7 +563,7 @@ def calculate_multi_group_limma(
         experiment_to_r[experiment] = f".EXPERIMENT__{i:04d}"
     r_to_experiment = {v: k for k, v in experiment_to_r.items()}
 
-    r_experiment_pairs = []
+    r_experiment_pairs: list[str] = []
     for exp1, exp2 in experiment_pairs:
         r_experiment_pairs.append(f"{experiment_to_r[exp1]}-{experiment_to_r[exp2]}")
 
@@ -592,7 +592,7 @@ def calculate_multi_group_limma(
 
 def calculate_two_group_limma(
     qtable: Qtable,
-    experiment_pair: list[str],
+    experiment_pair: Sequence[str],
     exclude_invalid: bool = True,
     limma_trend: bool = True,
 ) -> None:
