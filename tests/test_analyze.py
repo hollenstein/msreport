@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import msreport.qtable
 import msreport.analyze
+import msreport.qtable
 
 
 @pytest.fixture
@@ -250,9 +250,9 @@ def test_calculate_experiment_means(example_data, example_qtable):
 
     experiments = example_qtable.get_experiments()
     qtable_columns = example_qtable.data.columns.to_list()
-    assert all([f"Expression {e}" in qtable_columns for e in experiments])
+    assert all(f"Expression {e}" in qtable_columns for e in experiments)
     assert all(
-        [f"Expression {e}" in example_qtable._expression_features for e in experiments]
+        f"Expression {e}" in example_qtable._expression_features for e in experiments
     )
     assert np.allclose(
         example_qtable.data["Expression Experiment_B"],

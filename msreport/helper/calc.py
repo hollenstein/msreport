@@ -1,12 +1,10 @@
-import itertools
 from typing import Iterable
 
 import numpy as np
-import scipy.stats
-import scipy.optimize
-
 import pyteomics.mass
 import pyteomics.parser
+import scipy.optimize
+import scipy.stats
 
 
 def mode(values: Iterable) -> float:
@@ -27,17 +25,19 @@ def mode(values: Iterable) -> float:
         return np.unique(finite_values)[0]
 
     kde = scipy.stats.gaussian_kde(finite_values)
-    minimum_function = lambda x: -kde(x)[0]
+
+    def _minimum_function(x):
+        return -kde(x)[0]
 
     min_slice, max_sclice = np.percentile(finite_values, (2, 98))
     slice_step = 0.2
     brute_optimize_result = scipy.optimize.brute(
-        minimum_function, [slice(min_slice, max_sclice + slice_step, slice_step)]
+        _minimum_function, [slice(min_slice, max_sclice + slice_step, slice_step)]
     )
     rough_minimum = brute_optimize_result[0]
 
     local_optimize_result = scipy.optimize.minimize(
-        minimum_function, x0=rough_minimum, method="BFGS"
+        _minimum_function, x0=rough_minimum, method="BFGS"
     )
     fine_minimum = local_optimize_result.x[0]
     return fine_minimum

@@ -1,21 +1,21 @@
 from .calc import (
-    mode,
+    calculate_monoisotopic_mass,
+    calculate_sequence_coverage,
     calculate_tryptic_ibaq_peptides,
     make_coverage_mask,
-    calculate_sequence_coverage,
-    calculate_monoisotopic_mass,
+    mode,
 )
 from .table import (
     apply_intensity_cutoff,
-    guess_design,
-    intensities_in_logspace,
     find_columns,
     find_sample_columns,
+    guess_design,
+    intensities_in_logspace,
+    join_tables,
     keep_rows_by_partial_match,
     remove_rows_by_partial_match,
-    join_tables,
-    rename_sample_columns,
     rename_mq_reporter_channels,
+    rename_sample_columns,
 )
 from .temp import (
     extract_modifications,

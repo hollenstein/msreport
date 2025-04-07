@@ -74,7 +74,7 @@ class Qtable:
         """
         columns = design.columns.tolist()
         required_columns = ["Experiment", "Sample", "Replicate"]
-        if not all([c in columns for c in required_columns]):
+        if not all(c in columns for c in required_columns):
             exception_message = "".join(
                 [
                     "The design table must at least contain the columns: ",
@@ -419,18 +419,18 @@ class Qtable:
 
         if not expression_columns:
             raise KeyError("No expression columns matched in qtable")
-        if not all([e in data_columns for e in expression_columns]):
+        if not all(e in data_columns for e in expression_columns):
             exception_message = (
                 f"Not all specified columns {expression_columns} are present in the"
                 " qtable"
             )
             raise KeyError(exception_message)
-        if not all([s in self.get_samples() for s in samples]):
+        if not all(s in self.get_samples() for s in samples):
             exception_message = (
                 f"Not all specified samples {samples} are present in the qtable.design"
             )
             raise ValueError(exception_message)
-        if not all([s in samples for s in self.get_samples()]):
+        if not all(s in samples for s in self.get_samples()):
             exception_message = (
                 "Not all samples from qtable.design are also present in the specified"
                 "samples."
@@ -522,7 +522,7 @@ def _match_samples_to_tag_columns(
     """
     WHITESPACE_CHARS = " ."
 
-    mapping = dict()
+    mapping = {}
     for sample in samples:
         for col in columns:
             if col.replace(tag, "").replace(sample, "").strip(WHITESPACE_CHARS) == "":

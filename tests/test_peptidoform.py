@@ -1,4 +1,5 @@
 import pytest
+
 import msreport.peptidoform
 
 
@@ -59,7 +60,7 @@ class TestPeptide:
     def test_get_peptide_site_probability_when_no_localization_probabilites_are_specified(self):  # fmt: skip
         modified_peptide = msreport.peptidoform.Peptide("PE[mod1]PT[mod2]ID[mod2]ESR")
         probability = modified_peptide.get_peptide_site_probability(2)
-        assert probability == None
+        assert probability is None
 
     @pytest.mark.parametrize(
         "site, expected_probability", [(13, 0.8), (15, 0.2), (2, None)]

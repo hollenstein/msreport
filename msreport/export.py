@@ -13,10 +13,10 @@ Index([
 ], dtype='object')
 """
 
-from collections import defaultdict as ddict
 import os
-from typing import Iterable, Optional, Protocol
 import warnings
+from collections import defaultdict as ddict
+from typing import Iterable, Optional, Protocol
 
 import numpy as np
 import pandas as pd
@@ -136,9 +136,9 @@ def to_perseus_matrix(
     numeric_columns = set(numeric_columns).difference(categorical_columns)
 
     column_categories = ddict(lambda: default_category)
-    column_categories.update({c: "N" for c in numeric_columns})
-    column_categories.update({c: "C" for c in categorical_columns})
-    column_categories.update({c: "E" for c in expression_columns})
+    column_categories.update(dict.fromkeys(numeric_columns, "N"))
+    column_categories.update(dict.fromkeys(categorical_columns, "C"))
+    column_categories.update(dict.fromkeys(expression_columns, "E"))
 
     column_annotation = [column_categories[column] for column in table.columns]
     column_annotation[0] = f"{annotation_row_prefix}{column_annotation[0]}"
@@ -219,6 +219,7 @@ def write_html_coverage_map(
             "change in a future release."
         ),
         FutureWarning,
+        stacklevel=2,
     )
     # Get protein information from the protein database
     protein_entry = protein_db[protein_id]
@@ -457,7 +458,7 @@ def _generate_html_sequence_map(
 
     in_covered_region: bool = False
     strings = []
-    strings.append(f'<FONT COLOR="#606060">')  # Set default text color to grey
+    strings.append('<FONT COLOR="#606060">')  # Set default text color to grey
     write_row_index(0, strings)
     for pos, character in enumerate(sequence):
         if pos in coverage_start_idx:
@@ -483,7 +484,7 @@ def _generate_html_sequence_map(
         if pos in coverage_stop_idx:
             in_covered_region = False
             close_coverage_region(strings)
-    strings.append(f"</FONT>")
+    strings.append("</FONT>")
 
     html_sequence_block = "".join(strings)
     return html_sequence_block

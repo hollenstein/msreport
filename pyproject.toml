@@ -70,6 +70,9 @@ select = ["E4", "E7", "E9", "F", "W", "C", "B"]
 ignore = ["B905"]
 unfixable = ["F401"]  # Disable fix for unused imports (`F401`).
 
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

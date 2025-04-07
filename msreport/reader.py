@@ -20,19 +20,19 @@ Unified column names:
 - iBAQ intensity "sample name"
 """
 
-from collections import OrderedDict, defaultdict
 import os
-from typing import Any, Callable, Iterable, Optional, Protocol
 import pathlib
 import warnings
+from collections import OrderedDict, defaultdict
+from typing import Any, Callable, Iterable, Optional, Protocol
 
 import numpy as np
 import pandas as pd
 
 import msreport.helper as helper
-from msreport.helper.temp import extract_window_around_position
-from msreport.errors import ProteinsNotInFastaWarning
 import msreport.peptidoform
+from msreport.errors import ProteinsNotInFastaWarning
+from msreport.helper.temp import extract_window_around_position
 
 
 class Protein(Protocol):
@@ -183,18 +183,16 @@ class MaxQuantReader(ResultReader):
         "MS/MS count",
         "Sequence coverage",
     ]
-    column_mapping: dict[str, str] = dict(
-        [
-            ("Peptides", "Total peptides"),
-            ("Sequence coverage [%]", "Sequence coverage"),
-            ("MS/MS count", "Spectral count Combined"),  # proteinGroups, evidence
-            ("MS/MS Count", "Spectral count Combined"),  # peptides
-            ("Sequence", "Peptide sequence"),  # peptides, evidence
-            ("Sequence length", "Protein length"),
-            ("Mol. weight [kDa]", "Molecular weight [kDa]"),
-            ("Experiment", "Sample"),
-        ]
-    )
+    column_mapping: dict[str, str] = {
+        "Peptides": "Total peptides",
+        "Sequence coverage [%]": "Sequence coverage",
+        "MS/MS count": "Spectral count Combined",  # proteinGroups, evidence
+        "MS/MS Count": "Spectral count Combined",  # peptides
+        "Sequence": "Peptide sequence",  # peptides, evidence
+        "Sequence length": "Protein length",
+        "Mol. weight [kDa]": "Molecular weight [kDa]",
+        "Experiment": "Sample",
+    }
     column_tag_mapping: OrderedDict[str, str] = OrderedDict(
         [("MS/MS count", "Spectral count"), ("iBAQ", "iBAQ intensity")]
     )
@@ -590,20 +588,18 @@ class FragPipeReader(ResultReader):
         "Intensity",
         "MaxLFQ Intensity",
     ]
-    column_mapping: dict[str, str] = dict(
-        [
-            ("Peptide Sequence", "Peptide sequence"),  # Peptide and ion
-            ("Modified Sequence", "Modified sequence"),  # Modified peptide and ion
-            ("Start", "Start position"),  # Peptide and ion
-            ("End", "End position"),  # Peptide and ion
-            ("Combined Total Peptides", "Total peptides"),  # From LFQ
-            ("Total Peptides", "Total peptides"),  # From TMT
-            ("Description", "Protein name"),
-            ("Protein Length", "Protein length"),
-            ("Entry Name", "Protein entry name"),
-            ("Gene", "Gene name"),
-        ]
-    )
+    column_mapping: dict[str, str] = {
+        "Peptide Sequence": "Peptide sequence",  # Peptide and ion
+        "Modified Sequence": "Modified sequence",  # Modified peptide and ion
+        "Start": "Start position",  # Peptide and ion
+        "End": "End position",  # Peptide and ion
+        "Combined Total Peptides": "Total peptides",  # From LFQ
+        "Total Peptides": "Total peptides",  # From TMT
+        "Description": "Protein name",
+        "Protein Length": "Protein length",
+        "Entry Name": "Protein entry name",
+        "Gene": "Gene name",
+    }
     column_tag_mapping: OrderedDict[str, str] = OrderedDict(
         [
             ("MaxLFQ Intensity", "LFQ intensity"),
@@ -1038,40 +1034,32 @@ class SpectronautReader(ResultReader):
         "design": "conditionsetup",
     }
     protected_columns: list[str] = []
-    column_mapping: dict[str, str] = dict(
-        [
-            ("R.FileName", "Filename"),
-            ("R.Label", "Sample"),
-            ("PG.Qvalue", "Protein qvalue"),
-            ("PG.Cscore", "Protein cscore"),
-            ("PG.NrOfStrippedSequencesIdentified (Experiment-wide)", "Total peptides"),
-            ("PG.NrOfPrecursorsIdentified (Experiment-wide)", "Total ions"),
-            ("PG.Cscore", "Cscore"),
-            ("PEP.StrippedSequence", "Peptide sequence"),
-            ("PEP.AllOccurringProteinAccessions", "Mapped proteins"),
-            ("EG.ModifiedSequence", "Modified sequence"),
-            ("EG.CompensationVoltage", "Compensation voltage"),
-            ("EG.Qvalue", "Qvalue"),
-            ("EG.ApexRT", "Apex retention time"),
-            ("EG.DatapointsPerPeak", "Datapoints per peak"),
-            ("EG.FWHM", "FWHM"),
-            ("EG.SignalToNoise", "Signal to noise"),
-            ("FG.FragmentCount", "Fragment count"),
-            ("FG.Charge", "Charge"),
-            ("FG.MS1Quantity", "MS1 intensity"),
-            ("FG.MS1RawQuantity", "MS1 raw intensity"),
-            ("FG.MS2Quantity", "MS2 intensity"),
-            ("FG.MS2RawQuantity", "MS2 raw intensity"),
-            ("FG.MeasuredMz", "Observed m/z"),
-            ("FG.TheoreticalMz", "Theoretical m/z"),
-            ("FG.CalibratedMz", "Calibrated m/z"),
-            # ("PG.ProteinAccessions", ""),
-            # ("EG.HasLocalizationInformation", ""),
-            # ("EG.PTMLocalizationProbabilities", ""),
-            # ("EG.UsedForProteinGroupQuantity", ""),
-            # Modified peptides need to be parsed and rewritten
-        ]
-    )
+    column_mapping: dict[str, str] = {
+        "R.FileName": "Filename",
+        "R.Label": "Sample",
+        "PG.Qvalue": "Protein qvalue",
+        "PG.Cscore": "Protein cscore",
+        "PG.NrOfStrippedSequencesIdentified (Experiment-wide)": "Total peptides",
+        "PG.NrOfPrecursorsIdentified (Experiment-wide)": "Total ions",
+        "PEP.StrippedSequence": "Peptide sequence",
+        "PEP.AllOccurringProteinAccessions": "Mapped proteins",
+        "EG.ModifiedSequence": "Modified sequence",
+        "EG.CompensationVoltage": "Compensation voltage",
+        "EG.Qvalue": "Qvalue",
+        "EG.ApexRT": "Apex retention time",
+        "EG.DatapointsPerPeak": "Datapoints per peak",
+        "EG.FWHM": "FWHM",
+        "EG.SignalToNoise": "Signal to noise",
+        "FG.FragmentCount": "Fragment count",
+        "FG.Charge": "Charge",
+        "FG.MS1Quantity": "MS1 intensity",
+        "FG.MS1RawQuantity": "MS1 raw intensity",
+        "FG.MS2Quantity": "MS2 intensity",
+        "FG.MS2RawQuantity": "MS2 raw intensity",
+        "FG.MeasuredMz": "Observed m/z",
+        "FG.TheoreticalMz": "Theoretical m/z",
+        "FG.CalibratedMz": "Calibrated m/z",
+    }
     sample_column_tags: list[str] = [
         ".PG.NrOfPrecursorsIdentified",
         ".PG.IBAQ",
@@ -1462,7 +1450,7 @@ def sort_leading_proteins(
     if penalize_contaminants is not None:
         contaminant_encoding = {"False": 0, "True": 1, False: 0, True: 1}
 
-    for idx, row in table.iterrows():
+    for _, row in table.iterrows():
         protein_ids = row["Leading proteins"].split(";")
 
         sorting_info = [[] for _ in protein_ids]
@@ -1559,6 +1547,7 @@ def add_protein_annotation(
         warnings.warn(
             f"Some proteins could not be annotated: {repr(proteins_not_in_db)}",
             ProteinsNotInFastaWarning,
+            stacklevel=2,
         )
 
     annotations = {}
@@ -1636,6 +1625,7 @@ def add_protein_site_annotation(
         warnings.warn(
             f"Some proteins could not be annotated: {repr(proteins_not_in_db)}",
             ProteinsNotInFastaWarning,
+            stacklevel=2,
         )
 
     annotations = {
@@ -1702,6 +1692,7 @@ def add_leading_proteins_annotation(
         warnings.warn(
             f"Some proteins could not be annotated: {repr(proteins_not_in_db)}",
             ProteinsNotInFastaWarning,
+            stacklevel=2,
         )
 
     annotations = {}
@@ -1875,6 +1866,7 @@ def add_peptide_positions(
         warnings.warn(
             f"Some peptides could not be annotated: {repr(proteins_not_in_db)}",
             ProteinsNotInFastaWarning,
+            stacklevel=2,
         )
 
 

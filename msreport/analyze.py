@@ -1,8 +1,9 @@
 """The analyze module contains methods for analysing quantification results."""
 
 from __future__ import annotations
-from typing import Iterable, Optional, Protocol
+
 import warnings
+from typing import Iterable, Optional, Protocol
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,7 @@ import pandas as pd
 import msreport.normalize
 import msreport.rinterface
 from msreport.helper import find_sample_columns
+from msreport.qtable import Qtable
 
 
 class Transformer(Protocol):
@@ -301,7 +303,7 @@ def create_ibaq_transformer(
     ibaq_factor_values[ibaq_factor_values < 1] = 1
     ibaq_factor_values = np.log2(ibaq_factor_values)
 
-    reference_table = pd.DataFrame({c: ibaq_factor_values for c in sample_columns})
+    reference_table = pd.DataFrame(dict.fromkeys(sample_columns, ibaq_factor_values))
     reference_table[category_column] = category_values
 
     normalizer = msreport.normalize.CategoricalNormalizer(category_column)
@@ -635,7 +637,7 @@ def calculate_two_group_limma(
 
     samples_to_experiment = {}
     for experiment in experiment_pair:
-        mapping = {s: experiment for s in qtable.get_samples(experiment)}
+        mapping = dict.fromkeys(qtable.get_samples(experiment), experiment)
         samples_to_experiment.update(mapping)
 
     table_columns = ["Representative protein"]
@@ -681,7 +683,7 @@ def _validate_experiment_pairs(
     Raises:
         ValueError: If any of the validation checks fail.
     """
-    all_experiments = set(exp for pair in exp_pairs for exp in pair)
+    all_experiments = {exp for pair in exp_pairs for exp in pair}
     missing_experiments = all_experiments - set(qtable.get_experiments())
     if missing_experiments:
         raise ValueError(
@@ -690,7 +692,7 @@ def _validate_experiment_pairs(
     for experiment_pair in exp_pairs:
         _validate_experiment_pair(qtable, experiment_pair)
 
-    if len(list(exp_pairs)) != len(set(tuple(pair) for pair in exp_pairs)):
+    if len(list(exp_pairs)) != len({tuple(pair) for pair in exp_pairs}):
         raise ValueError(
             f"Some experiment pairs in {exp_pairs} have been specified multiple "
             "times. Each pair must occur only once."

@@ -1,6 +1,6 @@
-from rpy2.robjects.packages import importr
-import rpy2.robjects.packages as rpackages
 import rpy2.robjects as robjects
+import rpy2.robjects.packages as rpackages
+from rpy2.robjects.packages import importr
 
 
 def r_package_version(package_name: str) -> (str, str):

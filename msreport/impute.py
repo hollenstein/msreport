@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Optional, Any
+
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -51,7 +52,7 @@ class FixedValueImputer:
             Returns the fitted FixedValueImputer instance.
         """
         if self.strategy == "constant":
-            fill_values = {column: self.fill_value for column in table.columns}
+            fill_values = dict.fromkeys(table.columns, self.fill_value)
         elif self.strategy == "below":
             if self.column_wise:
                 fill_values = {}
@@ -59,7 +60,7 @@ class FixedValueImputer:
                     fill_values[column] = _calculate_integer_below_min(table[column])
             else:
                 int_below_min = _calculate_integer_below_min(table)
-                fill_values = {column: int_below_min for column in table.columns}
+                fill_values = dict.fromkeys(table.columns, int_below_min)
         self._sample_fill_values = fill_values
         return self
 

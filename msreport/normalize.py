@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 from typing import Callable, Iterable, Optional, Protocol
-from typing_extensions import Self
 
 import numpy as np
 import pandas as pd
 import statsmodels.nonparametric.smoothers_lowess
+from typing_extensions import Self
 
 import msreport.helper
 import msreport.helper.maxlfq as MAXLFQ

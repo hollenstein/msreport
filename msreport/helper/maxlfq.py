@@ -1,6 +1,6 @@
 import itertools
-from typing import Callable
 import warnings
+from typing import Callable
 
 import numpy as np
 

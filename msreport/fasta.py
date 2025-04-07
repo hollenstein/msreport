@@ -1,7 +1,6 @@
 import pathlib
 from typing import Iterable, Union
 
-
 from profasta.db import ProteinDatabase
 
 
