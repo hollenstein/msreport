@@ -1,3 +1,4 @@
+import colorsys
 import itertools
 import re
 import warnings
@@ -6,6 +7,7 @@ from collections.abc import Iterable, Sequence
 from typing import Optional
 
 import adjustText
+import matplotlib.colors as mcolors
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -16,6 +18,38 @@ from matplotlib import pyplot as plt
 import msreport.helper
 from msreport.errors import MsreportError
 from msreport.qtable import Qtable
+
+
+def _modify_lightness_rgb(
+    rgb_color: tuple[float, float, float], lightness_scale_factor: float
+) -> tuple[float, float, float]:
+    """Modifies the lightness of a color while preserving hue and saturation.
+
+    Parameters:
+        rgb_color: A tuple of RGB values in the range [0, 1]
+        lightness_scale_factor: Factor to scale the lightness by (values > 1 lighten, < 1 darken)
+
+    Returns:
+        A tuple of RGB values with adjusted lightness
+    """
+    hue, lightness, saturation = colorsys.rgb_to_hls(*rgb_color)
+    new_lightness = min(1.0, lightness * lightness_scale_factor)
+    return colorsys.hls_to_rgb(hue, new_lightness, saturation)
+
+
+def _modify_lightness_hex(hex_color: str, lightness_scale_factor: float) -> str:
+    """Modifies the lightness of a hex color while preserving hue and saturation.
+
+    Parameters:
+        hex_color: A hex color string (e.g., "#80b1d3").
+        lightness_scale_factor: Factor to scale the lightness by (values > 1 lighten, < 1 darken).
+
+    Returns:
+        A hex color string with adjusted lightness.
+    """
+    rgb_color = mcolors.to_rgb(hex_color)
+    new_ligthness_rgb = _modify_lightness_rgb(rgb_color, lightness_scale_factor)
+    return mcolors.to_hex(new_ligthness_rgb)
 
 
 def set_dpi(dpi: int) -> None:
@@ -65,6 +99,19 @@ class ColorWheelDict(UserDict):
                 "#ccebc5",
             ]
         self._color_wheel = self.colors.copy()
+
+    def modified_color(self, key: str, factor: float) -> str:
+        """Returns a color for the specified key with modified lightness.
+
+        Args:
+            key: The key for which to get the color.
+            factor: The factor by which to modify the lightness. Values > 1 lighten,
+                < 1 darken.
+
+        Returns:
+            A hex color string with modified lightness.
+        """
+        return _modify_lightness_hex(self[key], factor)
 
     def _next_color(self) -> str:
         color = self._color_wheel.pop(0)
