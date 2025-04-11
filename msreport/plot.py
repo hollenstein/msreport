@@ -361,10 +361,9 @@ def sample_intensities(
     color_wheel = ColorWheelDict()
     colors = [color_wheel[exp] for exp in qtable.get_experiments(samples)]
     fig, axes = box_and_bars(box_values, bar_values, samples, colors=colors)
-    axes[0].set_title(f'Comparison of "{tag}" columns', pad=15)
-    axes[0].set_ylabel("Protein ratios [log2]\nto pseudo reference")
-    axes[1].set_ylabel("Total protein intensity")
-    fig.tight_layout()
+    fig.suptitle(f'Comparison of "{tag}" values', fontsize=12)
+    axes[0].set_ylabel("Ratio [log2]\nto pseudo reference")
+    axes[1].set_ylabel("Total intensity")
     return fig, axes
 
 
@@ -956,8 +955,8 @@ def expression_comparison(
 def box_and_bars(
     box_values: Sequence[Iterable[float]],
     bar_values: Sequence[float],
-    group_names: list[str],
-    colors: Optional[list[str]] = None,
+    group_names: Sequence[str],
+    colors: Optional[Sequence[str]] = None,
 ) -> tuple[plt.Figure, list[plt.Axes]]:
     """Generates a figure with horizontally aligned box and bar subplots.
 
@@ -977,34 +976,60 @@ def box_and_bars(
             the box and bar plots. Must be the same length as group names. If 'colors'
             is None, boxes are colored in light grey.
 
+    Raises:
+        ValueError: If the length of box_values, bar_values and group_names is not the
+            same or if the length of colors is not the same as group_names.
+
     Returns:
         A matplotlib Figure and a list of Axes objects containing the box and bar plots.
     """
-    assert len(box_values) == len(bar_values) == len(group_names)
-    assert colors is None or len(colors) == len(group_names)
+    if not (len(box_values) == len(bar_values) == len(group_names)):
+        raise ValueError(
+            "The length of box_values, bar_values and group_names must be the same."
+        )
+    if colors is not None and len(colors) != len(group_names):
+        raise ValueError(
+            "The length of colors must be the same as the length of group_names."
+        )
     if colors is None:
         colors = ["#D0D0D0" for _ in group_names]
 
     num_samples = len(group_names)
     x_values = range(num_samples)
-    width = 0.8
-    xlim = (-1 + 0.15, num_samples - 0.15)
-    figwidth = (num_samples * 0.25) + 1.2
-    figsize = (figwidth, 6)
+    bar_width = 0.8
+
+    suptitle_space_inch = 0.45
+    ax_height_inch = 1.9
+    ax_hspace_inch = 0.35
+    x_padding = 0.3
+    fig_height = suptitle_space_inch + ax_height_inch * 2 + ax_hspace_inch
+    bar_width_inches = 0.3
+
+    fig_width = (num_samples + (2 * x_padding)) * bar_width_inches
+    fig_size = (fig_width, fig_height)
+
+    subplot_top = 1 - (suptitle_space_inch / fig_height)
+    subplot_hspace = ax_hspace_inch / ax_height_inch
+
+    bar_half_width = 0.5
+    lower_xbound = (0 - bar_half_width) - x_padding
+    upper_xbound = (num_samples - 1) + bar_half_width + x_padding
 
     sns.set_style("whitegrid")
-    fig, axes = plt.subplots(2, figsize=figsize, sharex=True)
+    fig, axes = plt.subplots(2, figsize=fig_size, sharex=True)
+    fig.subplots_adjust(top=subplot_top, hspace=subplot_hspace)
+    fig.suptitle("A box and bars plot", fontsize=12)
 
     # Plot boxplots using the box_values
     ax = axes[0]
-    ax.plot(xlim, (0, 0), color="#999999", lw=1, zorder=2)
+    ax.axhline(0, color="#999999", lw=1, zorder=2)
     boxplots = ax.boxplot(
         box_values,
         positions=x_values,
         vert=True,
         showfliers=False,
         patch_artist=True,
-        widths=width,
+        widths=bar_width,
         medianprops={"color": "#000000"},
     )
     for color, box in zip(colors, boxplots["boxes"], strict=True):
@@ -1014,7 +1039,7 @@ def box_and_bars(
 
     # Plot barplots using the bar_values
     ax = axes[1]
-    ax.bar(x_values, bar_values, width=width, color=colors, edgecolor="#000000")
+    ax.bar(x_values, bar_values, width=bar_width, color=colors, edgecolor="#000000")
     ax.set_xticklabels(group_names, rotation=90)
     for ax in axes:
         for spine in ["bottom", "left"]:
@@ -1024,8 +1049,7 @@ def box_and_bars(
         ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
     sns.despine(top=True, right=True)
 
-    ax.set_xlim(xlim)
-    fig.tight_layout()
+    ax.set_xlim(lower_xbound, upper_xbound)
     return fig, axes
 
 
