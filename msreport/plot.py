@@ -374,12 +374,9 @@ def replicate_ratios(
 ) -> tuple[plt.Figure, list[plt.Axes]]:
     """Figure to compare the similarity of expression values between replicates.
 
-    Intended to evaluate the bulk distribution of expression values within experiments,
-    after normalization. Plots from one experiment are placed in the same row. For each
-    experiment, samples are compared pair-wise and for each sample comparison the
-    distribution of the log2 ratios is shown as a density plot.
-
-    Requires log2 transformed expression values.
+    Displays the distribution of pair-wise log2 ratios between samples of the same
+    experiment. Comparisons of the same experiment are placed in the same row. Requires
+    log2 transformed expression values.
 
     Args:
         qtable: A `Qtable` instance, which data is used for plotting.
@@ -397,27 +394,54 @@ def replicate_ratios(
     )
     design = qtable.get_design()
 
+    color_wheel = ColorWheelDict()
+    for exp in design["Experiment"].unique():
+        _ = color_wheel[exp]
+
     experiments = []
     for experiment in design["Experiment"].unique():
         if len(qtable.get_samples(experiment)) >= 2:
             experiments.append(experiment)
+    if not experiments:
+        fig, ax = plt.subplots(1, 1, figsize=(2, 1.3))
+        fig.suptitle("Pair wise comparison of replicates", fontsize=12, y=1.1)
+        ax.text(0.5, 0.5, "No replicate\ndata available", ha="center", va="center")
+        ax.grid(False)
+        ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+        sns.despine(top=True, right=True, fig=fig)
+        return fig, np.array([ax])
 
     num_experiments = len(experiments)
     max_replicates = max([len(qtable.get_samples(exp)) for exp in experiments])
     max_combinations = len(list(itertools.combinations(range(max_replicates), 2)))
 
-    figheight = (num_experiments * 0.85) + 0.64
-    figwidth = (max_combinations * 1.5) + 0.75
-    figsize = (figwidth, figheight)
+    suptitle_space_inch = 0.6
+    ax_height_inch = 0.6
+    ax_width_inch = 2
+    ax_hspace_inch = 0.35
+    fig_height = (
+        num_experiments * ax_height_inch
+        + (num_experiments - 1) * ax_hspace_inch
+        + suptitle_space_inch
+    )
+    fig_width = max_combinations * ax_width_inch
+    fig_size = (fig_width, fig_height)
+
+    subplot_top = 1 - (suptitle_space_inch / fig_height)
+    subplot_hspace = ax_hspace_inch / ax_height_inch
 
     sns.set_style("whitegrid")
     fig, axes = plt.subplots(
-        num_experiments, max_combinations, figsize=figsize, sharex=True
+        num_experiments, max_combinations, figsize=fig_size, sharex=True
     )
-    axes = axes if isinstance(axes[0], Iterable) else np.array([axes])
-
-    color_wheel = ColorWheelDict()
-    _ = [color_wheel[exp] for exp in experiments]
+    if num_experiments == 1 and max_combinations == 1:
+        axes = np.array([[axes]])
+    elif num_experiments == 1:
+        axes = np.array([axes])
+    elif max_combinations == 1:
+        axes = np.array([axes]).T
+    fig.subplots_adjust(top=subplot_top, hspace=subplot_hspace, bottom=0)
+    fig.suptitle("Pair wise comparison of replicates", fontsize=12)
 
     for x_pos, experiment in enumerate(experiments):
         sample_combinations = itertools.combinations(qtable.get_samples(experiment), 2)
@@ -433,23 +457,24 @@ def replicate_ratios(
 
             sns.kdeplot(x=ratios, fill=True, ax=ax, zorder=3, color=color, alpha=0.5)
             ax.set_title(title, fontsize=10)
-            ax.set_yticklabels("")
-            ax.set_ylabel(ylabel, rotation=90, fontsize=10, va="center")
-            ax.set_xlabel("")
-            ax.tick_params(axis="both", labelsize=8)
+            ax.set_ylabel(ylabel, rotation=0, fontsize=10, va="center", ha="right")
+            ax.set_xlabel("Ratio [log2]", fontsize=10)
+            ax.tick_params(axis="both", labelsize=8, labelleft=False, left=False)
             ax.locator_params(axis="x", nbins=5)
 
     axes[0, 0].set_xlim(xlim)
     for ax in axes.flatten():
+        if not ax.has_data():
+            ax.remove()
+            continue
+
         for spine in ["bottom", "left"]:
             ax.spines[spine].set_color("#000000")
             ax.spines[spine].set_linewidth(0.5)
-        ax.plot((0, 0), ax.get_ylim(), color="#999999", lw=1, zorder=2)
+        ax.axvline(x=0, color="#999999", lw=1, zorder=2)
         ax.grid(False, axis="y")
         ax.grid(axis="x", linestyle="dashed", linewidth=1, color="#cccccc")
-    sns.despine(top=True, right=True)
-    fig.suptitle("Protein ratios [log2] between replicates", fontsize=10)
-    fig.tight_layout()
+    sns.despine(top=True, right=True, fig=fig)
 
     return fig, axes
 
