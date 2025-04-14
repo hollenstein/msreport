@@ -1214,12 +1214,19 @@ def expression_clustermap(
         cluster_method: Linkage method to use for calculating clusters. See
             `scipy.cluster.hierarchy.linkage` documentation for more information.
 
+    Raises:
+        ValueError: If less than two samples are present in the qtable.
+
     Returns:
         A seaborn ClusterGrid instance. Note that ClusterGrid has a `savefig` method
         that can be used for saving the figure.
     """
+    tag: str = "Expression"
     samples = qtable.get_samples()
     experiments = qtable.get_experiments()
+
+    if len(samples) < 2:
+        raise ValueError("At least two samples are required to generate a clustermap.")
 
     data = qtable.make_expression_table(samples_as_columns=True)
     data = data[samples]
@@ -1232,29 +1239,79 @@ def expression_clustermap(
         imputed_values = imputed_values[qtable.data["Valid"]]
 
     color_wheel = ColorWheelDict()
-    _ = [color_wheel[exp] for exp in experiments]
+    for exp in experiments:
+        _ = color_wheel[exp]
     sample_colors = [color_wheel[qtable.get_experiment(sample)] for sample in samples]
-    figsize = (0.3 + len(samples) * 0.4, 5)
+
+    suptitle_space_inch = 0.45
+    sample_width_inch = 0.27
+    cbar_height_inch = 3
+    cbar_width_inch = sample_width_inch
+    cbar_gap_inch = sample_width_inch
+    col_colors_height_inch = 0.12
+    col_dendrogram_height_inch = 0.6
+    heatmap_height_inch = 3
+    heatmap_width_inch = len(samples) * sample_width_inch
+
+    fig_width = cbar_width_inch + heatmap_width_inch + cbar_gap_inch
+    fig_height = (
+        suptitle_space_inch
+        + col_dendrogram_height_inch
+        + col_colors_height_inch
+        + heatmap_height_inch
+    )
+    fig_size = fig_width, fig_height
+
+    heatmap_width = heatmap_width_inch / fig_width
+    heatmap_x0 = 0
+    heatmap_height = heatmap_height_inch / fig_height
+    heatmap_y0 = 0
+    col_colors_height = col_colors_height_inch / fig_height
+    col_colors_y0 = heatmap_y0 + heatmap_height
+    col_dendrogram_height = col_dendrogram_height_inch / fig_height
+    col_dendrogram_y0 = col_colors_y0 + col_colors_height
+    cbar_widh = cbar_width_inch / fig_width
+    cbar_x0 = (heatmap_width_inch + cbar_gap_inch) / fig_width
+    cbar_height = cbar_height_inch / fig_height
+    cbar_y0 = col_colors_y0 - cbar_height
 
     # Generate the plot
-    cluster_grid = sns.clustermap(
+    grid = sns.clustermap(
         data,
         col_colors=sample_colors,
+        row_colors=["#000000" for _ in range(len(data))],
         cmap="magma",
         yticklabels=False,
         mask=imputed_values,
-        figsize=figsize,
+        figsize=fig_size,
         metric="euclidean",
         method=cluster_method,
     )
-    cluster_grid.ax_row_dendrogram.set_visible(False)
+    # Reloacte clustermap axes to create a consistent layout
+    grid.figure.suptitle(
+        f'Hierarchically-clustered heatmap of "{tag}" values', fontsize=12
+    )
+    grid.figure.delaxes(grid.ax_row_colors)
+    grid.figure.delaxes(grid.ax_row_dendrogram)
+    grid.ax_heatmap.set_position(
+        [heatmap_x0, heatmap_y0, heatmap_width, heatmap_height]
+    )
+    grid.ax_col_colors.set_position(
+        [heatmap_x0, col_colors_y0, heatmap_width, col_colors_height]
+    )
+    grid.ax_col_dendrogram.set_position(
+        [heatmap_x0, col_dendrogram_y0, heatmap_width, col_dendrogram_height]
+    )
+    grid.ax_cbar.set_position([cbar_x0, cbar_y0, cbar_widh, cbar_height])
 
-    # Add background color and spines
-    cluster_grid.ax_heatmap.set_facecolor("#F9F9F9")
-    for _, spine in cluster_grid.ax_heatmap.spines.items():
+    grid.ax_heatmap.set_facecolor("#F9F9F9")
+    for spine in grid.ax_heatmap.spines.values():
         spine.set_visible(True)
         spine.set_linewidth(0.75)
-    return cluster_grid
+    for spine in grid.ax_cbar.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(0.75)
+    return grid
 
 
 def pvalue_histogram(
