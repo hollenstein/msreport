@@ -16,7 +16,6 @@ import sklearn.preprocessing
 from matplotlib import pyplot as plt
 
 import msreport.helper
-from msreport.errors import MsreportError
 from msreport.qtable import Qtable
 
 
@@ -507,43 +506,86 @@ def experiment_ratios(
         ylim: Specifies the displayed range for the log2 ratios on the y-axis. Default
             is from -2 to 2.
 
+    Raises:
+        ValueError: If only one experiment is specified in the `experiments` parameter
+            or if the specified experiments are not present in the qtable design.
+
     Returns:
         A matplotlib Figure and a list of Axes objects, containing the comparison plots.
     """
     tag: str = "Expression"
-    qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
-    if experiments is None:
+
+    if experiments is not None and len(experiments) == 1:
+        raise ValueError(
+            "Only one experiment is specified, please provide at least two experiments."
+        )
+    elif experiments is not None:
+        experiments_not_in_design = set(experiments) - set(qtable.design["Experiment"])
+        if experiments_not_in_design:
+            raise ValueError(
+                "All experiments must be present in qtable.design. The following "
+                f"experiments are not present: {experiments_not_in_design}"
+            )
+    else:
         experiments = qtable.design["Experiment"].unique().tolist()
 
     if len(experiments) < 2:
-        raise MsreportError(
-            "This plot cannot be generated with less than two experiments present in"
-            "the qtable.design"
+        fig, ax = plt.subplots(1, 1, figsize=(2.5, 1.3))
+        fig.suptitle("Comparison of experiments means", fontsize=12, y=1.1)
+        ax.text(
+            0.5,
+            0.5,
+            "Comparison not possible.\nOnly one experiment\npresent in design.",
+            ha="center",
+            va="center",
         )
+        ax.grid(False)
+        ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+        sns.despine(top=False, right=False, fig=fig)
+        return fig, np.array([ax])
 
-    column_mapping = {f"{tag} {exp}": exp for exp in experiments}
-    exp_data = qtable_data[column_mapping.keys()]
-    exp_data = exp_data.rename(columns=column_mapping)
+    sample_data = qtable.make_sample_table(tag, samples_as_columns=True)
+    experiment_means = {}
+    for experiment in experiments:
+        samples = qtable.get_samples(experiment)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            row_means = np.nanmean(sample_data[samples], axis=1)
+        experiment_means[experiment] = row_means
+    experiment_data = pd.DataFrame(experiment_means)
 
-    quant_mask = np.all(
-        [(qtable_data[f"Events {exp}"] > 0) for exp in experiments], axis=0
-    )
-    exp_data = exp_data[quant_mask]
-    pseudo_ref = np.nanmean(exp_data, axis=1)
-    exp_ratios = exp_data.subtract(pseudo_ref, axis=0)
+    # Only consider rows with quantitative values in all experiments
+    mask = np.all([(qtable.data[f"Events {exp}"] > 0) for exp in experiments], axis=0)
+    if exclude_invalid:
+        mask = mask & qtable["Valid"]
+    experiment_data = experiment_data[mask]
+    pseudo_reference = np.nanmean(experiment_data, axis=1)
+    ratio_data = experiment_data.subtract(pseudo_reference, axis=0)
 
     color_wheel = ColorWheelDict()
+    for exp in qtable.design["Experiment"].unique():
+        _ = color_wheel[exp]
     num_experiments = len(experiments)
-    figwidth = (num_experiments * 0.75) + 0.82
-    figheight = 2.5
-    figsize = (figwidth, figheight)
+
+    suptitle_space_inch = 0.45
+    ax_height_inch = 1.6
+    ax_width_inch = 0.8
+    ax_wspace_inch = 0.2
+    fig_height = ax_height_inch + suptitle_space_inch
+    fig_width = num_experiments * ax_width_inch + (num_experiments - 1) * ax_wspace_inch
+    fig_size = (fig_width, fig_height)
+
+    subplot_top = 1 - (suptitle_space_inch / fig_height)
+    subplot_wspace = ax_wspace_inch / ax_width_inch
 
     sns.set_style("whitegrid")
-    fig, axes = plt.subplots(1, num_experiments, figsize=figsize, sharey=True)
+    fig, axes = plt.subplots(1, num_experiments, figsize=fig_size, sharey=True)
+    fig.subplots_adjust(top=subplot_top, wspace=subplot_wspace)
+    fig.suptitle("Comparison of experiments means", fontsize=12)
 
     for exp_pos, experiment in enumerate(experiments):
         ax = axes[exp_pos]
-        values = exp_ratios[experiment]
+        values = ratio_data[experiment]
         color = color_wheel[experiment]
         sns.kdeplot(y=values, fill=True, ax=ax, zorder=3, color=color, alpha=0.5)
         if exp_pos == 0:
@@ -555,21 +597,19 @@ def experiment_ratios(
                 ha="left",
                 fontsize=8,
             )
-        ax.set_xticklabels("")
-        ax.tick_params(axis="both", labelsize=8)
+        ax.tick_params(axis="both", labelsize=8, labelbottom=False, bottom=False)
         ax.set_xlabel(experiment, rotation=90)
 
-    axes[0].set_ylabel("Protein ratios [log2]\nto pseudo reference")
+    axes[0].set_ylabel("Ratio [log2]\nto pseudo reference")
     axes[0].set_ylim(ylim)
     for ax in axes:
         for spine in ["bottom", "left"]:
             ax.spines[spine].set_color("#000000")
             ax.spines[spine].set_linewidth(0.5)
-        ax.plot(ax.get_xlim(), (0, 0), color="#999999", lw=1, zorder=2)
+        ax.axhline(y=0, color="#999999", lw=1, zorder=2)
         ax.grid(False, axis="x")
         ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
-    sns.despine(top=True, right=True)
-    fig.tight_layout()
+    sns.despine(top=True, right=True, fig=fig)
     return fig, axes
 
 
