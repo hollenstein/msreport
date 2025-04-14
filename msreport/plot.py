@@ -266,50 +266,79 @@ def contaminants(
         tag: A string that is used to extract iBAQ intensity containing columns.
             Default "iBAQ intensity".
 
+    Raises:
+        ValueError: If the "Potential contaminant" column is missing in the Qtable data.
+            If the Qtable does not contain any columns for the specified 'tag'.
+
     Returns:
-        A matplotlib Figure and Axes object, containing the contaminants plot.
+        A matplotlib Figure and an Axes object, containing the contaminants plot.
     """
+    if "Potential contaminant" not in qtable.data.columns:
+        raise ValueError(
+            "The 'Potential contaminant' column is missing in the Qtable data."
+        )
     data = qtable.make_sample_table(tag, samples_as_columns=True)
+    if data.empty:
+        raise ValueError(f"The Qtable does not contain any '{tag}' columns.")
     if msreport.helper.intensities_in_logspace(data):
         data = np.power(2, data)
 
     relative_intensity = data / data.sum() * 100
     contaminants = qtable["Potential contaminant"]
     samples = data.columns.to_list()
-    num_samples = len(samples)
-
-    x_values = range(relative_intensity.shape[1])
-    bar_values = relative_intensity[contaminants].sum(axis=0)
 
     color_wheel = ColorWheelDict()
     colors = [color_wheel[exp] for exp in qtable.get_experiments(samples)]
-    width = 0.8
-    xlim_pad = 0.5
-    xlim = ((width / 2 + xlim_pad) * -1, (num_samples - 1 + width / 2 + xlim_pad))
-    min_upper_ylim = 5
-    figwidth = (num_samples * 0.25) + 1.05
-    figsize = (figwidth, 3)
+    dark_colors = [_modify_lightness_hex(color, 0.4) for color in colors]
 
-    fig, ax = plt.subplots(figsize=figsize)
+    num_samples = len(samples)
+    x_values = range(relative_intensity.shape[1])
+    bar_values = relative_intensity[contaminants].sum(axis=0)
+
+    suptitle_space_inch = 0.45
+    ax_height_inch = 1.9
+    bar_width_inches = 0.3
+    x_padding = 0.3
+
+    fig_height = ax_height_inch + suptitle_space_inch
+    fig_width = (num_samples + (2 * x_padding)) * bar_width_inches
+    fig_size = (fig_width, fig_height)
+
+    subplot_top = 1 - (suptitle_space_inch / fig_height)
+
+    bar_width = 0.8
+    bar_half_width = 0.5
+    lower_xbound = (0 - bar_half_width) - x_padding
+    upper_xbound = (num_samples - 1) + bar_half_width + x_padding
+    min_upper_ybound = 5
+
+    sns.set_style("whitegrid")
+    fig, ax = plt.subplots(figsize=fig_size)
+    fig.subplots_adjust(top=subplot_top)
+    fig.suptitle("Relative amount of contaminants", fontsize=12)
+
     ax.bar(
-        x_values, bar_values, width=width, color=colors, edgecolor="#000000", zorder=3
+        x_values,
+        bar_values,
+        width=bar_width,
+        color=colors,
+        edgecolor=dark_colors,  # "#000000",
+        zorder=3,
     )
     ax.set_xticks(x_values)
     ax.set_xticklabels(samples, rotation=90)
-    ax.set_ylabel(f"Sum relative\n{tag} [%]")
+    ax.tick_params(axis="x", bottom=False)
+    ax.set_ylabel(f"Sum contaminant\n{tag} [%]")
 
-    ax.set_ylim(0, max(min_upper_ylim, ax.get_ylim()[1]))
-    ax.set_xlim(xlim)
-    sns.despine(top=True, right=True)
     for spine in ["bottom", "left"]:
         ax.spines[spine].set_color("#000000")
         ax.spines[spine].set_linewidth(1)
     ax.grid(False, axis="x")
     ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
+    sns.despine(top=True, right=True)
 
-    ax.set_title("Relative amount of contaminants")
-
-    fig.tight_layout()
+    ax.set_ylim(0, max(min_upper_ybound, ax.get_ylim()[1]))
+    ax.set_xlim(lower_xbound, upper_xbound)
     return fig, ax
 
 
