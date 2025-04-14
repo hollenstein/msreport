@@ -675,11 +675,25 @@ def sample_pca(
     Returns:
         A matplotlib Figure and a list of Axes objects, containing the PCA plots.
     """
+    design = qtable.get_design()
+    if design.shape[0] < 3:
+        fig, ax = plt.subplots(1, 1, figsize=(2, 1.3))
+        fig.suptitle(f'PCA of "{tag}" values', fontsize=12, y=1.1)
+        ax.text(
+            0.5,
+            0.5,
+            "PCA analysis cannot\nbe performed with\nless than 3 samples",
+            ha="center",
+            va="center",
+        )
+        ax.grid(False)
+        ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+        sns.despine(top=True, right=True, fig=fig)
+        return fig, np.array([ax])
+
     table = qtable.make_sample_table(
         tag, samples_as_columns=True, exclude_invalid=exclude_invalid
     )
-    design = qtable.get_design()
-
     table = table.replace({0: np.nan})
     table = table[np.isfinite(table).sum(axis=1) > 0]
     if not msreport.helper.intensities_in_logspace(table):
@@ -690,8 +704,8 @@ def sample_pca(
     sample_index = table.index.tolist()
     table = sklearn.preprocessing.scale(table, with_std=False)
 
-    n_components = min(len(sample_index), 9)
-    pca = sklearn.decomposition.PCA(n_components=n_components)
+    num_components = min(len(sample_index) - 1, 9)
+    pca = sklearn.decomposition.PCA(n_components=num_components)
     components = pca.fit_transform(table)
     component_labels = ["PC{}".format(i + 1) for i in range(components.shape[1])]
     components_table = pd.DataFrame(
@@ -702,36 +716,63 @@ def sample_pca(
 
     # Prepare colors
     color_wheel = ColorWheelDict()
-    experiments = qtable.get_experiments()
-    _ = [color_wheel[exp] for exp in experiments]
+    for exp in qtable.get_experiments():
+        _ = color_wheel[exp]
 
     # Prepare figure
-    num_legend_cols = 3
-    legendheight = 0.2 + 0.2 * np.ceil(len(experiments) / num_legend_cols)
-    plotheight = 3.7
-    figheight = plotheight + legendheight
-    figwidth = 4.3 + n_components * 0.2
-    width_ratios = [4, 0.2 + n_components * 0.25]
-    figsize = (figwidth, figheight)
+    num_legend_cols = 3  # math.ceil(len(qtable.get_experiments()) / 8)
+    bar_width = 0.8
+    bar_width_inches = 0.25
+    x_padding = 0.25
+
+    suptitle_space_inch = 0.45
+    ax_height_inch = 2.7
+    ax_width_inch = ax_height_inch
+    ax_wspace_inch = 0.6
+    bar_ax_width_inch = (num_components + (2 * x_padding)) * bar_width_inches
+    width_ratios = [ax_width_inch, bar_ax_width_inch]
+
+    fig_height = suptitle_space_inch + ax_height_inch
+    fig_width = ax_height_inch + bar_ax_width_inch + ax_wspace_inch
+    fig_size = (fig_width, fig_height)
+
+    subplot_top = 1 - (suptitle_space_inch / fig_height)
+    subplot_wspace = ax_wspace_inch / np.mean([ax_width_inch, bar_ax_width_inch])
+
+    bar_half_width = 0.5
+    lower_xbound = (0 - bar_half_width) - x_padding
+    upper_xbound = (num_components - 1) + bar_half_width + x_padding
 
     sns.set_style("white")
     fig, axes = plt.subplots(
-        1, 2, figsize=figsize, gridspec_kw={"width_ratios": width_ratios}
+        1,
+        2,
+        figsize=fig_size,
+        gridspec_kw={
+            "top": subplot_top,
+            "bottom": 0,
+            "left": 0,
+            "right": 1,
+            "width_ratios": width_ratios,
+            "wspace": subplot_wspace,
+        },
     )
+    fig.suptitle(f'PCA of "{tag}" values', fontsize=12)
 
     # Comparison of two principle components
     ax = axes[0]
     texts = []
     for sample, data in components_table.iterrows():
-        experiment = qtable.get_experiment(sample)
+        experiment = qtable.get_experiment(str(sample))
         label = design.loc[(design["Sample"] == sample), "Replicate"].tolist()[0]
         color = color_wheel[experiment]
+        edge_color = _modify_lightness_hex(color, 0.4)
         ax.scatter(
             data[pc_x],
             data[pc_y],
             color=color,
-            edgecolor="#999999",
-            lw=1,
+            edgecolor=edge_color,
+            lw=0.7,
             s=50,
             label=experiment,
         )
@@ -739,40 +780,48 @@ def sample_pca(
     adjustText.adjust_text(
         texts,
         force_text=0.15,
-        arrowprops={"arrowstyle": "-", "color": "#ebae34", "lw": 0.5},
+        expand_points=(1.4, 1.4),
         lim=20,
         ax=ax,
     )
-    ax.tick_params(axis="both", labelsize=9)
-    ax.set_xlabel(f"{pc_x} ({variance_lookup[pc_x]:.2f}%)", size=12)
-    ax.set_ylabel(f"{pc_y} ({variance_lookup[pc_y]:.2f}%)", size=12)
+    ax.tick_params(axis="both", labelsize=8)
+    ax.set_xlabel(f"{pc_x} ({variance_lookup[pc_x]:.1f}%)", size=10)
+    ax.set_ylabel(f"{pc_y} ({variance_lookup[pc_y]:.1f}%)", size=10)
     ax.grid(axis="both", linestyle="dotted", linewidth=1)
 
     # Explained variance bar plot
     ax = axes[1]
     xpos = range(len(variance))
-    ax.bar(xpos, variance, color="#D0D0D0", edgecolor="#000000")
+    ax.bar(xpos, variance, width=bar_width, color="#D0D0D0", edgecolor="#000000")
     ax.set_xticks(xpos)
-    ax.set_xticklabels(component_labels, rotation="vertical", ha="center")
-    ax.tick_params(axis="both", labelsize=9)
-    ax.set_ylabel("Explained variance", size=12)
+    ax.set_xticklabels(component_labels, rotation="vertical", ha="center", size=10)
+    ax.tick_params(axis="y", labelsize=8, left=False, bottom=False)
+    ax.set_ylabel("Explained variance [%]", size=10)
     ax.grid(axis="y", linestyle="dashed", linewidth=1)
+    ax.set_xlim(lower_xbound, upper_xbound)
 
-    # Add legend
     handles, labels = axes[0].get_legend_handles_labels()
-    by_label = dict(zip(labels, handles, strict=True))
-    handles, labels = by_label.values(), by_label.keys()
+    experiment_handles = dict(zip(labels, handles, strict=True))
+
+    first_ax_bbox = axes[1].get_position()
+    legend_xgap_inches = 0.25
+    legend_ygap_inches = 0.03
+    legend_bbox_x = first_ax_bbox.x1 + (legend_xgap_inches / fig.get_figwidth())
+    legend_bbox_y = first_ax_bbox.y1 + (legend_ygap_inches / fig.get_figheight())
+    handles, _ = axes[0].get_legend_handles_labels()
+    num_legend_cols = np.ceil(len(qtable.get_experiments()) / 12)
     fig.legend(
-        handles,
-        labels,
-        bbox_to_anchor=(0.5, 0.0),
+        handles=experiment_handles.values(),
+        loc="upper left",
+        bbox_to_anchor=(legend_bbox_x, legend_bbox_y),
+        fontsize=10,
+        title="Experiment",
+        title_fontsize=10,
+        alignment="left",
+        frameon=False,
+        borderaxespad=0,
         ncol=num_legend_cols,
-        fontsize=9,
-        loc="lower center",
     )
-    legend_space = legendheight / figheight
-    fig.suptitle(f'PCA of "{tag}" columns')
-    fig.tight_layout(rect=(0, legend_space, 1, 1))
 
     return fig, axes
 
