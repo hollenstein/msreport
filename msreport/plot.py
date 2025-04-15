@@ -4,7 +4,7 @@ import re
 import warnings
 from collections import UserDict
 from collections.abc import Iterable, Sequence
-from typing import Optional
+from typing import Any, Optional
 
 import adjustText
 import matplotlib.colors as mcolors
@@ -1312,18 +1312,28 @@ def box_and_bars(
 def expression_clustermap(
     qtable: Qtable,
     exclude_invalid: bool = True,
+    remove_imputation: bool = True,
+    mean_center: bool = False,
+    cluster_samples: bool = True,
     cluster_method: str = "average",
 ) -> sns.matrix.ClusterGrid:
     """Plot sample expression values as a hierarchically-clustered heatmap.
 
-    Missing or imputed values are assigned an intensity value of 0 to perform the
-    clustering.Once clustering is done, these values are removed from the heatmap,
-    leaving white entries on the heatmap.
+    By default missing and imputed values are assigned an intensity value of 0 to
+    perform the clustering. Once clustering is done, these values are removed from the
+    heatmap, making them appear white.
 
     Args:
         qtable: A `Qtable` instance, which data is used for plotting.
         exclude_invalid: If True, rows are filtered according to the Boolean entries of
             the "Valid" column.
+        remove_imputation: If True, imputed values are set to 0 before clustering.
+            Defaults to True.
+        mean_center: If True, the data is mean-centered before clustering. Defaults to
+            False.
+        cluster_samples: If True, sample order is determined by hierarchical clustering.
+            Otherwise, the order is determined by the order of samples in the qtable
+            design. Defaults to True.
         cluster_method: Linkage method to use for calculating clusters. See
             `scipy.cluster.hierarchy.linkage` documentation for more information.
 
@@ -1343,13 +1353,23 @@ def expression_clustermap(
 
     data = qtable.make_expression_table(samples_as_columns=True)
     data = data[samples]
+
     for sample in samples:
-        data.loc[qtable.data[f"Missing {sample}"], sample] = 0
-    imputed_values = qtable.data[[f"Missing {sample}" for sample in samples]].to_numpy()
+        if remove_imputation:
+            data.loc[qtable.data[f"Missing {sample}"], sample] = 0
+        data[sample] = data[sample].fillna(0)
+
+    if not mean_center:
+        # Hide missing values in the heatmap, making them appear white
+        mask_values = qtable.data[
+            [f"Missing {sample}" for sample in samples]
+        ].to_numpy()
+    else:
+        mask_values = np.zeros(data.shape, dtype=bool)
 
     if exclude_invalid:
         data = data[qtable.data["Valid"]]
-        imputed_values = imputed_values[qtable.data["Valid"]]
+        mask_values = mask_values[qtable.data["Valid"]]
 
     color_wheel = ColorWheelDict()
     for exp in experiments:
@@ -1362,7 +1382,7 @@ def expression_clustermap(
     cbar_width_inch = sample_width_inch
     cbar_gap_inch = sample_width_inch
     col_colors_height_inch = 0.12
-    col_dendrogram_height_inch = 0.6
+    col_dendrogram_height_inch = 0.6 if cluster_samples else 0.0
     heatmap_height_inch = 3
     heatmap_width_inch = len(samples) * sample_width_inch
 
@@ -1388,17 +1408,25 @@ def expression_clustermap(
     cbar_height = cbar_height_inch / fig_height
     cbar_y0 = col_colors_y0 - cbar_height
 
+    heatmap_args: dict[str, Any] = {
+        "cmap": "magma",
+        "yticklabels": False,
+        "figsize": fig_size,
+    }
+    if mean_center:
+        data = data.sub(data.mean(axis=1), axis=0)
+        heatmap_args.update({"vmin": -2.5, "vmax": 2.5, "center": 0, "cmap": "vlag"})
+
     # Generate the plot
     grid = sns.clustermap(
         data,
+        col_cluster=cluster_samples,
         col_colors=sample_colors,
         row_colors=["#000000" for _ in range(len(data))],
-        cmap="magma",
-        yticklabels=False,
-        mask=imputed_values,
-        figsize=fig_size,
-        metric="euclidean",
+        mask=mask_values,
         method=cluster_method,
+        metric="euclidean",
+        **heatmap_args,
     )
     # Reloacte clustermap axes to create a consistent layout
     grid.figure.suptitle(
@@ -1416,6 +1444,15 @@ def expression_clustermap(
         [heatmap_x0, col_dendrogram_y0, heatmap_width, col_dendrogram_height]
     )
     grid.ax_cbar.set_position([cbar_x0, cbar_y0, cbar_widh, cbar_height])
+
+    # manually set xticks to guarantee that all samples are displayed
+    if cluster_samples:
+        sample_order = [samples[i] for i in grid.dendrogram_col.reordered_ind]
+    else:
+        sample_order = samples
+    sample_ticks = np.arange(len(sample_order)) + 0.5
+    grid.ax_heatmap.set_xticks(sample_ticks, labels=sample_order)
+    grid.ax_heatmap.tick_params(axis="x", labelsize=10, rotation=90)
 
     grid.ax_heatmap.set_facecolor("#F9F9F9")
     for spine in grid.ax_heatmap.spines.values():
