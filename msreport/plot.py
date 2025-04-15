@@ -1339,56 +1339,105 @@ def pvalue_histogram(
         exclude_invalid: If True, rows are filtered according to the Boolean entries of
             the "Valid" column.
 
+    Raises:
+        ValueError: If no experiment pairs are found in the Qtable for the provided
+            p-value tag and comparison tag or if any of the provided experiment pairs
+            does not exist in the Qtable.
+
     Returns:
         A matplotlib Figure and a list of Axes objects, containing the p-value plots.
     """
     data = qtable.get_data(exclude_invalid=exclude_invalid)
 
-    # Find all experiment pairs
-    if experiment_pairs is None:
-        experiment_pairs = []
-        for experiment_pair in itertools.permutations(qtable.get_experiments(), 2):
-            comparison_group = comparison_tag.join(experiment_pair)
+    def _get_valid_experiment_pairs(
+        pairs: Iterable[Iterable[str]],
+    ) -> list[Iterable[str]]:
+        valid_pairs = []
+        for pair in pairs:
+            comparison_group = comparison_tag.join(pair)
             comparison_column = f"{pvalue_tag} {comparison_group}"
             if comparison_column in data.columns:
-                experiment_pairs.append(experiment_pair)
+                valid_pairs.append(pair)
+        return valid_pairs
+
+    # Find all experiment pairs
+    if experiment_pairs is not None:
+        valid_pairs = _get_valid_experiment_pairs(experiment_pairs)
+        invalid_pairs = list(set(experiment_pairs) - set(valid_pairs))
+        if invalid_pairs:
+            raise ValueError(
+                "The following provided experiment pairs do not exist in the Qtable: "
+                f"{invalid_pairs}"
+            )
+    else:
+        experiment_pairs = _get_valid_experiment_pairs(
+            itertools.permutations(qtable.get_experiments(), 2)
+        )
+        if not experiment_pairs:
+            raise ValueError(
+                "No experiment pairs found in the Qtable for p-value tag "
+                f"'{pvalue_tag}' and comparison tag '{comparison_tag}'."
+            )
 
     num_plots = len(experiment_pairs)
 
-    figwidth = (num_plots * 1.8) + -0.6
-    figheight = 2.5
-    figsize = (figwidth, figheight)
+    suptitle_space_inch = 0.4
+    ax_height_inch = 1.8
+    ax_width_inch = 1
+    ax_wspace_inch = 0.6
 
-    fig, axes = plt.subplots(1, num_plots, figsize=figsize, sharex=True, sharey=True)
-    axes = axes if isinstance(axes, Iterable) else (axes,)
-    fig.subplots_adjust(wspace=0.5)
+    fig_width = num_plots * ax_width_inch + (num_plots - 1) * ax_wspace_inch
+    fig_height = ax_height_inch + suptitle_space_inch
+    fig_size = (fig_width, fig_height)
+
+    subplot_top = 1 - (suptitle_space_inch / fig_height)
+    subplot_wspace = ax_wspace_inch / ax_width_inch
+
+    fig, axes = plt.subplots(1, num_plots, figsize=fig_size, sharex=True, sharey=True)
+    if num_plots == 1:
+        axes = np.array([axes])
+    else:
+        axes = np.array(axes)
+    fig.subplots_adjust(
+        top=subplot_top, wspace=subplot_wspace, bottom=0, left=0, right=1
+    )
+    fig.suptitle("P-value histogram of pair-wise experiment comparisons", fontsize=12)
 
     bins = np.arange(0, 1.01, 0.05)
-    for plot_number, experiment_pair in enumerate(experiment_pairs):  # type: ignore
-        ax = axes[plot_number]
+    for ax_pos, experiment_pair in enumerate(experiment_pairs):  # type: ignore
+        ax = axes[ax_pos]
         comparison_group = comparison_tag.join(experiment_pair)
         comparison_column = f"{pvalue_tag} {comparison_group}"
+        comparison_label = f"{comparison_tag}\n".join(experiment_pair)
         p_values = data[comparison_column]
         ax.hist(
             p_values,
             bins=bins,
+            color=None,
+            edgecolor="#215e5d",
+            linewidth=1.5,
             zorder=2,
-            color="#fbc97a",
-            edgecolor="#FFFFFF",
-            linewidth=0.7,
+        )
+        ax.hist(
+            p_values,
+            bins=bins,
+            color="#40B7B5",
+            edgecolor=None,
+            linewidth=0,
+            zorder=2.1,
         )
 
         # Adjust x- and y-axis
-        ax.set_xticks(np.arange(0, 1.01, 0.5))
-        ax.tick_params(labelsize=9)
-        if plot_number > 0:
-            ax.tick_params(axis="y", color="none")
+        ax.set_xticks([0, 0.5, 1])
+        ax.tick_params(labelsize=8)
+        if ax_pos > 0:
+            ax.tick_params(axis="y", color="none", labelleft=False, left=False)
 
         # Add x-label and second y-label
-        ax.set_xlabel(pvalue_tag, fontsize=9)
+        ax.set_xlabel(pvalue_tag)
         ax2 = ax.twinx()
         ax2.set_yticks([])
-        ax2.set_ylabel(comparison_group, fontsize=9)
+        ax2.set_ylabel(comparison_label, fontsize=9)
 
         # Adjust spines
         sns.despine(top=True, right=True)
