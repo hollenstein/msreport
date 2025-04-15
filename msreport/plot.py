@@ -855,11 +855,27 @@ def volcano_ma(
         exclude_invalid: If True, rows are filtered according to the Boolean entries of
             the "Valid" column.
 
+    Raises:
+        ValueError: If the 'pvalue_tag', "Average expression" or "Ratio [log2]" column
+            is missing in the Qtable for the specified experiment_pair.
+
     Returns:
         A matplotlib Figure object and a list of two Axes objects containing the volcano
         and the MA plot.
     """
+    ratio_tag = "Ratio [log2]"
+    expression_tag = "Average expression"
     comparison_group = comparison_tag.join(experiment_pair)
+
+    for tag in [ratio_tag, expression_tag, pvalue_tag]:
+        tag_column = msreport.helper.find_sample_columns(
+            qtable.data, comparison_group, [tag]
+        )
+        if not tag_column:
+            raise ValueError(
+                f"Missing the required '{tag}' column for the comparison group "
+                f"'{comparison_group}' in the Qtable."
+            )
 
     if special_entries is None:
         special_entries = []
@@ -897,12 +913,27 @@ def volcano_ma(
     ):
         data[column] = np.log10(data[column]) * -1
 
-    fig, axes = plt.subplots(1, 2, figsize=[8, 4], sharex=True)
-    fig.suptitle(comparison_group)
+    suptitle_space_inch = 0.45
+    ax_height_inch = 3.2
+    ax_width_inch = 3.2
+    ax_wspace_inch = 1
+
+    fig_height = suptitle_space_inch + ax_height_inch
+    fig_width = ax_width_inch * 2 + ax_wspace_inch
+    fig_size = (fig_width, fig_height)
+
+    subplot_top = 1 - (suptitle_space_inch / fig_height)
+    subplot_wspace = ax_wspace_inch / ax_width_inch
+
+    fig, axes = plt.subplots(1, 2, figsize=fig_size, sharex=True)
+    fig.subplots_adjust(
+        top=subplot_top, wspace=subplot_wspace, bottom=0, left=0, right=1
+    )
+    fig.suptitle(f"Volcano and MA plot of: {comparison_group}")
 
     for ax, x_variable, y_variable in [
-        (axes[0], "Ratio [log2]", pvalue_tag),
-        (axes[1], "Ratio [log2]", "Average expression"),
+        (axes[0], ratio_tag, pvalue_tag),
+        (axes[1], ratio_tag, expression_tag),
     ]:
         x_col = " ".join([x_variable, comparison_group])
         y_col = " ".join([y_variable, comparison_group])
@@ -914,7 +945,6 @@ def volcano_ma(
         mask_default = masks["default"] & valid_values
         mask_special = masks["highlight"] & valid_values
 
-        ax.grid(axis="both", linestyle="dotted", linewidth=1)
         ax.scatter(x_values[mask_default], y_values[mask_default], **params["default"])
         _annotated_scatter(
             x_values=x_values[mask_special],
@@ -929,8 +959,9 @@ def volcano_ma(
             ax.set_ylabel(f"{y_variable} [-log10]")
         else:
             ax.set_ylabel(f"{y_variable} [log2]")
+        ax.tick_params(axis="both", labelsize=8)
+        ax.grid(axis="both", linestyle="dotted", linewidth=1, zorder=1)
 
-    fig.tight_layout()
     return fig, axes
 
 
