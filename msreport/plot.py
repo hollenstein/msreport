@@ -222,27 +222,55 @@ def missing_values_horizontal(
         data["some"].append(with_missing_some)
         data["min"].append(missing_none)
 
-    plotheight = (num_experiments * 0.5) + 0.5
-    legendheight = 1.5
-    figheight = plotheight + legendheight
-    figsize = (5, figheight)
+    bar_width = 0.35
+
+    suptitle_space_inch = 0.45
+    ax_height_inch = num_experiments * bar_width
+    ax_width_inch = 4
+    fig_height = ax_height_inch + suptitle_space_inch
+    fig_width = ax_width_inch
+    fig_size = (fig_width, fig_height)
+
+    subplot_top = 1 - (suptitle_space_inch / fig_height)
 
     sns.set_style("whitegrid")
-    fig, ax = plt.subplots(figsize=figsize)
+    fig, ax = plt.subplots(figsize=fig_size)
+    fig.subplots_adjust(bottom=0, top=subplot_top, left=0, right=1)
+    fig.suptitle("Completeness of quantification per experiment")
+
     sns.barplot(y="exp", x="max", data=data, label="All missing", color="#EB3952")
     sns.barplot(y="exp", x="some", data=data, label="Some missing", color="#FAB74E")
     sns.barplot(y="exp", x="min", data=data, label="None missing", color="#31A590")
-    # Manually remove axis labels and axis legend required for seaborn > 0.13
+
     ax.set_ylabel("")
     ax.set_xlabel("")
-    ax.legend().remove()
-
     ax.set_xlim(0, total)
-    ax.set_title("Completeness of protein quantification per experiment")
+
+    ax.legend().remove()
     handles, labels = ax.get_legend_handles_labels()
-    fig.legend(handles, labels, bbox_to_anchor=(1, 0), ncol=3)
-    figure_space_for_legend = 1 - (legendheight / figheight)
-    fig.tight_layout(rect=(0, 0, 1, figure_space_for_legend))
+    legend_ygap_inches = 0.3
+    legend_bbox_y = 0 - (legend_ygap_inches / fig.get_figheight())
+
+    fig.legend(
+        handles[::-1],
+        labels[::-1],
+        bbox_to_anchor=(0.5, legend_bbox_y),
+        loc="upper center",
+        ncol=3,
+        frameon=False,
+        borderaxespad=0,
+        handlelength=0.95,
+        handleheight=1,
+    )
+
+    ax.tick_params(axis="x", labelsize=8)
+    ax.tick_params(axis="y", labelsize=10)
+    ax.grid(axis="x", linestyle="solid", linewidth=1, color="#cccccc")
+    for spine in ax.spines.values():
+        spine.set_color("#000000")
+        spine.set_linewidth(1)
+    sns.despine(fig=fig, top=True, right=True, bottom=True)
+
     return fig, ax
 
 
