@@ -8,12 +8,12 @@ from typing import Any, Optional
 
 import adjustText
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import sklearn.decomposition
 import sklearn.preprocessing
-from matplotlib import pyplot as plt
 
 import msreport.helper
 from msreport.qtable import Qtable
@@ -1602,6 +1602,127 @@ def pvalue_histogram(
     axes[0].set_ylabel(f"{pvalue_tag} count")
     ax.set_xlim(-0.05, 1.05)
 
+    return fig, axes
+
+
+def sample_correlation(
+    qtable, exclude_invalid: bool = True, labels: bool = False
+) -> tuple[plt.Figure, list[plt.Axes]]:
+    """Generates a pair-wise correlation matrix of samples 'Expression' values.
+
+    Correlation values are calculated using the Pearson method and the "Expression"
+    values.
+
+    Args:
+        qtable: A `Qtable` instance, which data is used for plotting.
+        exclude_invalid: If True, rows are filtered according to the Boolean entries of
+            the "Valid" column.
+        labels: If True, correlation values are displayed in the heatmap.
+
+    Raises:
+        ValueError: If less than two samples are present in the qtable.
+
+    Returns:
+        A matplotlib Figure and a list of Axes objects, containing the correlation
+        matrix plot and the color bar
+    """
+    num_samples = qtable.design.shape[0]
+    if num_samples < 2:
+        raise ValueError(
+            "At least two samples are required to generate a correlation matrix."
+        )
+    data = qtable.make_expression_table(
+        samples_as_columns=True, exclude_invalid=exclude_invalid
+    )
+    samples = data.columns.tolist()
+    corr = data.corr()
+    mask = np.triu(np.ones_like(corr, dtype=bool))
+
+    num_cells = num_samples - 1
+    cell_size_inch = 0.3
+    suptitle_space_inch = 0.4
+    ax_height_inch = ax_width_inch = cell_size_inch * num_cells
+    ax_wspace_inch = 0.4
+    cbar_height_inch = max(1.2, min(3, cell_size_inch * num_cells))
+    cbar_width_inch = 0.27
+    width_ratios = [ax_width_inch, cbar_width_inch]
+    subplot_wspace = ax_wspace_inch / np.mean([ax_width_inch, cbar_width_inch])
+
+    fig_width = ax_width_inch + cbar_width_inch + ax_wspace_inch
+    fig_height = ax_height_inch + suptitle_space_inch
+    fig_size = (fig_width, fig_height)
+
+    subplot_top = 1 - (suptitle_space_inch / fig_height)
+    cbar_width = cbar_width_inch / fig_width
+    cbar_height = cbar_height_inch / fig_height
+    cbar_x0 = (ax_width_inch + ax_wspace_inch) / fig_width
+    cbar_y0 = (ax_height_inch / fig_height) - cbar_height
+
+    sns.set_theme(style="white")
+    fig, axes = plt.subplots(
+        1,
+        2,
+        figsize=fig_size,
+        gridspec_kw={
+            "top": subplot_top,
+            "bottom": 0,
+            "left": 0,
+            "right": 1,
+            "width_ratios": width_ratios,
+            "wspace": subplot_wspace,
+        },
+    )
+    fig.suptitle(
+        'Pairwise correlation matrix of sample "Expression" values', fontsize=12
+    )
+    ax_heatmap, ax_cbar = axes
+    ax_cbar.set_position((cbar_x0, cbar_y0, cbar_width, cbar_height))
+
+    palette = sns.color_palette("rainbow", desat=0.8)
+    cmap = mcolors.LinearSegmentedColormap.from_list("rainbow_desat", palette)
+    sns.heatmap(
+        corr,
+        mask=mask,
+        cmap=cmap,
+        vmax=1,
+        vmin=0.5,
+        square=False,
+        linewidths=0.5,
+        ax=ax_heatmap,
+    )
+    cbar = ax_heatmap.collections[0].colorbar
+    if cbar is not None:
+        cbar.remove()
+    fig.colorbar(ax_heatmap.collections[0], cax=ax_cbar)
+
+    if labels:
+        for i, j in itertools.product(range(num_cells + 1), range(num_cells + 1)):
+            if i <= j:
+                continue
+            corr_value = corr.iloc[i, j]
+            ax_heatmap.text(
+                j + 0.5,
+                i + 0.5,
+                f"{corr_value:.2f}",
+                ha="center",
+                va="center",
+                fontsize=8,
+            )
+    # Need to manually set ticks because sometimes not all are properly included
+    ax_heatmap.set_yticks([i + 0.5 for i in range(1, len(samples))])
+    ax_heatmap.set_yticklabels(samples[1:])
+    ax_heatmap.set_xticks([i + 0.5 for i in range(0, len(samples) - 1)])
+    ax_heatmap.set_xticklabels(samples[:-1])
+
+    ax_heatmap.tick_params(axis="x", rotation=90, labelsize=10)
+    ax_heatmap.tick_params(axis="y", rotation=0, labelsize=10)
+    ax_heatmap.set_xlim(0, num_cells)
+    ax_heatmap.set_ylim(1 + num_cells, 1)
+
+    ax_cbar.tick_params(axis="y", labelsize=10)
+    for spine in ax_cbar.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(0.75)
     return fig, axes
 
 
