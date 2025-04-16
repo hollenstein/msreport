@@ -148,6 +148,16 @@ def missing_values_vertical(
         A matplotlib Figure and a list of Axes objects containing the missing values
         plots.
     """
+    # add a deprecation warning here
+    warnings.warn(
+        (
+            "The function `missing_values_vertical` is deprecated. Use"
+            "`missing_values_horizontal` instead."
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     experiments = qtable.get_experiments()
     num_experiments = len(experiments)
     qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
