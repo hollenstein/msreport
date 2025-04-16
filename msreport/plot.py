@@ -998,12 +998,25 @@ def expression_comparison(
         exclude_invalid: If True, rows are filtered according to the Boolean entries of
             the "Valid" column.
 
+    Raises:
+        ValueError: If the "Expression" and "Events" columns for the specified
+            experiments are missing in the Qtable.
+
     Returns:
         A matplotlib Figure objects and a list of three Axes objects containing the
         expression comparison plots.
     """
-    exp_1, exp_2 = experiment_pair
-    comparison_group = comparison_tag.join(experiment_pair)
+    missing_columns = []
+    for exp in experiment_pair:
+        for tag in ["Expression", "Events"]:
+            if f"{tag} {exp}" not in qtable.data.columns:
+                missing_columns.append(f"{tag} {exp}")
+    missing_columns = sorted(missing_columns)
+    if missing_columns:
+        raise ValueError(
+            f"Missing the required columns in the Qtable: {missing_columns}."
+        )
+
     if special_entries is None:
         special_entries = []
     if special_proteins is not None:
@@ -1013,6 +1026,9 @@ def expression_comparison(
             stacklevel=2,
         )
         special_entries = list(special_entries) + list(special_proteins)
+
+    exp_1, exp_2 = experiment_pair
+    comparison_group = comparison_tag.join(experiment_pair)
 
     qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
     if annotation_column not in qtable_data.columns:
@@ -1051,10 +1067,35 @@ def expression_comparison(
             size = 1
         return size
 
-    width_ratios = [1, 5, 1]
+    suptitle_space_inch = 0.45
+    ax_height_inch = 3.2
+    main_ax_width_inch = 3.2
+    side_ax_width_inch = 0.65
+    ax_wspace_inch = 0.6
+    width_ratios = [side_ax_width_inch, main_ax_width_inch, side_ax_width_inch]
+
+    fig_height = suptitle_space_inch + ax_height_inch
+    fig_width = main_ax_width_inch + (side_ax_width_inch + ax_wspace_inch) * 2
+    fig_size = (fig_width, fig_height)
+
+    subplot_top = 1 - (suptitle_space_inch / fig_height)
+    subplot_wspace = ax_wspace_inch / np.mean(width_ratios)
+
     fig, axes = plt.subplots(
-        1, 3, figsize=[6, 4], sharey=True, gridspec_kw={"width_ratios": width_ratios}
+        1,
+        3,
+        figsize=fig_size,
+        sharey=True,
+        gridspec_kw={
+            "bottom": 0,
+            "top": subplot_top,
+            "left": 0,
+            "right": 1,
+            "wspace": subplot_wspace,
+            "width_ratios": width_ratios,
+        },
     )
+    fig.suptitle(f'Comparison of "Expression": {comparison_group}')
 
     # Plot values quantified in both experiments
     ax = axes[1]
@@ -1079,9 +1120,9 @@ def expression_comparison(
         scatter_kws=params["highlight"],
     )
 
-    ax.set_xlabel(x_variable, fontsize=9)
-    ax.set_title(comparison_group, fontsize=12)
+    ax.set_xlabel(x_variable, fontsize=10)
     ax.set_ylabel(y_variable)
+    ax.tick_params(axis="x", labelsize=8)
 
     # Plot values quantified only in one experiment
     for ax, mask, exp in [(axes[2], only_exp_1, exp_1), (axes[0], only_exp_2, exp_2)]:
@@ -1092,7 +1133,7 @@ def expression_comparison(
 
         ax.grid(axis="y", linestyle="dotted", linewidth=1)
         ax.set_ylabel(y_variable)
-        ax.tick_params(axis="x", bottom=False, labelbottom=False)
+        ax.tick_params(axis="y", labelsize=8)
 
         if len(values) == 0:
             continue
@@ -1119,10 +1160,13 @@ def expression_comparison(
         )
         ax.set_xlim(xlim)
 
-    axes[0].set_title(f"Absent in\n{exp_1}", fontsize=9)
-    axes[2].set_title(f"Absent in\n{exp_2}", fontsize=9)
+    # Important to reverse the order here which experiment is on the left and right
+    axes[0].set_xlabel(f"Absent in\n{exp_1}")
+    axes[2].set_xlabel(f"Absent in\n{exp_2}")
 
-    fig.tight_layout()
+    for ax in axes:
+        ax.tick_params(color="none")
+
     return fig, axes
 
 
