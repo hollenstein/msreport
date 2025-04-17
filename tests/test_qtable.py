@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+
 import msreport.qtable
 
 
@@ -67,9 +68,59 @@ def example_data():
 
 @pytest.fixture
 def example_qtable(example_data):
-    qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])
+    qtable = msreport.qtable.Qtable(
+        example_data["data"], design=example_data["design"], id_column="id"
+    )
     qtable.set_expression_by_tag("Intensity")
     return qtable
+
+
+class TestQtableInitialization:
+    def test_data_is_added_to_qtable(self, example_data):
+        qtable = msreport.qtable.Qtable(example_data["data"])
+        assert qtable.data.equals(example_data["data"])
+
+    def test_design_is_added_to_qtable(self, example_data):
+        qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])  # fmt: skip
+        assert qtable.design.equals(example_data["design"])
+
+    def test_id_column_is_added_to_qtable(self, example_data):
+        qtable = msreport.qtable.Qtable(example_data["data"], id_column="id")
+        assert qtable.id_column == "id"
+
+    def test_non_unique_data_index_raises_error(self, example_data):
+        example_data["data"].index = [0 for _ in range(len(example_data["data"]))]
+        with pytest.raises(ValueError):
+            msreport.qtable.Qtable(example_data["data"])
+
+    def test_non_existing_id_column_raises_error(self, example_data):
+        with pytest.raises(KeyError):
+            msreport.qtable.Qtable(example_data["data"], id_column="non_existing_column")  # fmt: skip
+
+    def test_id_column_containing_non_unique_values_raises_error(self, example_data):
+        example_data["data"]["id"] = "1"
+        with pytest.raises(ValueError):
+            msreport.qtable.Qtable(example_data["data"], id_column="id")
+
+
+def test_qtable_add_design(example_data):
+    qtable = msreport.qtable.Qtable(example_data["data"])
+    qtable.add_design(example_data["design"])
+    assert qtable.design.equals(example_data["design"])
+
+    with pytest.raises(ValueError):
+        qtable.add_design(pd.DataFrame(columns=["Sample"]))
+    with pytest.raises(ValueError):
+        qtable.add_design(pd.DataFrame(columns=["Experiment"]))
+
+
+class TestQtableCopy:
+    def test_copy(self, example_qtable):
+        copied_qtable = example_qtable.copy()
+        assert copied_qtable.data.equals(example_qtable.data)
+        assert copied_qtable.design.equals(example_qtable.design)
+        assert copied_qtable.id_column == example_qtable.id_column
+        assert copied_qtable is not example_qtable
 
 
 class TestExcludeInvalid:
@@ -102,27 +153,6 @@ class TestMatchSamplesToTagColumns:
         true_mapping = {"B_1": "Tag B_1", "SampleB_1": "Tag SampleB_1"}
         observed_mapping = msreport.qtable._match_samples_to_tag_columns(samples, columns, "Tag")  # fmt:skip
         assert observed_mapping == true_mapping
-
-
-def test_qtable_setup():
-    qtable = msreport.qtable.Qtable(pd.DataFrame())
-    assert isinstance(qtable.data, pd.DataFrame)
-
-
-def test_qtable_add_design(example_data):
-    qtable = msreport.qtable.Qtable(pd.DataFrame())
-    qtable.add_design(example_data["design"])
-    assert qtable.design.equals(example_data["design"])
-
-    with pytest.raises(ValueError):
-        qtable.add_design(pd.DataFrame(columns=["Sample"]))
-    with pytest.raises(ValueError):
-        qtable.add_design(pd.DataFrame(columns=["Experiment"]))
-
-
-def test_qtable_setup_with_design(example_data):
-    qtable = msreport.qtable.Qtable(pd.DataFrame(), design=example_data["design"])
-    assert qtable.design.equals(example_data["design"])
 
 
 class TestQtableGetData:
@@ -494,6 +524,7 @@ class TestQtableSafeLoad:
 
         reader = FragPipeReader("./tests/testdata/fragpipe", contaminant_tag="contam_")
         proteins = reader.import_proteins()
+        proteins["Unique ID"] = range(len(proteins))
         design = pd.DataFrame(
             [
                 ("SampleA_1", "Experiment_A", "1"),
@@ -501,10 +532,12 @@ class TestQtableSafeLoad:
             ],
             columns=["Sample", "Experiment", "Replicate"],
         )
-        self.qtable = msreport.qtable.Qtable(proteins, design)
+        self.qtable = msreport.qtable.Qtable(proteins, design, id_column="Unique ID")
         self.qtable.set_expression_by_tag("Intensity", log2=True)
 
     def test_data_is_equal_after_safe_and_load(self, tmp_path):
         self.qtable.save(tmp_path, "test_qtable")
         loaded_qtable = self.qtable.load(tmp_path, "test_qtable")
         pd.testing.assert_frame_equal(self.qtable.data, loaded_qtable.data)
+        pd.testing.assert_frame_equal(self.qtable.design, loaded_qtable.design)
+        assert self.qtable.id_column == loaded_qtable.id_column

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import os
 import warnings
 from typing import Any, Iterable, Optional
@@ -25,7 +26,14 @@ class Qtable:
         design: A pandas.DataFrame describing the experimental design.
     """
 
-    def __init__(self, data: pd.DataFrame, design: Optional[pd.DataFrame] = None):
+    _default_id_column = "Representative protein"
+
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        design: Optional[pd.DataFrame] = None,
+        id_column: str = "Representative protein",
+    ):
         """Initializes the Qtable.
 
         If data does not contain a "Valid" column, this column is added and all its row
@@ -37,11 +45,34 @@ class Qtable:
                 contain the columns "Sample" and "Experiment". The "Sample" entries
                 should correspond to the Sample names present in the quantitative
                 columns of the data.
+            id_column: The name of the column that contains the unique identifiers for
+                the entries in the data table. Default is "Representative protein".
+
+        Raises:
+            KeyError: If the specified id_column is not found in data.
+            ValueError: If the specified id_column does not contain unique identifiers.
         """
         self.design: pd.DataFrame
         self.data: pd.DataFrame
+        self._id_column: str
+
+        if not data.index.is_unique:
+            raise ValueError(
+                "The index of the 'data' table must contain unique values."
+            )
+        if id_column not in data.columns:
+            raise KeyError(
+                f"Column '{id_column}' not found in 'data'. Please specify a valid "
+                "column that contains unique identifiers for the entries in 'data'."
+            )
+        if not data[id_column].is_unique:
+            raise ValueError(
+                f"Column '{id_column}' in 'data' table must contain unique identifiers"
+                ", i.e. no duplicated values. Please provide a valid 'id_column'."
+            )
 
         self.data = data.copy()
+        self._id_column = id_column
         if "Valid" not in self.data.columns:
             self.data["Valid"] = True
         if design is not None:
@@ -105,6 +136,11 @@ class Qtable:
     def get_design(self) -> pd.DataFrame:
         """Returns a copy of the design table."""
         return self.design.copy()
+
+    @property
+    def id_column(self) -> str:
+        """Returns the name of the id column."""
+        return self._id_column
 
     def get_samples(self, experiment: Optional[str] = None) -> list[str]:
         """Returns a list of samples present in the design table.
@@ -334,6 +370,8 @@ class Qtable:
             "Expression features": self._expression_features,
             "Expression sample mapping": self._expression_sample_mapping,
             "Data dtypes": self.data.dtypes.astype(str).to_dict(),
+            "Design dtypes": self.design.dtypes.astype(str).to_dict(),
+            "Unique ID column": self._id_column,
         }
         with open(filepaths["config"], "w") as openfile:
             yaml.safe_dump(config_data, openfile)
@@ -364,14 +402,24 @@ class Qtable:
         data = _read_csv_str_safe(
             filepaths["data"], dtypes, **{"sep": "\t", "index_col": 0}
         )
-        design = pd.read_csv(
-            filepaths["design"], sep="\t", index_col=0, keep_default_na=True
-        )
+        # This check is required for backwards compatibility with msreport <= 0.0.27
+        if "Design dtypes" in config_data:
+            design_dtypes = config_data["Design dtypes"]
+            design = _read_csv_str_safe(
+                filepaths["design"], design_dtypes, **{"sep": "\t", "index_col": 0}
+            )
+        else:
+            design = pd.read_csv(
+                filepaths["design"], sep="\t", index_col=0, keep_default_na=True
+            )
 
         qtable = Qtable(data, design)
         qtable._expression_columns = config_data["Expression columns"]
         qtable._expression_features = config_data["Expression features"]
         qtable._expression_sample_mapping = config_data["Expression sample mapping"]
+        # This check is required for backwards compatibility with msreport <= 0.0.27
+        if "Unique ID column" in config_data:
+            qtable._id_column = config_data["Unique ID column"]
         return qtable
 
     def to_tsv(self, path: str, index: bool = False):
@@ -389,7 +437,6 @@ class Qtable:
 
     def copy(self) -> Qtable:
         """Returns a copy of this Qtable instance."""
-        # not tested #
         return self.__copy__()
 
     def _set_expression(
@@ -478,7 +525,6 @@ class Qtable:
         self._expression_sample_mapping = {}
 
     def __copy__(self) -> Qtable:
-        # not tested #
         new_instance = Qtable(self.data, self.design)
         # Copy all private attributes
         for attr in dir(self):
@@ -487,7 +533,7 @@ class Qtable:
                 and attr.startswith("_")
                 and not attr.startswith("__")
             ):
-                attr_values = self.__getattribute__(attr).copy()
+                attr_values = copy.deepcopy(self.__getattribute__(attr))
                 new_instance.__setattr__(attr, attr_values)
         return new_instance
 

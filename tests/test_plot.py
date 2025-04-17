@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import msreport.qtable
 import msreport.plot
+import msreport.qtable
 
 
 @pytest.fixture
@@ -81,6 +81,29 @@ class TestVolcanoMa:
     def test_no_error_with_missing_values_of_special_proteins(self):
         fig, axes = msreport.plot.volcano_ma(
             self.qtable,
+            ["Experiment_A", "Experiment_B"],
+            comparison_tag=" vs ",
+            pvalue_tag="P-value",
+            special_proteins=["A", "B", "C"],
+            exclude_invalid=False,
+        )
+
+    def test_no_error_when_annotation_column_does_not_exist(self):
+        fig, axes = msreport.plot.volcano_ma(
+            self.qtable,
+            ["Experiment_A", "Experiment_B"],
+            comparison_tag=" vs ",
+            pvalue_tag="P-value",
+            special_proteins=["A", "B", "C"],
+            exclude_invalid=False,
+            annotation_column="Nonexistent_Column",
+        )
+
+    def test_qtable_id_column_is_used_for_matching_special_proteins(self, example_data):
+        example_data["data"].rename(columns={"Representative protein": "ID"}, inplace=True)  # fmt: skip
+        qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"], id_column="ID")  # fmt: skip
+        fig, axes = msreport.plot.volcano_ma(
+            qtable,
             ["Experiment_A", "Experiment_B"],
             comparison_tag=" vs ",
             pvalue_tag="P-value",

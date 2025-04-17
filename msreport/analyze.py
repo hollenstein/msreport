@@ -501,8 +501,7 @@ def calculate_multi_group_limma(
 
     Requires that expression columns are set, and expression values are log2 transformed
     All rows with missing values are ignored, impute missing values to allow
-    differential expression analysis of all rows. The qtable.data column
-    "Representative protein" is used as the index.
+    differential expression analysis of all rows.
 
     Args:
         qtable: Qtable instance that contains expression values for differential
@@ -544,10 +543,8 @@ def calculate_multi_group_limma(
         )
 
     design = qtable.get_design()
-    table = qtable.make_expression_table(
-        samples_as_columns=True, features=["Representative protein"]
-    )
-    table = table.set_index("Representative protein")
+    table = qtable.make_expression_table(samples_as_columns=True)
+    table.index = table.index.astype(str)  # It appears that a string is required for R
     comparison_tag = " vs "
 
     if exclude_invalid:
@@ -605,8 +602,7 @@ def calculate_two_group_limma(
 
     Requires that expression columns are set, and expression values are log2
     transformed. All rows with missing values are ignored, impute missing values to
-    allow differential expression analysis of all rows. The qtable.data
-    column "Representative protein" is used as the index.
+    allow differential expression analysis of all rows.
 
     Args:
         qtable: Qtable instance that contains expression values for differential
@@ -625,25 +621,22 @@ def calculate_two_group_limma(
     _validate_experiment_pair(qtable, experiment_pair)
 
     # TODO: LIMMA function not tested #
-    expression_table = qtable.make_expression_table(
-        samples_as_columns=True, features=["Representative protein"]
-    )
+    table = qtable.make_expression_table(samples_as_columns=True)
     comparison_tag = " vs "
 
     if exclude_invalid:
         valid = qtable["Valid"]
     else:
-        valid = np.full(expression_table.shape[0], True)
+        valid = np.full(table.shape[0], True)
 
     samples_to_experiment = {}
     for experiment in experiment_pair:
         mapping = dict.fromkeys(qtable.get_samples(experiment), experiment)
         samples_to_experiment.update(mapping)
 
-    table_columns = ["Representative protein"]
-    table_columns.extend(samples_to_experiment.keys())
-    table = expression_table[table_columns]
-    table = table.set_index("Representative protein")
+    # Keep only samples that are present in the 'experiment_pair'
+    table = table[samples_to_experiment.keys()]
+    table.index = table.index.astype(str)  # It appears that a string is required for R
     not_nan = table.isna().sum(axis=1) == 0
 
     mask = np.all([valid, not_nan], axis=0)

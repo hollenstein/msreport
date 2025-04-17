@@ -1,5 +1,6 @@
 import itertools
 import re
+import warnings
 from collections import UserDict
 from collections.abc import Iterable, Sequence
 from typing import Optional
@@ -641,7 +642,9 @@ def volcano_ma(
     experiment_pair: Iterable[str],
     comparison_tag: str = " vs ",
     pvalue_tag: str = "P-value",
+    special_entries: Optional[list[str]] = None,
     special_proteins: Optional[list[str]] = None,
+    annotation_column: str = "Gene name",
     exclude_invalid: bool = True,
 ) -> tuple[plt.Figure, list[plt.Axes]]:
     """Generates a volcano and an MA plot for the comparison of two experiments.
@@ -654,10 +657,12 @@ def volcano_ma(
             experiments; default " vs ", which corresponds to the MsReport convention.
         pvalue_tag: String used for matching the pvalue columns; default "P-value",
             which corresponds to the MsReport convention.
-        special_proteins: Optional, allows to specify a list of entries from the
-            "Representative Protein" column to be annotated. Entries are annotated with
-            values from the "Gene Name" column if present, otherwise from the
-            "Representative Protein" column.
+        special_entries: Optional, allows to specify a list of entries from the
+            `qtable.id_column` column to be annotated.
+        special_proteins: This argument is deprecated, use 'special_entries' instead.
+        annotation_column: Column used for labeling the points of special entries in the
+            scatter plot. Default "Gene name". If the 'annotation_column' is not present
+            in the `qtable.data` table, the `qtable.id_column` is used instead.
         exclude_invalid: If True, rows are filtered according to the Boolean entries of
             the "Valid" column.
 
@@ -667,16 +672,25 @@ def volcano_ma(
     """
     comparison_group = comparison_tag.join(experiment_pair)
 
-    special_proteins = special_proteins if special_proteins is not None else []
+    if special_entries is None:
+        special_entries = []
+    if special_proteins is not None:
+        warnings.warn(
+            "The argument 'special_proteins' is deprecated, use 'special_entries' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        special_entries = list(special_entries) + list(special_proteins)
+
     data = qtable.get_data(exclude_invalid=exclude_invalid)
-    annotation_column = (
-        "Gene name" if "Gene name" in data.columns else "Representative protein"
-    )
+    if annotation_column not in data.columns:
+        annotation_column = qtable.id_column
+
     scatter_size = 2 / (max(min(data.shape[0], 10000), 1000) / 1000)
 
     masks = {
-        "highlight": data["Representative protein"].isin(special_proteins),
-        "default": ~data["Representative protein"].isin(special_proteins),
+        "highlight": data[qtable.id_column].isin(special_entries),
+        "default": ~data[qtable.id_column].isin(special_entries),
     }
     params = {
         "highlight": {
@@ -736,7 +750,9 @@ def expression_comparison(
     experiment_pair: list[str],
     comparison_tag: str = " vs ",
     plot_average_expression: bool = False,
+    special_entries: Optional[list[str]] = None,
     special_proteins: Optional[list[str]] = None,
+    annotation_column: str = "Gene name",
     exclude_invalid: bool = True,
 ) -> tuple[plt.Figure, list[plt.Axes]]:
     """Generates an expression comparison plot for two experiments.
@@ -753,10 +769,12 @@ def expression_comparison(
             experiments; default " vs ", which corresponds to the MsReport convention.
         plot_average_expression: If True plot average expression instead of maxium
             expression. Default False.
-        special_proteins: Optional, allows to specify a list of entries from the
-            "Representative Protein" column to be annotated. Entries are annotated with
-            values from the "Gene Name" column if present, otherwise from the
-            "Representative Protein" column.
+        special_entries: Optional, allows to specify a list of entries from the
+            `qtable.id_column` column to be annotated.
+        special_proteins: This argument is deprecated, use 'special_entries' instead.
+        annotation_column: Column used for labeling the points of special entries in the
+            scatter plot. Default "Gene name". If the 'annotation_column' is not present
+            in the `qtable.data` table, the `qtable.id_column` is used instead.
         exclude_invalid: If True, rows are filtered according to the Boolean entries of
             the "Valid" column.
 
@@ -766,11 +784,19 @@ def expression_comparison(
     """
     exp_1, exp_2 = experiment_pair
     comparison_group = comparison_tag.join(experiment_pair)
-    special_proteins = special_proteins if special_proteins is not None else []
+    if special_entries is None:
+        special_entries = []
+    if special_proteins is not None:
+        warnings.warn(
+            "The argument 'special_proteins' is deprecated, use 'special_entries' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        special_entries = list(special_entries) + list(special_proteins)
+
     qtable_data = qtable.get_data(exclude_invalid=exclude_invalid)
-    annotation_column = (
-        "Gene name" if "Gene name" in qtable_data.columns else "Representative protein"
-    )
+    if annotation_column not in qtable_data.columns:
+        annotation_column = qtable.id_column
     total_scatter_area = 5000
     params = {
         "highlight": {
@@ -824,7 +850,7 @@ def expression_comparison(
     y_values = values[y_col]
     ax.grid(axis="both", linestyle="dotted", linewidth=1)
     ax.scatter(x_values, y_values, s=s, **params["default"])
-    highlight_mask = values["Representative protein"].isin(special_proteins)
+    highlight_mask = values[qtable.id_column].isin(special_entries)
     _annotated_scatter(
         x_values=x_values[highlight_mask],
         y_values=y_values[highlight_mask],
@@ -841,7 +867,7 @@ def expression_comparison(
     for ax, mask, exp in [(axes[2], only_exp_1, exp_1), (axes[0], only_exp_2, exp_2)]:
         y_variable = f"Expression {exp}"
         values = qtable_data[mask]
-        highlight_mask = values["Representative protein"].isin(special_proteins)
+        highlight_mask = values[qtable.id_column].isin(special_entries)
         s = scattersize(values, total_scatter_area)
 
         ax.grid(axis="y", linestyle="dotted", linewidth=1)
