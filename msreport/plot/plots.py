@@ -189,9 +189,6 @@ def missing_values_vertical(
         ax.set_title(exp)
         ax.set_xticks(np.array([0, 1, 2]) + 0.4)
         ax.set_xticklabels(xtick_labels, rotation=45, va="top", ha="right")
-        for spine in ["bottom", "left"]:
-            ax.spines[spine].set_color("#000000")
-            ax.spines[spine].set_linewidth(1)
         ax.grid(False, axis="x")
     sns.despine(top=True, right=True)
     fig.tight_layout()
@@ -277,9 +274,6 @@ def missing_values_horizontal(
     ax.tick_params(axis="x", labelsize=8)
     ax.tick_params(axis="y", labelsize=10)
     ax.grid(axis="x", linestyle="solid")
-    for spine in ax.spines.values():
-        spine.set_color("#000000")
-        spine.set_linewidth(1)
     sns.despine(fig=fig, top=True, right=True, bottom=True)
 
     return fig, ax
@@ -369,9 +363,6 @@ def contaminants(
     ax.tick_params(axis="x", bottom=False)
     ax.set_ylabel(f"Sum contaminant\n{tag} [%]")
 
-    for spine in ["bottom", "left"]:
-        ax.spines[spine].set_color("#000000")
-        ax.spines[spine].set_linewidth(1)
     ax.grid(False, axis="x")
     sns.despine(top=True, right=True)
 
@@ -535,9 +526,6 @@ def replicate_ratios(
             ax.remove()
             continue
 
-        for spine in ["bottom", "left"]:
-            ax.spines[spine].set_color("#000000")
-            ax.spines[spine].set_linewidth(0.5)
         ax.axvline(x=0, color="#999999", lw=1, zorder=2)
         ax.grid(False, axis="y")
     sns.despine(top=True, right=True, fig=fig)
@@ -670,9 +658,6 @@ def experiment_ratios(
     axes[0].set_ylabel("Ratio [log2]\nto pseudo reference")
     axes[0].set_ylim(ylim)
     for ax in axes:
-        for spine in ["bottom", "left"]:
-            ax.spines[spine].set_color("#000000")
-            ax.spines[spine].set_linewidth(0.5)
         ax.axhline(y=0, color="#999999", lw=1, zorder=2)
         ax.grid(False, axis="x")
     sns.despine(top=True, right=True, fig=fig)
@@ -1299,9 +1284,6 @@ def box_and_bars(
     ax.bar(x_values, bar_values, width=bar_width, color=colors, edgecolor="#000000")
     ax.set_xticklabels(group_names, rotation=90)
     for ax in axes:
-        for spine in ["bottom", "left"]:
-            ax.spines[spine].set_color("#000000")
-            ax.spines[spine].set_linewidth(1)
         ax.grid(False, axis="x")
     sns.despine(top=True, right=True)
 
@@ -1457,12 +1439,11 @@ def expression_clustermap(
     grid.ax_heatmap.tick_params(axis="x", labelsize=10, rotation=90)
 
     grid.ax_heatmap.set_facecolor("#F9F9F9")
-    for spine in grid.ax_heatmap.spines.values():
-        spine.set_visible(True)
-        spine.set_linewidth(0.75)
-    for spine in grid.ax_cbar.spines.values():
-        spine.set_visible(True)
-        spine.set_linewidth(0.75)
+
+    for ax in [grid.ax_heatmap, grid.ax_cbar]:
+        sns.despine(top=False, right=False, left=False, bottom=False, ax=ax)
+        for spine in ["top", "right", "left", "bottom"]:
+            ax.spines[spine].set_linewidth(0.75)
     return grid
 
 
@@ -1594,9 +1575,6 @@ def pvalue_histogram(
 
         # Adjust spines
         sns.despine(top=True, right=True)
-        for spine in ["bottom", "left"]:
-            ax.spines[spine].set_color("#000000")
-            ax.spines[spine].set_linewidth(1)
 
         # Adjust grid
         ax.grid(False, axis="x")
@@ -1724,7 +1702,6 @@ def sample_correlation(
 
     ax_cbar.tick_params(axis="y", labelsize=10)
     for spine in ax_cbar.spines.values():
-        spine.set_visible(True)
         spine.set_linewidth(0.75)
     return fig, axes
 
