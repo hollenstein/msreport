@@ -171,7 +171,6 @@ def missing_values_vertical(
     figsize = (figwidth, 3.5)
     xtick_labels = ["No missing", "Some missing", "All missing"]
 
-    sns.set_style("whitegrid")
     fig, axes = plt.subplots(1, num_experiments, figsize=figsize, sharey=True)
     for exp_num, exp in enumerate(experiments):
         ax = axes[exp_num]
@@ -247,7 +246,6 @@ def missing_values_horizontal(
 
     subplot_top = 1 - (suptitle_space_inch / fig_height)
 
-    sns.set_style("whitegrid")
     fig, ax = plt.subplots(figsize=fig_size)
     fig.subplots_adjust(bottom=0, top=subplot_top, left=0, right=1)
     fig.suptitle("Completeness of quantification per experiment")
@@ -355,7 +353,6 @@ def contaminants(
     upper_xbound = (num_samples - 1) + bar_half_width + x_padding
     min_upper_ybound = 5
 
-    sns.set_style("whitegrid")
     fig, ax = plt.subplots(figsize=fig_size)
     fig.subplots_adjust(top=subplot_top)
     fig.suptitle("Relative amount of contaminants", fontsize=12)
@@ -503,7 +500,6 @@ def replicate_ratios(
     subplot_top = 1 - (suptitle_space_inch / fig_height)
     subplot_hspace = ax_hspace_inch / ax_height_inch
 
-    sns.set_style("whitegrid")
     fig, axes = plt.subplots(
         num_experiments, max_combinations, figsize=fig_size, sharex=True
     )
@@ -653,7 +649,6 @@ def experiment_ratios(
     subplot_top = 1 - (suptitle_space_inch / fig_height)
     subplot_wspace = ax_wspace_inch / ax_width_inch
 
-    sns.set_style("whitegrid")
     fig, axes = plt.subplots(1, num_experiments, figsize=fig_size, sharey=True)
     fig.subplots_adjust(top=subplot_top, wspace=subplot_wspace)
     fig.suptitle("Comparison of experiments means", fontsize=12)
@@ -790,7 +785,6 @@ def sample_pca(
     lower_xbound = (0 - bar_half_width) - x_padding
     upper_xbound = (num_components - 1) + bar_half_width + x_padding
 
-    sns.set_style("white")
     fig, axes = plt.subplots(
         1,
         2,
@@ -1283,7 +1277,6 @@ def box_and_bars(
     lower_xbound = (0 - bar_half_width) - x_padding
     upper_xbound = (num_samples - 1) + bar_half_width + x_padding
 
-    sns.set_style("whitegrid")
     fig, axes = plt.subplots(2, figsize=fig_size, sharex=True)
     fig.subplots_adjust(top=subplot_top, hspace=subplot_hspace)
     fig.suptitle("A box and bars plot", fontsize=12)
@@ -1673,7 +1666,6 @@ def sample_correlation(
     cbar_x0 = (ax_width_inch + ax_wspace_inch) / fig_width
     cbar_y0 = (ax_height_inch / fig_height) - cbar_height
 
-    sns.set_theme(style="white")
     fig, axes = plt.subplots(
         1,
         2,
