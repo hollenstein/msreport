@@ -193,7 +193,6 @@ def missing_values_vertical(
             ax.spines[spine].set_color("#000000")
             ax.spines[spine].set_linewidth(1)
         ax.grid(False, axis="x")
-        ax.grid(axis="y", linestyle="dashed", linewidth=1)
     sns.despine(top=True, right=True)
     fig.tight_layout()
     return fig, axes
@@ -277,7 +276,7 @@ def missing_values_horizontal(
 
     ax.tick_params(axis="x", labelsize=8)
     ax.tick_params(axis="y", labelsize=10)
-    ax.grid(axis="x", linestyle="solid", linewidth=1, color="#cccccc")
+    ax.grid(axis="x", linestyle="solid")
     for spine in ax.spines.values():
         spine.set_color("#000000")
         spine.set_linewidth(1)
@@ -374,7 +373,6 @@ def contaminants(
         ax.spines[spine].set_color("#000000")
         ax.spines[spine].set_linewidth(1)
     ax.grid(False, axis="x")
-    ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
     sns.despine(top=True, right=True)
 
     ax.set_ylim(0, max(min_upper_ybound, ax.get_ylim()[1]))
@@ -542,7 +540,6 @@ def replicate_ratios(
             ax.spines[spine].set_linewidth(0.5)
         ax.axvline(x=0, color="#999999", lw=1, zorder=2)
         ax.grid(False, axis="y")
-        ax.grid(axis="x", linestyle="dashed", linewidth=1, color="#cccccc")
     sns.despine(top=True, right=True, fig=fig)
 
     return fig, axes
@@ -678,7 +675,6 @@ def experiment_ratios(
             ax.spines[spine].set_linewidth(0.5)
         ax.axhline(y=0, color="#999999", lw=1, zorder=2)
         ax.grid(False, axis="x")
-        ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
     sns.despine(top=True, right=True, fig=fig)
     return fig, axes
 
@@ -828,7 +824,7 @@ def sample_pca(
     ax.tick_params(axis="both", labelsize=8)
     ax.set_xlabel(f"{pc_x} ({variance_lookup[pc_x]:.1f}%)", size=10)
     ax.set_ylabel(f"{pc_y} ({variance_lookup[pc_y]:.1f}%)", size=10)
-    ax.grid(axis="both", linestyle="dotted", linewidth=1)
+    ax.grid(axis="both", linestyle="dotted")
 
     # Explained variance bar plot
     ax = axes[1]
@@ -838,7 +834,7 @@ def sample_pca(
     ax.set_xticklabels(component_labels, rotation="vertical", ha="center", size=10)
     ax.tick_params(axis="y", labelsize=8, left=False, bottom=False)
     ax.set_ylabel("Explained variance [%]", size=10)
-    ax.grid(axis="y", linestyle="dashed", linewidth=1)
+    ax.grid(False, axis="x")
     ax.set_xlim(lower_xbound, upper_xbound)
 
     handles, labels = axes[0].get_legend_handles_labels()
@@ -1002,7 +998,7 @@ def volcano_ma(
         else:
             ax.set_ylabel(f"{y_variable} [log2]")
         ax.tick_params(axis="both", labelsize=8)
-        ax.grid(axis="both", linestyle="dotted", linewidth=1, zorder=1)
+        ax.grid(axis="both", linestyle="dotted")
 
     return fig, axes
 
@@ -1152,7 +1148,7 @@ def expression_comparison(
     y_col = " ".join([y_variable, comparison_group])
     x_values = values[x_col]
     y_values = values[y_col]
-    ax.grid(axis="both", linestyle="dotted", linewidth=1)
+    ax.grid(axis="both", linestyle="dotted")
     ax.scatter(x_values, y_values, s=s, **params["default"])
     highlight_mask = values[qtable.id_column].isin(special_entries)
     _annotated_scatter(
@@ -1174,7 +1170,7 @@ def expression_comparison(
         highlight_mask = values[qtable.id_column].isin(special_entries)
         s = scattersize(values, total_scatter_area)
 
-        ax.grid(axis="y", linestyle="dotted", linewidth=1)
+        ax.grid(axis="y", linestyle="dotted")
         ax.set_ylabel(y_variable)
         ax.tick_params(axis="y", labelsize=8)
 
@@ -1307,7 +1303,6 @@ def box_and_bars(
             ax.spines[spine].set_color("#000000")
             ax.spines[spine].set_linewidth(1)
         ax.grid(False, axis="x")
-        ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc")
     sns.despine(top=True, right=True)
 
     ax.set_xlim(lower_xbound, upper_xbound)
@@ -1457,6 +1452,7 @@ def expression_clustermap(
     else:
         sample_order = samples
     sample_ticks = np.arange(len(sample_order)) + 0.5
+    grid.ax_heatmap.grid(False)
     grid.ax_heatmap.set_xticks(sample_ticks, labels=sample_order)
     grid.ax_heatmap.tick_params(axis="x", labelsize=10, rotation=90)
 
@@ -1604,7 +1600,6 @@ def pvalue_histogram(
 
         # Adjust grid
         ax.grid(False, axis="x")
-        ax.grid(axis="y", linestyle="dashed", linewidth=1, color="#cccccc", zorder=1)
 
     axes[0].set_ylabel(f"{pvalue_tag} count")
     ax.set_xlim(-0.05, 1.05)
@@ -1721,6 +1716,7 @@ def sample_correlation(
     ax_heatmap.set_xticks([i + 0.5 for i in range(0, len(samples) - 1)])
     ax_heatmap.set_xticklabels(samples[:-1])
 
+    ax_heatmap.grid(False)
     ax_heatmap.tick_params(axis="x", rotation=90, labelsize=10)
     ax_heatmap.tick_params(axis="y", rotation=0, labelsize=10)
     ax_heatmap.set_xlim(0, num_cells)
