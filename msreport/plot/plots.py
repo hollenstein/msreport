@@ -271,8 +271,7 @@ def missing_values_horizontal(
         handleheight=1,
     )
 
-    ax.tick_params(axis="x", labelsize=8)
-    ax.tick_params(axis="y", labelsize=10)
+    ax.tick_params(axis="y", labelsize=plt.rcParams["axes.labelsize"])
     ax.grid(axis="x", linestyle="solid")
     sns.despine(fig=fig, top=True, right=True, bottom=True)
 
@@ -348,7 +347,7 @@ def contaminants(
 
     fig, ax = plt.subplots(figsize=fig_size)
     fig.subplots_adjust(top=subplot_top)
-    fig.suptitle("Relative amount of contaminants", fontsize=12)
+    fig.suptitle("Relative amount of contaminants")
 
     ax.bar(
         x_values,
@@ -359,8 +358,7 @@ def contaminants(
         zorder=3,
     )
     ax.set_xticks(x_values)
-    ax.set_xticklabels(samples, rotation=90)
-    ax.tick_params(axis="x", bottom=False)
+    ax.set_xticklabels(samples, fontsize=plt.rcParams["axes.labelsize"], rotation=90)
     ax.set_ylabel(f"Sum contaminant\n{tag} [%]")
 
     ax.grid(False, axis="x")
@@ -419,7 +417,7 @@ def sample_intensities(
     color_wheel = ColorWheelDict()
     colors = [color_wheel[exp] for exp in qtable.get_experiments(samples)]
     fig, axes = box_and_bars(box_values, bar_values, samples, colors=colors)
-    fig.suptitle(f'Comparison of "{tag}" values', fontsize=12)
+    fig.suptitle(f'Comparison of "{tag}" values')
     axes[0].set_ylabel("Ratio [log2]\nto pseudo reference")
     axes[1].set_ylabel("Total intensity")
     return fig, axes
@@ -463,11 +461,11 @@ def replicate_ratios(
             experiments.append(experiment)
     if not experiments:
         fig, ax = plt.subplots(1, 1, figsize=(2, 1.3))
-        fig.suptitle("Pair wise comparison of replicates", fontsize=12, y=1.1)
+        fig.suptitle("Pair wise comparison of replicates", y=1.1)
         ax.text(0.5, 0.5, "No replicate\ndata available", ha="center", va="center")
         ax.grid(False)
         ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
-        sns.despine(top=True, right=True, fig=fig)
+        sns.despine(top=False, right=False, fig=fig)
         return fig, np.array([ax])
 
     num_experiments = len(experiments)
@@ -499,7 +497,7 @@ def replicate_ratios(
     elif max_combinations == 1:
         axes = np.array([axes]).T
     fig.subplots_adjust(top=subplot_top, hspace=subplot_hspace, bottom=0)
-    fig.suptitle("Pair wise comparison of replicates", fontsize=12)
+    fig.suptitle("Pair wise comparison of replicates")
 
     for x_pos, experiment in enumerate(experiments):
         sample_combinations = itertools.combinations(qtable.get_samples(experiment), 2)
@@ -514,10 +512,10 @@ def replicate_ratios(
             color = color_wheel[experiment]
 
             sns.kdeplot(x=ratios, fill=True, ax=ax, zorder=3, color=color, alpha=0.5)
-            ax.set_title(title, fontsize=10)
-            ax.set_ylabel(ylabel, rotation=0, fontsize=10, va="center", ha="right")
-            ax.set_xlabel("Ratio [log2]", fontsize=10)
-            ax.tick_params(axis="both", labelsize=8, labelleft=False, left=False)
+            ax.set_title(title, fontsize=plt.rcParams["axes.labelsize"])
+            ax.set_ylabel(ylabel, rotation=0, va="center", ha="right")
+            ax.set_xlabel("Ratio [log2]")
+            ax.tick_params(labelleft=False)
             ax.locator_params(axis="x", nbins=5)
 
     axes[0, 0].set_xlim(xlim)
@@ -587,7 +585,7 @@ def experiment_ratios(
 
     if len(experiments) < 2:
         fig, ax = plt.subplots(1, 1, figsize=(2.5, 1.3))
-        fig.suptitle("Comparison of experiments means", fontsize=12, y=1.1)
+        fig.suptitle("Comparison of experiments means", y=1.1)
         ax.text(
             0.5,
             0.5,
@@ -636,7 +634,7 @@ def experiment_ratios(
 
     fig, axes = plt.subplots(1, num_experiments, figsize=fig_size, sharey=True)
     fig.subplots_adjust(top=subplot_top, wspace=subplot_wspace)
-    fig.suptitle("Comparison of experiments means", fontsize=12)
+    fig.suptitle("Comparison of experiments means")
 
     for exp_pos, experiment in enumerate(experiments):
         ax = axes[exp_pos]
@@ -652,7 +650,7 @@ def experiment_ratios(
                 ha="left",
                 fontsize=8,
             )
-        ax.tick_params(axis="both", labelsize=8, labelbottom=False, bottom=False)
+        ax.tick_params(labelbottom=False)
         ax.set_xlabel(experiment, rotation=90)
 
     axes[0].set_ylabel("Ratio [log2]\nto pseudo reference")
@@ -701,7 +699,7 @@ def sample_pca(
     design = qtable.get_design()
     if design.shape[0] < 3:
         fig, ax = plt.subplots(1, 1, figsize=(2, 1.3))
-        fig.suptitle(f'PCA of "{tag}" values', fontsize=12, y=1.1)
+        fig.suptitle(f'PCA of "{tag}" values', y=1.1)
         ax.text(
             0.5,
             0.5,
@@ -779,7 +777,7 @@ def sample_pca(
             "wspace": subplot_wspace,
         },
     )
-    fig.suptitle(f'PCA of "{tag}" values', fontsize=12)
+    fig.suptitle(f'PCA of "{tag}" values')
 
     # Comparison of two principle components
     ax = axes[0]
@@ -798,7 +796,7 @@ def sample_pca(
             s=50,
             label=experiment,
         )
-        texts.append(ax.text(data[pc_x], data[pc_y], label, fontdict={"fontsize": 9}))
+        texts.append(ax.text(data[pc_x], data[pc_y], label, fontsize=9))
     adjustText.adjust_text(
         texts,
         force_text=0.15,
@@ -806,9 +804,8 @@ def sample_pca(
         lim=20,
         ax=ax,
     )
-    ax.tick_params(axis="both", labelsize=8)
-    ax.set_xlabel(f"{pc_x} ({variance_lookup[pc_x]:.1f}%)", size=10)
-    ax.set_ylabel(f"{pc_y} ({variance_lookup[pc_y]:.1f}%)", size=10)
+    ax.set_xlabel(f"{pc_x} ({variance_lookup[pc_x]:.1f}%)")
+    ax.set_ylabel(f"{pc_y} ({variance_lookup[pc_y]:.1f}%)")
     ax.grid(axis="both", linestyle="dotted")
 
     # Explained variance bar plot
@@ -816,9 +813,13 @@ def sample_pca(
     xpos = range(len(variance))
     ax.bar(xpos, variance, width=bar_width, color="#D0D0D0", edgecolor="#000000")
     ax.set_xticks(xpos)
-    ax.set_xticklabels(component_labels, rotation="vertical", ha="center", size=10)
-    ax.tick_params(axis="y", labelsize=8, left=False, bottom=False)
-    ax.set_ylabel("Explained variance [%]", size=10)
+    ax.set_xticklabels(
+        component_labels,
+        rotation="vertical",
+        ha="center",
+        size=plt.rcParams["axes.labelsize"],
+    )
+    ax.set_ylabel("Explained variance [%]")
     ax.grid(False, axis="x")
     ax.set_xlim(lower_xbound, upper_xbound)
 
@@ -836,9 +837,7 @@ def sample_pca(
         handles=experiment_handles.values(),
         loc="upper left",
         bbox_to_anchor=(legend_bbox_x, legend_bbox_y),
-        fontsize=10,
         title="Experiment",
-        title_fontsize=10,
         alignment="left",
         frameon=False,
         borderaxespad=0,
@@ -982,7 +981,6 @@ def volcano_ma(
             ax.set_ylabel(f"{y_variable} [-log10]")
         else:
             ax.set_ylabel(f"{y_variable} [log2]")
-        ax.tick_params(axis="both", labelsize=8)
         ax.grid(axis="both", linestyle="dotted")
 
     return fig, axes
@@ -1144,9 +1142,8 @@ def expression_comparison(
         scatter_kws=params["highlight"],
     )
 
-    ax.set_xlabel(x_variable, fontsize=10)
+    ax.set_xlabel(x_variable)
     ax.set_ylabel(y_variable)
-    ax.tick_params(axis="x", labelsize=8)
 
     # Plot values quantified only in one experiment
     for ax, mask, exp in [(axes[2], only_exp_1, exp_1), (axes[0], only_exp_2, exp_2)]:
@@ -1157,7 +1154,6 @@ def expression_comparison(
 
         ax.grid(axis="y", linestyle="dotted")
         ax.set_ylabel(y_variable)
-        ax.tick_params(axis="y", labelsize=8)
 
         if len(values) == 0:
             continue
@@ -1187,9 +1183,6 @@ def expression_comparison(
     # Important to reverse the order here which experiment is on the left and right
     axes[0].set_xlabel(f"Absent in\n{exp_1}")
     axes[2].set_xlabel(f"Absent in\n{exp_2}")
-
-    for ax in axes:
-        ax.tick_params(color="none")
 
     return fig, axes
 
@@ -1260,7 +1253,7 @@ def box_and_bars(
 
     fig, axes = plt.subplots(2, figsize=fig_size, sharex=True)
     fig.subplots_adjust(top=subplot_top, hspace=subplot_hspace)
-    fig.suptitle("A box and bars plot", fontsize=12)
+    fig.suptitle("A box and bars plot")
 
     # Plot boxplots using the box_values
     ax = axes[0]
@@ -1282,7 +1275,9 @@ def box_and_bars(
     # Plot barplots using the bar_values
     ax = axes[1]
     ax.bar(x_values, bar_values, width=bar_width, color=colors, edgecolor="#000000")
-    ax.set_xticklabels(group_names, rotation=90)
+    ax.set_xticklabels(
+        group_names, fontsize=plt.rcParams["axes.labelsize"], rotation=90
+    )
     for ax in axes:
         ax.grid(False, axis="x")
     sns.despine(top=True, right=True)
@@ -1412,9 +1407,7 @@ def expression_clustermap(
         **heatmap_args,
     )
     # Reloacte clustermap axes to create a consistent layout
-    grid.figure.suptitle(
-        f'Hierarchically-clustered heatmap of "{tag}" values', fontsize=12
-    )
+    grid.figure.suptitle(f'Hierarchically-clustered heatmap of "{tag}" values')
     grid.figure.delaxes(grid.ax_row_colors)
     grid.figure.delaxes(grid.ax_row_dendrogram)
     grid.ax_heatmap.set_position(
@@ -1436,7 +1429,9 @@ def expression_clustermap(
     sample_ticks = np.arange(len(sample_order)) + 0.5
     grid.ax_heatmap.grid(False)
     grid.ax_heatmap.set_xticks(sample_ticks, labels=sample_order)
-    grid.ax_heatmap.tick_params(axis="x", labelsize=10, rotation=90)
+    grid.ax_heatmap.tick_params(
+        axis="x", labelsize=plt.rcParams["axes.labelsize"], rotation=90
+    )
 
     grid.ax_heatmap.set_facecolor("#F9F9F9")
 
@@ -1535,15 +1530,20 @@ def pvalue_histogram(
     fig.subplots_adjust(
         top=subplot_top, wspace=subplot_wspace, bottom=0, left=0, right=1
     )
-    fig.suptitle("P-value histogram of pair-wise experiment comparisons", fontsize=12)
+    fig.suptitle("P-value histogram of pair-wise experiment comparisons")
 
     bins = np.arange(0, 1.01, 0.05)
     for ax_pos, experiment_pair in enumerate(experiment_pairs):  # type: ignore
-        ax = axes[ax_pos]
         comparison_group = comparison_tag.join(experiment_pair)
         comparison_column = f"{pvalue_tag} {comparison_group}"
         comparison_label = f"{comparison_tag}\n".join(experiment_pair)
         p_values = data[comparison_column]
+
+        ax = axes[ax_pos]
+        ax2 = ax.twinx()
+        ax2.set_yticks([])
+        ax2.set_ylabel(comparison_label)
+
         ax.hist(
             p_values,
             bins=bins,
@@ -1561,23 +1561,15 @@ def pvalue_histogram(
             zorder=2.1,
         )
 
-        # Adjust x- and y-axis
         ax.set_xticks([0, 0.5, 1])
-        ax.tick_params(labelsize=8)
-        if ax_pos > 0:
-            ax.tick_params(axis="y", color="none", labelleft=False, left=False)
-
-        # Add x-label and second y-label
+        # Need to remove the ticks manually because creating the twin axis somehow
+        # overrides the rcParams settings.
+        ax.tick_params(
+            left=plt.rcParams["ytick.left"], right=plt.rcParams["ytick.right"]
+        )
         ax.set_xlabel(pvalue_tag)
-        ax2 = ax.twinx()
-        ax2.set_yticks([])
-        ax2.set_ylabel(comparison_label, fontsize=9)
-
-        # Adjust spines
-        sns.despine(top=True, right=True)
-
-        # Adjust grid
         ax.grid(False, axis="x")
+        sns.despine(top=True, right=True)
 
     axes[0].set_ylabel(f"{pvalue_tag} count")
     ax.set_xlim(-0.05, 1.05)
@@ -1652,9 +1644,7 @@ def sample_correlation(
             "wspace": subplot_wspace,
         },
     )
-    fig.suptitle(
-        'Pairwise correlation matrix of sample "Expression" values', fontsize=12
-    )
+    fig.suptitle('Pairwise correlation matrix of sample "Expression" values')
     ax_heatmap, ax_cbar = axes
     ax_cbar.set_position((cbar_x0, cbar_y0, cbar_width, cbar_height))
 
@@ -1686,21 +1676,19 @@ def sample_correlation(
                 f"{corr_value:.2f}",
                 ha="center",
                 va="center",
-                fontsize=8,
+                fontsize=8,  # Fontsize cannot be larger to fit in the cell
             )
     # Need to manually set ticks because sometimes not all are properly included
     ax_heatmap.set_yticks([i + 0.5 for i in range(1, len(samples))])
     ax_heatmap.set_yticklabels(samples[1:])
     ax_heatmap.set_xticks([i + 0.5 for i in range(0, len(samples) - 1)])
-    ax_heatmap.set_xticklabels(samples[:-1])
+    ax_heatmap.set_xticklabels(samples[:-1], rotation=90)
 
     ax_heatmap.grid(False)
-    ax_heatmap.tick_params(axis="x", rotation=90, labelsize=10)
-    ax_heatmap.tick_params(axis="y", rotation=0, labelsize=10)
+    ax_heatmap.tick_params(labelsize=plt.rcParams["axes.labelsize"])
     ax_heatmap.set_xlim(0, num_cells)
     ax_heatmap.set_ylim(1 + num_cells, 1)
 
-    ax_cbar.tick_params(axis="y", labelsize=10)
     for spine in ax_cbar.spines.values():
         spine.set_linewidth(0.75)
     return fig, axes
@@ -1730,7 +1718,7 @@ def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None) ->
 
     texts = []
     for x, y, text in zip(x_values, y_values, labels, strict=True):
-        texts.append(ax.text(x, y, text, fontdict={"fontsize": 9}))
+        texts.append(ax.text(x, y, text, fontsize=9))
 
     if texts:
         adjustText.adjust_text(texts, ax=ax, **text_params)  # type: ignore
