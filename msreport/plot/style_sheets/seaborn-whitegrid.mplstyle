@@ -1,0 +1,45 @@
+## LINES
+lines.solid_capstyle: round
+
+## PATCHES
+patch.edgecolor:       white
+patch.force_edgecolor: True
+
+## FONT
+font.family:     sans-serif
+font.sans-serif: Arial, DejaVu Sans, Liberation Sans, Bitstream Vera Sans, sans-serif
+
+## TEXT
+text.color: 0.15
+
+## FIGURE
+figure.facecolor: white
+
+## AXES
+axes.facecolor:     white
+axes.edgecolor:     0.15
+axes.labelcolor:    0.15
+axes.axisbelow:     True
+axes.grid:          True
+axes.spines.left:   True
+axes.spines.bottom: True
+axes.spines.right:  True
+axes.spines.top:    True
+
+## TICKS
+xtick.top:       False
+xtick.bottom:    False
+xtick.color:     0.15
+xtick.direction: out
+
+ytick.left:      False
+ytick.right:     False
+ytick.color:     0.15
+ytick.direction: out
+
+## GRID
+grid.color:     0.8
+grid.linestyle: -
+
+## IMAGE
+image.cmap: rocket

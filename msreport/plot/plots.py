@@ -18,6 +18,8 @@ import sklearn.preprocessing
 import msreport.helper
 from msreport.qtable import Qtable
 
+from .style import with_active_style
+
 
 def _modify_lightness_rgb(
     rgb_color: tuple[float, float, float], lightness_scale_factor: float
@@ -130,6 +132,7 @@ class ColorWheelDict(UserDict):
         return self.data[key]
 
 
+@with_active_style
 def missing_values_vertical(
     qtable: Qtable,
     exclude_invalid: bool = True,
@@ -197,6 +200,7 @@ def missing_values_vertical(
     return fig, axes
 
 
+@with_active_style
 def missing_values_horizontal(
     qtable: Qtable,
     exclude_invalid: bool = True,
@@ -284,6 +288,7 @@ def missing_values_horizontal(
     return fig, ax
 
 
+@with_active_style
 def contaminants(
     qtable: Qtable, tag: str = "iBAQ intensity"
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -380,6 +385,7 @@ def contaminants(
     return fig, ax
 
 
+@with_active_style
 def sample_intensities(
     qtable: Qtable, tag: str = "Intensity", exclude_invalid: bool = True
 ) -> tuple[plt.Figure, list[plt.Axes]]:
@@ -433,6 +439,7 @@ def sample_intensities(
     return fig, axes
 
 
+@with_active_style
 def replicate_ratios(
     qtable: Qtable,
     exclude_invalid: bool = True,
@@ -545,6 +552,7 @@ def replicate_ratios(
     return fig, axes
 
 
+@with_active_style
 def experiment_ratios(
     qtable: Qtable,
     experiments: Optional[str] = None,
@@ -680,6 +688,7 @@ def experiment_ratios(
     return fig, axes
 
 
+@with_active_style
 def sample_pca(
     qtable: Qtable,
     tag: str = "Expression",
@@ -864,6 +873,7 @@ def sample_pca(
     return fig, axes
 
 
+@with_active_style
 def volcano_ma(
     qtable: Qtable,
     experiment_pair: Iterable[str],
@@ -1003,6 +1013,7 @@ def volcano_ma(
     return fig, axes
 
 
+@with_active_style
 def expression_comparison(
     qtable: Qtable,
     experiment_pair: list[str],
@@ -1208,6 +1219,7 @@ def expression_comparison(
     return fig, axes
 
 
+@with_active_style
 def box_and_bars(
     box_values: Sequence[Iterable[float]],
     bar_values: Sequence[float],
@@ -1309,6 +1321,7 @@ def box_and_bars(
     return fig, axes
 
 
+@with_active_style
 def expression_clustermap(
     qtable: Qtable,
     exclude_invalid: bool = True,
@@ -1464,6 +1477,7 @@ def expression_clustermap(
     return grid
 
 
+@with_active_style
 def pvalue_histogram(
     qtable: Qtable,
     pvalue_tag: str = "P-value",
@@ -1605,6 +1619,7 @@ def pvalue_histogram(
     return fig, axes
 
 
+@with_active_style
 def sample_correlation(
     qtable, exclude_invalid: bool = True, labels: bool = False
 ) -> tuple[plt.Figure, list[plt.Axes]]:
@@ -1726,6 +1741,7 @@ def sample_correlation(
     return fig, axes
 
 
+@with_active_style
 def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None) -> None:
     ax = plt.gca() if ax is None else ax
     if scatter_kws is None:

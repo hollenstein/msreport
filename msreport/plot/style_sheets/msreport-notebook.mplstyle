@@ -1,0 +1,56 @@
+## LINES
+lines.solid_capstyle: round
+
+## PATCHES
+patch.edgecolor:       white
+patch.force_edgecolor: True
+
+## FONT
+font.family:     sans-serif
+font.sans-serif: Arial, DejaVu Sans, Liberation Sans, Bitstream Vera Sans, sans-serif
+
+## TEXT
+text.color: black
+
+## FIGURE
+figure.facecolor: white
+figure.titlesize: 12
+
+## AXES
+axes.facecolor:     white
+axes.edgecolor:     black  # Color of the axes border / spines
+axes.linewidth:     1      # Width of the axes border / spines
+axes.labelcolor:    black
+axes.labelsize:     10
+axes.axisbelow:     True
+axes.grid:          True
+axes.titlesize:     10
+axes.spines.left:   True
+axes.spines.bottom: True
+axes.spines.right:  True
+axes.spines.top:    True
+
+## TICKS
+xtick.top:         False
+xtick.bottom:      False
+xtick.color:       black
+xtick.direction:   out
+xtick.major.width: 1
+xtick.labelsize:   8
+
+ytick.left:        False
+ytick.right:       False
+ytick.color:       black
+ytick.direction:   out
+ytick.major.width: 1
+ytick.labelsize:   8
+
+## GRIDS
+grid.alpha:     1.0
+grid.color:     0.8
+grid.linestyle: dashed
+grid.linewidth: 1
+
+## LEGEND
+legend.fontsize:       10
+legend.title_fontsize: None  # Set to None to use the same as axes.titlesize

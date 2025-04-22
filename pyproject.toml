@@ -51,12 +51,15 @@ packages = [
   "msreport",
   "msreport.aggregate",
   "msreport.helper",
+  "msreport.plot",
+  "msreport.plot.style_sheets",
   "msreport.rinterface",
   "msreport.rinterface.rscripts",
 ]
 
 [tool.setuptools.package-data]
 "msreport.rinterface.rscripts" = ["*.r", "*.R"]
+"msreport.plot.style_sheets" = ["*.mplstyle"]
 
 [tool.setuptools.dynamic]
 version = { attr = "msreport.__version__" }
