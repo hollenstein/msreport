@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import os
 import warnings
+from contextlib import contextmanager
 from typing import Any, Iterable, Optional
 
 import numpy as np
@@ -351,6 +352,50 @@ class Qtable:
         self._expression_features.extend(
             expression_features.columns.difference(self._expression_features)
         )
+
+    @contextmanager
+    def temp_design(
+        self,
+        design: Optional[pd.DataFrame] = None,
+        exclude_experiments: Optional[Iterable[str]] = None,
+        keep_experiments: Optional[Iterable[str]] = None,
+        exclude_samples: Optional[Iterable[str]] = None,
+        keep_samples: Optional[Iterable[str]] = None,
+    ):
+        """Context manager to temporarily modify the design table.
+
+        Args:
+            design: A DataFrame to temporarily replace the current design table.
+            exclude_experiments: A list of experiments to exclude from the design.
+            keep_experiments: A list of experiments to keep in the design (all others are removed).
+            exclude_samples: A list of samples to exclude from the design.
+            keep_samples: A list of samples to keep in the design (all others are removed).
+
+        Yields:
+            None. Restores the original design table after the context ends.
+        """
+        original_design = self.design
+
+        _design: pd.DataFrame
+        if design is None:
+            _design = self.get_design()
+        else:
+            _design = design
+
+        if exclude_experiments is not None:
+            _design = _design[~_design["Experiment"].isin(exclude_experiments)]
+        if keep_experiments is not None:
+            _design = _design[_design["Experiment"].isin(keep_experiments)]
+        if exclude_samples is not None:
+            _design = _design[~_design["Sample"].isin(exclude_samples)]
+        if keep_samples is not None:
+            _design = _design[_design["Sample"].isin(keep_samples)]
+
+        try:
+            self.add_design(_design)
+            yield
+        finally:
+            self.add_design(original_design)
 
     def save(self, directory: str, basename: str):
         """Save qtable to disk, creating a data, design, and config file.

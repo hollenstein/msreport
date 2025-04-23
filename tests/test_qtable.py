@@ -123,6 +123,40 @@ class TestQtableCopy:
         assert copied_qtable is not example_qtable
 
 
+class TestQtableTempDesign:
+    def test_design_is_changed_in_scope(self, example_qtable):
+        with example_qtable.temp_design(pd.DataFrame(columns=["Sample", "Experiment", "Replicate"])):  # fmt: skip
+            assert example_qtable.design.equals(pd.DataFrame(columns=["Sample", "Experiment", "Replicate"]))  # fmt:skip
+
+    def test_design_is_restored_after_scope(self, example_qtable):
+        original_design = example_qtable.design.copy()
+        with example_qtable.temp_design(pd.DataFrame(columns=["Sample", "Experiment", "Replicate"])):  # fmt: skip
+            ...
+        assert example_qtable.design.equals(original_design)
+        assert "Experiment_A" in example_qtable.design["Experiment"].tolist()
+        assert "Experiment_B" in example_qtable.design["Experiment"].tolist()
+
+    def test_exclude_experiments_removes_experiment(self, example_qtable):
+        with example_qtable.temp_design(exclude_experiments=["Experiment_A"]):
+            assert "Experiment_A" not in example_qtable.design["Experiment"].tolist()
+            assert "Experiment_B" in example_qtable.design["Experiment"].tolist()
+
+    def test_keep_experiments_keeps_only_selected_experiments(self, example_qtable):
+        with example_qtable.temp_design(keep_experiments=["Experiment_A"]):
+            assert "Experiment_A" in example_qtable.design["Experiment"].tolist()
+            assert "Experiment_B" not in example_qtable.design["Experiment"].tolist()
+
+    def test_exclude_samples_removes_experiment(self, example_qtable):
+        with example_qtable.temp_design(exclude_samples=["Sample_A1"]):
+            assert "Sample_A1" not in example_qtable.design["Sample"].tolist()
+            assert "Sample_A2" in example_qtable.design["Sample"].tolist()
+
+    def test_keep_samples_keeps_only_selected_experiments(self, example_qtable):
+        with example_qtable.temp_design(keep_samples=["Sample_A1"]):
+            assert "Sample_A1" in example_qtable.design["Sample"].tolist()
+            assert "Sample_A2" not in example_qtable.design["Sample"].tolist()
+
+
 class TestExcludeInvalid:
     def test_default(self):
         df = pd.DataFrame({"Value": ["valid", "excluded"], "Valid": [True, False]})
