@@ -10,23 +10,17 @@ The style of the plots can be customized using the `set_active_style` function, 
 allows applying style sheets from the msreport library or those available in matplotlib.
 """
 
-from .plots import (
-    ColorWheelDict,
+from .comparison import expression_comparison, pvalue_histogram, volcano_ma
+from .distribution import experiment_ratios, replicate_ratios
+from .multivariate import expression_clustermap, sample_pca
+from .quality import (
     contaminants,
-    experiment_ratios,
-    expression_clustermap,
-    expression_comparison,
     missing_values_horizontal,
     missing_values_vertical,
-    pvalue_histogram,
-    replicate_ratios,
     sample_correlation,
     sample_intensities,
-    sample_pca,
-    set_dpi,
-    volcano_ma,
 )
-from .style import set_active_style
+from .style import ColorWheelDict, set_active_style, set_dpi
 
 __all__ = [
     "ColorWheelDict",

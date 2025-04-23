@@ -16,52 +16,98 @@ Available msreport style sheets:
 - "seaborn-whitegrid
 """
 
+import colorsys
 import functools
 import pathlib
+import re
+from collections import UserDict
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, Optional
 
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import matplotlib.style
 
-__all__ = ["set_active_style"]
+__all__ = ["ColorWheelDict", "set_active_style", "set_dpi"]
 
 
-_STYLE_DIR: str = (pathlib.Path(__file__).parent / "style_sheets").resolve().as_posix()
-_DEFAULT_STYLE: str = "msreport-notebook"
-_active_style_name: str | None = _DEFAULT_STYLE
-_active_style_rc_override: dict[str, Any] | None = None
+class ColorWheelDict(UserDict):
+    """Lookup dictionary that maps keys to hex colors by using a color wheel.
 
-
-def _get_library_styles() -> dict[str, str]:
-    """Scan the style directory and returns a dict of available library styles.
-
-    Returns:
-        A dictionary mapping style names (without extension) to their full paths.
-        Returns an empty dictionary if the style directory doesn't exist or is empty.
+    When a key is not present the first color of the color wheel is added as the value,
+    and the color is moved from the beginning to the end of the color wheel. If no list
+    of colors is specified, a default list of ten colors is added to the color wheel.
+    It is also possible to manually set key and color pairs by using the same syntax as
+    for a regular dictionary.
     """
-    styles = {}
-    try:
-        for filepath in pathlib.Path(_STYLE_DIR).iterdir():
-            if filepath.suffix == ".mplstyle":
-                styles[filepath.stem] = filepath.resolve().as_posix()
-    except OSError as err:
-        raise OSError(
-            f"Could not read 'msreport.plot' style directory {_STYLE_DIR}: {err}. "
-            "Please check if the directory exists and is accessible."
-        ) from err
 
-    return styles
+    def __init__(self, colors: Optional[list[str]] = None):
+        """Initializes a ColorWheelDict.
+
+        Args:
+            colors: Optional, a list of hex colors used for the color wheel. By default
+                a list with ten colors is used.
+        """
+        self.data = {}
+
+        if colors is not None:
+            self.colors = colors
+        else:
+            self.colors = [
+                "#80b1d3",
+                "#fdb462",
+                "#8dd3c7",
+                "#bebada",
+                "#fb8072",
+                "#b3de69",
+                "#fccde5",
+                "#d9d9d9",
+                "#bc80bd",
+                "#ccebc5",
+            ]
+        self._color_wheel = self.colors.copy()
+
+    def modified_color(self, key: str, factor: float) -> str:
+        """Returns a color for the specified key with modified lightness.
+
+        Args:
+            key: The key for which to get the color.
+            factor: The factor by which to modify the lightness. Values > 1 lighten,
+                < 1 darken.
+
+        Returns:
+            A hex color string with modified lightness.
+        """
+        return _modify_lightness_hex(self[key], factor)
+
+    def _next_color(self) -> str:
+        color = self._color_wheel.pop(0)
+        self._color_wheel.append(color)
+        return color
+
+    def __setitem__(self, key, value):
+        is_hexcolor = re.search(r"^#(?:[0-9a-fA-F]{3}){1,2}$", value)
+        if is_hexcolor:
+            self.data[key] = value
+        else:
+            raise ValueError(f"the specified value {value} is not a hexcolor.")
+
+    def __getitem__(self, key):
+        if key not in self.data:
+            self.data[key] = self._next_color()
+        return self.data[key]
 
 
-def _get_available_styles() -> list[str]:
-    """Get a list of all available style names from library and matplotlib."""
-    lib_styles = _get_library_styles().keys()
-    mpl_styles = matplotlib.style.available
-    return list(set(lib_styles) | set(mpl_styles))
+def set_dpi(dpi: int) -> None:
+    """Changes the default dots per inch settings for matplotlib plots.
 
+    This effectively makes figures smaller or larger, without affecting the relative
+    sizes of elements within the figures.
 
-_AVAILABLE_STYLES: list[str] = _get_available_styles()
-_LIBRARY_STYLE_PATHS: dict[str, str] = _get_library_styles()
+    Args:
+        dpi: New default dots per inch.
+    """
+    plt.rcParams["figure.dpi"] = dpi
 
 
 @contextmanager
@@ -170,3 +216,71 @@ def _get_active_style_context_arg() -> list[str | dict[str, Any]]:
     if active_override is not None:
         context_args.append(active_override)
     return context_args
+
+
+def _modify_lightness_rgb(
+    rgb_color: tuple[float, float, float], lightness_scale_factor: float
+) -> tuple[float, float, float]:
+    """Modifies the lightness of a color while preserving hue and saturation.
+
+    Parameters:
+        rgb_color: A tuple of RGB values in the range [0, 1]
+        lightness_scale_factor: Factor to scale the lightness by (values > 1 lighten, < 1 darken)
+
+    Returns:
+        A tuple of RGB values with adjusted lightness
+    """
+    hue, lightness, saturation = colorsys.rgb_to_hls(*rgb_color)
+    new_lightness = min(1.0, lightness * lightness_scale_factor)
+    return colorsys.hls_to_rgb(hue, new_lightness, saturation)
+
+
+def _modify_lightness_hex(hex_color: str, lightness_scale_factor: float) -> str:
+    """Modifies the lightness of a hex color while preserving hue and saturation.
+
+    Parameters:
+        hex_color: A hex color string (e.g., "#80b1d3").
+        lightness_scale_factor: Factor to scale the lightness by (values > 1 lighten, < 1 darken).
+
+    Returns:
+        A hex color string with adjusted lightness.
+    """
+    rgb_color = mcolors.to_rgb(hex_color)
+    new_ligthness_rgb = _modify_lightness_rgb(rgb_color, lightness_scale_factor)
+    return mcolors.to_hex(new_ligthness_rgb)
+
+
+def _get_library_styles() -> dict[str, str]:
+    """Scan the style directory and returns a dict of available library styles.
+
+    Returns:
+        A dictionary mapping style names (without extension) to their full paths.
+        Returns an empty dictionary if the style directory doesn't exist or is empty.
+    """
+    styles = {}
+    try:
+        for filepath in pathlib.Path(_STYLE_DIR).iterdir():
+            if filepath.suffix == ".mplstyle":
+                styles[filepath.stem] = filepath.resolve().as_posix()
+    except OSError as err:
+        raise OSError(
+            f"Could not read 'msreport.plot' style directory {_STYLE_DIR}: {err}. "
+            "Please check if the directory exists and is accessible."
+        ) from err
+
+    return styles
+
+
+def _get_available_styles() -> list[str]:
+    """Get a list of all available style names from library and matplotlib."""
+    lib_styles = _get_library_styles().keys()
+    mpl_styles = matplotlib.style.available
+    return list(set(lib_styles) | set(mpl_styles))
+
+
+_STYLE_DIR: str = (pathlib.Path(__file__).parent / "style_sheets").resolve().as_posix()
+_AVAILABLE_STYLES: list[str] = _get_available_styles()
+_LIBRARY_STYLE_PATHS: dict[str, str] = _get_library_styles()
+_DEFAULT_STYLE: str = "msreport-notebook"
+_active_style_name: str | None = _DEFAULT_STYLE
+_active_style_rc_override: dict[str, Any] | None = None
