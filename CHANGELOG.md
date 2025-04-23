@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.0.28 - Improved visual consistency of plots and Qtable QOL features 
+
+### Added
+- Added a new plot function, `plot.sample_correlation`, to display a heatmap of pairwise sample correlations based on expression values.
+- Added matplotlib rcParams style sheets to the `plot` module to ensure consistent styling across all plots.
+  - The default active style sheet is "msreport-notebook", which is automatically applied to all plotting functions in the `plot` module using a context manager.
+  - The new submodule `plot.style` manages the active style sheet and provides functions to set an active style sheet and provide overrides for individual rcParams.
+- Added customization options to `plot.expression_clustermap`:
+  - `remove_imputation`: Allows retaining imputed values instead of setting them to 0.
+  - `mean_center`: Enables row-wise mean-centering of the data before creating the clustermap.
+  - `cluster_samples`: Provides the option to disable sample clustering and use the sample order from the qtable design.
+- Introduced `id_column` to the `Qtable` class to replace the hardcoded "Representative protein" column. This allows specifying a column in `qtable.data` that contains unique identifiers to enable compatibility with other data types, such as peptide tables.
+  - The default value for `id_column` is set to "Representative protein" for backward compatibility.
+  - Updated modules `analyze` and `plot` to access `qtable.id_column` instead of relying on the hardcoded "Representative protein" column.
+- Added the context manager method `Qtable.temp_design` to temporarily use an alternative design table. This allows using a different design table for plotting or analysis without directly modifying the `Qtable` instance.
+
+### Changed
+- Cosmetic improvements to all plots.
+  - Instead of globally applying seaborn styles in the plot functions, the "msreport-notebook" style sheet is now applied using a context manager, ensuring a consistent style and that the style is reset after plotting.
+  - Added descriptive suptitles for better context.
+  - Adjusted font sizes for consistency across plots.
+  - Adjusted spine visibility and thickness for consistency.
+  - Improved bar and scatter plot aesthetics by refining colors and outlines.
+- Instead of raising an error when not enough samples or experiments are present in the design, the functions `plot.replicate_ratios`, `plot.experiment_ratios`, and `plot.sample_pca` now display an empty plot with a warning message.
+
+### Fixed
+- Improved robustness of all plots for long experiment or samples names that could lead to overlapping labels or shrinked subplot sizes.
+- Ensure consistent plot layout and subplot sizes and spacing independent of the number of samples, experiments and subplots.
+- Corrected the number of principal components in the "explained variance" plot of `plot.sample_pca` to be one less than the number of samples.
+
+### Deprecated
+- `plot.missing_values_vertical` is now deprecated and will be removed in a future release.
+- The 'special_proteins' argument in `plot.volcano_ma` and `plot.expression_comparison` is now deprecated and will be removed in a future release. The argument is replaced by the 'special_entries' argument.
+
+### Dependencies
+- Added `pytest` as an optional development dependency.
+- Added `mypy` as an optional development dependency.
+- Excluded `rpy2` version 3.5.13 due to compatibility issues.
+
+### Internal
+- Applied code formatting, linting and import sorting with `ruff`.
+- Fixed (most) wrong or missing type hints using `mypy`.
+- Restructured `plot` module into submodules for better organization.
+
 ----------------------------------------------------------------------------------------
 
 ## 0.0.27 - PercentageScaler, minor features and fixes
