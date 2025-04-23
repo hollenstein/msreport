@@ -233,7 +233,7 @@ def missing_values_horizontal(
 
     bar_width = 0.35
 
-    suptitle_space_inch = 0.45
+    suptitle_space_inch = 0.4
     ax_height_inch = num_experiments * bar_width
     ax_width_inch = 4
     fig_height = ax_height_inch + suptitle_space_inch
@@ -244,7 +244,7 @@ def missing_values_horizontal(
 
     fig, ax = plt.subplots(figsize=fig_size)
     fig.subplots_adjust(bottom=0, top=subplot_top, left=0, right=1)
-    fig.suptitle("Completeness of quantification per experiment")
+    fig.suptitle("Completeness of quantification per experiment", y=1)
 
     sns.barplot(y="exp", x="max", data=data, label="All missing", color="#EB3952")
     sns.barplot(y="exp", x="some", data=data, label="Some missing", color="#FAB74E")
@@ -328,10 +328,10 @@ def contaminants(
     x_values = range(relative_intensity.shape[1])
     bar_values = relative_intensity[contaminants].sum(axis=0)
 
-    suptitle_space_inch = 0.45
-    ax_height_inch = 1.9
-    bar_width_inches = 0.3
-    x_padding = 0.3
+    suptitle_space_inch = 0.4
+    ax_height_inch = 1.6
+    bar_width_inches = 0.24
+    x_padding = 0.24
 
     fig_height = ax_height_inch + suptitle_space_inch
     fig_width = (num_samples + (2 * x_padding)) * bar_width_inches
@@ -346,15 +346,15 @@ def contaminants(
     min_upper_ybound = 5
 
     fig, ax = plt.subplots(figsize=fig_size)
-    fig.subplots_adjust(top=subplot_top)
-    fig.suptitle("Relative amount of contaminants")
+    fig.subplots_adjust(bottom=0, top=subplot_top, left=0, right=1)
+    fig.suptitle("Relative amount of contaminants", y=1)
 
     ax.bar(
         x_values,
         bar_values,
         width=bar_width,
         color=colors,
-        edgecolor=dark_colors,  # "#000000",
+        edgecolor=dark_colors,
         zorder=3,
     )
     ax.set_xticks(x_values)
@@ -416,8 +416,12 @@ def sample_intensities(
     box_values = [log2_ratios[c] for c in log2_ratios.columns]
     color_wheel = ColorWheelDict()
     colors = [color_wheel[exp] for exp in qtable.get_experiments(samples)]
-    fig, axes = box_and_bars(box_values, bar_values, samples, colors=colors)
-    fig.suptitle(f'Comparison of "{tag}" values')
+    edge_colors = [_modify_lightness_hex(color, 0.4) for color in colors]
+
+    fig, axes = box_and_bars(
+        box_values, bar_values, samples, colors=colors, edge_colors=edge_colors
+    )
+    fig.suptitle(f'Comparison of "{tag}" values', y=1)
     axes[0].set_ylabel("Ratio [log2]\nto pseudo reference")
     axes[1].set_ylabel("Total intensity")
     return fig, axes
@@ -472,9 +476,9 @@ def replicate_ratios(
     max_replicates = max([len(qtable.get_samples(exp)) for exp in experiments])
     max_combinations = len(list(itertools.combinations(range(max_replicates), 2)))
 
-    suptitle_space_inch = 0.6
+    suptitle_space_inch = 0.55
     ax_height_inch = 0.6
-    ax_width_inch = 2
+    ax_width_inch = 1.55
     ax_hspace_inch = 0.35
     fig_height = (
         num_experiments * ax_height_inch
@@ -496,8 +500,10 @@ def replicate_ratios(
         axes = np.array([axes])
     elif max_combinations == 1:
         axes = np.array([axes]).T
-    fig.subplots_adjust(top=subplot_top, hspace=subplot_hspace, bottom=0)
-    fig.suptitle("Pair wise comparison of replicates")
+    fig.subplots_adjust(
+        bottom=0, top=subplot_top, left=0, right=1, hspace=subplot_hspace
+    )
+    fig.suptitle("Pair wise comparison of replicates", y=1)
 
     for x_pos, experiment in enumerate(experiments):
         sample_combinations = itertools.combinations(qtable.get_samples(experiment), 2)
@@ -621,9 +627,9 @@ def experiment_ratios(
         _ = color_wheel[exp]
     num_experiments = len(experiments)
 
-    suptitle_space_inch = 0.45
-    ax_height_inch = 1.6
-    ax_width_inch = 0.8
+    suptitle_space_inch = 0.55
+    ax_height_inch = 1.25
+    ax_width_inch = 0.65
     ax_wspace_inch = 0.2
     fig_height = ax_height_inch + suptitle_space_inch
     fig_width = num_experiments * ax_width_inch + (num_experiments - 1) * ax_wspace_inch
@@ -633,8 +639,10 @@ def experiment_ratios(
     subplot_wspace = ax_wspace_inch / ax_width_inch
 
     fig, axes = plt.subplots(1, num_experiments, figsize=fig_size, sharey=True)
-    fig.subplots_adjust(top=subplot_top, wspace=subplot_wspace)
-    fig.suptitle("Comparison of experiments means")
+    fig.subplots_adjust(
+        bottom=0, top=subplot_top, left=0, right=1, wspace=subplot_wspace
+    )
+    fig.suptitle("Comparison of experiments means", y=1)
 
     for exp_pos, experiment in enumerate(experiments):
         ax = axes[exp_pos]
@@ -642,13 +650,10 @@ def experiment_ratios(
         color = color_wheel[experiment]
         sns.kdeplot(y=values, fill=True, ax=ax, zorder=3, color=color, alpha=0.5)
         if exp_pos == 0:
-            ax.text(
-                x=ax.get_xlim()[1] / 20,
-                y=ylim[1] * 0.95,
-                s=f"n={str(len(values))}",
-                va="top",
-                ha="left",
-                fontsize=8,
+            ax.set_title(
+                f"n={str(len(values))}",
+                fontsize=plt.rcParams["xtick.labelsize"],
+                loc="left",
             )
         ax.tick_params(labelbottom=False)
         ax.set_xlabel(experiment, rotation=90)
@@ -746,7 +751,7 @@ def sample_pca(
     bar_width_inches = 0.25
     x_padding = 0.25
 
-    suptitle_space_inch = 0.45
+    suptitle_space_inch = 0.4
     ax_height_inch = 2.7
     ax_width_inch = ax_height_inch
     ax_wspace_inch = 0.6
@@ -769,15 +774,15 @@ def sample_pca(
         2,
         figsize=fig_size,
         gridspec_kw={
-            "top": subplot_top,
             "bottom": 0,
+            "top": subplot_top,
             "left": 0,
             "right": 1,
-            "width_ratios": width_ratios,
             "wspace": subplot_wspace,
+            "width_ratios": width_ratios,
         },
     )
-    fig.suptitle(f'PCA of "{tag}" values')
+    fig.suptitle(f'PCA of "{tag}" values', y=1)
 
     # Comparison of two principle components
     ax = axes[0]
@@ -796,7 +801,7 @@ def sample_pca(
             s=50,
             label=experiment,
         )
-        texts.append(ax.text(data[pc_x], data[pc_y], label, fontsize=9))
+        texts.append(ax.text(data[pc_x], data[pc_y], label))
     adjustText.adjust_text(
         texts,
         force_text=0.15,
@@ -935,7 +940,7 @@ def volcano_ma(
     ):
         data[column] = np.log10(data[column]) * -1
 
-    suptitle_space_inch = 0.45
+    suptitle_space_inch = 0.4
     ax_height_inch = 3.2
     ax_width_inch = 3.2
     ax_wspace_inch = 1
@@ -949,9 +954,9 @@ def volcano_ma(
 
     fig, axes = plt.subplots(1, 2, figsize=fig_size, sharex=True)
     fig.subplots_adjust(
-        top=subplot_top, wspace=subplot_wspace, bottom=0, left=0, right=1
+        bottom=0, top=subplot_top, left=0, right=1, wspace=subplot_wspace
     )
-    fig.suptitle(f"Volcano and MA plot of: {comparison_group}")
+    fig.suptitle(f"Volcano and MA plot of: {comparison_group}", y=1)
 
     for ax, x_variable, y_variable in [
         (axes[0], ratio_tag, pvalue_tag),
@@ -1089,7 +1094,7 @@ def expression_comparison(
             size = 1
         return size
 
-    suptitle_space_inch = 0.45
+    suptitle_space_inch = 0.4
     ax_height_inch = 3.2
     main_ax_width_inch = 3.2
     side_ax_width_inch = 0.65
@@ -1117,7 +1122,7 @@ def expression_comparison(
             "width_ratios": width_ratios,
         },
     )
-    fig.suptitle(f'Comparison of "Expression": {comparison_group}')
+    fig.suptitle(f'Comparison of "Expression": {comparison_group}', y=1)
 
     # Plot values quantified in both experiments
     ax = axes[1]
@@ -1193,6 +1198,7 @@ def box_and_bars(
     bar_values: Sequence[float],
     group_names: Sequence[str],
     colors: Optional[Sequence[str]] = None,
+    edge_colors: Optional[Sequence[str]] = None,
 ) -> tuple[plt.Figure, list[plt.Axes]]:
     """Generates a figure with horizontally aligned box and bar subplots.
 
@@ -1211,6 +1217,9 @@ def box_and_bars(
         colors: Sequence of hex color codes for each group that is used for the boxes of
             the box and bar plots. Must be the same length as group names. If 'colors'
             is None, boxes are colored in light grey.
+        edge_colors: Sequence of hex color codes for each group that is used for the
+            edges of the boxes and bars. Must be the same length as group names. If
+            None, black is used as edge color.
 
     Raises:
         ValueError: If the length of box_values, bar_values and group_names is not the
@@ -1221,25 +1230,34 @@ def box_and_bars(
     """
     if not (len(box_values) == len(bar_values) == len(group_names)):
         raise ValueError(
-            "The length of box_values, bar_values and group_names must be the same."
+            "The length of 'box_values', 'bar_values' and 'group_names' must be the "
+            "same."
         )
     if colors is not None and len(colors) != len(group_names):
         raise ValueError(
-            "The length of colors must be the same as the length of group_names."
+            "The length of 'colors' must be the same as the length of 'group_names'."
         )
+    if edge_colors is not None and len(edge_colors) != len(group_names):
+        raise ValueError(
+            "The length of 'edge_colors' must be the same as the length of "
+            "'group_names'."
+        )
+
     if colors is None:
         colors = ["#D0D0D0" for _ in group_names]
+    if edge_colors is None:
+        edge_colors = ["#000000" for _ in group_names]
 
     num_samples = len(group_names)
     x_values = range(num_samples)
     bar_width = 0.8
 
-    suptitle_space_inch = 0.45
-    ax_height_inch = 1.9
+    suptitle_space_inch = 0.4
+    ax_height_inch = 1.6
     ax_hspace_inch = 0.35
-    x_padding = 0.3
+    bar_width_inches = 0.24
+    x_padding = 0.24
     fig_height = suptitle_space_inch + ax_height_inch * 2 + ax_hspace_inch
-    bar_width_inches = 0.3
 
     fig_width = (num_samples + (2 * x_padding)) * bar_width_inches
     fig_size = (fig_width, fig_height)
@@ -1252,8 +1270,10 @@ def box_and_bars(
     upper_xbound = (num_samples - 1) + bar_half_width + x_padding
 
     fig, axes = plt.subplots(2, figsize=fig_size, sharex=True)
-    fig.subplots_adjust(top=subplot_top, hspace=subplot_hspace)
-    fig.suptitle("A box and bars plot")
+    fig.subplots_adjust(
+        bottom=0, top=subplot_top, left=0, right=1, hspace=subplot_hspace
+    )
+    fig.suptitle("A box and bars plot", y=1)
 
     # Plot boxplots using the box_values
     ax = axes[0]
@@ -1267,14 +1287,17 @@ def box_and_bars(
         widths=bar_width,
         medianprops={"color": "#000000"},
     )
-    for color, box in zip(colors, boxplots["boxes"], strict=True):
+    for color, edge_color, box in zip(
+        colors, edge_colors, boxplots["boxes"], strict=True
+    ):
         box.set(facecolor=color)
+        box.set(edgecolor=edge_color)
     ylim = ax.get_ylim()
     ax.set_ylim(min(-0.4, ylim[0]), max(0.401, ylim[1]))
 
     # Plot barplots using the bar_values
     ax = axes[1]
-    ax.bar(x_values, bar_values, width=bar_width, color=colors, edgecolor="#000000")
+    ax.bar(x_values, bar_values, width=bar_width, color=colors, edgecolor=edge_colors)
     ax.set_xticklabels(
         group_names, fontsize=plt.rcParams["axes.labelsize"], rotation=90
     )
@@ -1354,7 +1377,7 @@ def expression_clustermap(
         _ = color_wheel[exp]
     sample_colors = [color_wheel[qtable.get_experiment(sample)] for sample in samples]
 
-    suptitle_space_inch = 0.45
+    suptitle_space_inch = 0.4
     sample_width_inch = 0.27
     cbar_height_inch = 3
     cbar_width_inch = sample_width_inch
@@ -1407,7 +1430,7 @@ def expression_clustermap(
         **heatmap_args,
     )
     # Reloacte clustermap axes to create a consistent layout
-    grid.figure.suptitle(f'Hierarchically-clustered heatmap of "{tag}" values')
+    grid.figure.suptitle(f'Hierarchically-clustered heatmap of "{tag}" values', y=1)
     grid.figure.delaxes(grid.ax_row_colors)
     grid.figure.delaxes(grid.ax_row_dendrogram)
     grid.ax_heatmap.set_position(
@@ -1435,7 +1458,7 @@ def expression_clustermap(
 
     grid.ax_heatmap.set_facecolor("#F9F9F9")
 
-    for ax in [grid.ax_heatmap, grid.ax_cbar]:
+    for ax in [grid.ax_heatmap, grid.ax_cbar, grid.ax_col_colors]:
         sns.despine(top=False, right=False, left=False, bottom=False, ax=ax)
         for spine in ["top", "right", "left", "bottom"]:
             ax.spines[spine].set_linewidth(0.75)
@@ -1528,9 +1551,9 @@ def pvalue_histogram(
     else:
         axes = np.array(axes)
     fig.subplots_adjust(
-        top=subplot_top, wspace=subplot_wspace, bottom=0, left=0, right=1
+        bottom=0, top=subplot_top, left=0, right=1, wspace=subplot_wspace
     )
-    fig.suptitle("P-value histogram of pair-wise experiment comparisons")
+    fig.suptitle("P-value histogram of pair-wise experiment comparisons", y=1)
 
     bins = np.arange(0, 1.01, 0.05)
     for ax_pos, experiment_pair in enumerate(experiment_pairs):  # type: ignore
@@ -1636,15 +1659,15 @@ def sample_correlation(
         2,
         figsize=fig_size,
         gridspec_kw={
-            "top": subplot_top,
             "bottom": 0,
+            "top": subplot_top,
             "left": 0,
             "right": 1,
-            "width_ratios": width_ratios,
             "wspace": subplot_wspace,
+            "width_ratios": width_ratios,
         },
     )
-    fig.suptitle('Pairwise correlation matrix of sample "Expression" values')
+    fig.suptitle('Pairwise correlation matrix of sample "Expression" values', y=1)
     ax_heatmap, ax_cbar = axes
     ax_cbar.set_position((cbar_x0, cbar_y0, cbar_width, cbar_height))
 
@@ -1680,7 +1703,7 @@ def sample_correlation(
             )
     # Need to manually set ticks because sometimes not all are properly included
     ax_heatmap.set_yticks([i + 0.5 for i in range(1, len(samples))])
-    ax_heatmap.set_yticklabels(samples[1:])
+    ax_heatmap.set_yticklabels(samples[1:], rotation=0)
     ax_heatmap.set_xticks([i + 0.5 for i in range(0, len(samples) - 1)])
     ax_heatmap.set_xticklabels(samples[:-1], rotation=90)
 
@@ -1689,22 +1712,27 @@ def sample_correlation(
     ax_heatmap.set_xlim(0, num_cells)
     ax_heatmap.set_ylim(1 + num_cells, 1)
 
-    for spine in ax_cbar.spines.values():
-        spine.set_linewidth(0.75)
+    sns.despine(left=False, bottom=False, ax=ax_heatmap)
+    for ax in [ax_heatmap, ax_cbar]:
+        for spine in ["top", "right", "left", "bottom"]:
+            ax.spines[spine].set_linewidth(0.75)
     return fig, axes
 
 
 @with_active_style
-def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None) -> None:
+def _annotated_scatter(
+    x_values,
+    y_values,
+    labels,
+    ax=None,
+    scatter_kws=None,
+    text_kws=None,
+) -> None:
     ax = plt.gca() if ax is None else ax
     if scatter_kws is None:
-        scatter_kws = {
-            "s": 10,
-            "color": "#FAB74E",
-            "edgecolor": "#000000",
-            "lw": 0.2,
-            "zorder": 3,
-        }
+        scatter_kws = {}
+    if text_kws is None:
+        text_kws = {}
     text_params = {
         "force_text": 0.15,
         "arrowprops": {
@@ -1718,7 +1746,7 @@ def _annotated_scatter(x_values, y_values, labels, ax=None, scatter_kws=None) ->
 
     texts = []
     for x, y, text in zip(x_values, y_values, labels, strict=True):
-        texts.append(ax.text(x, y, text, fontsize=9))
+        texts.append(ax.text(x, y, text, **text_kws))
 
     if texts:
         adjustText.adjust_text(texts, ax=ax, **text_params)  # type: ignore

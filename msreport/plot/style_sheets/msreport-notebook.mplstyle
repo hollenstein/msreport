@@ -8,6 +8,7 @@ patch.force_edgecolor: True
 ## FONT
 font.family:     sans-serif
 font.sans-serif: Arial, DejaVu Sans, Liberation Sans, Bitstream Vera Sans, sans-serif
+font.size:       10
 
 ## TEXT
 text.color: black
