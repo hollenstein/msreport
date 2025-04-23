@@ -48,6 +48,9 @@ dev = [
     "mypy>=1.15.0",
     "pytest>=8.3.5",
 ]
+test = [
+    "pytest>=8.3.5",
+]
 
 [tool.setuptools]
 packages = [
