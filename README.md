@@ -63,7 +63,7 @@ If you do not already have a Python installation, we recommend installing the
 which already contains a large number of popular Python packages for Data Science.
 Alternatively, you can also get Python from the
 [Python homepage](https://www.python.org/downloads/windows). MsReport requires Python
-version 3.9 or higher.
+version 3.10 or higher.
 
 You can use pip to install MsReport from the distribution file with the following
 command:
