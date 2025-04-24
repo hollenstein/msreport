@@ -576,6 +576,7 @@ class FragPipeReader(ResultReader):
         "peptides": "combined_peptide.tsv",
         "ions": "combined_ion.tsv",
         "ion_evidence": "ion.tsv",
+        "psm_evidence": "psm.tsv",
     }
     isobar_filenames: dict[str, str] = {
         "proteins": "protein.tsv",
@@ -591,6 +592,12 @@ class FragPipeReader(ResultReader):
         "MaxLFQ Intensity",
     ]
     column_mapping: dict[str, str] = {
+        "Peptide": "Peptide sequence",  # PSM
+        "Modified Peptide": "Modified sequence",  # PSM
+        "Protein Start": "Start position",  # PSM
+        "Protein End": "End position",  # PSM
+        "Number of Missed Cleavages": "Missed cleavage",  # PSM
+        "PeptideProphet Probability": "Probability",  # PSM
         "Peptide Sequence": "Peptide sequence",  # Peptide and ion
         "Modified Sequence": "Modified sequence",  # Modified peptide and ion
         "Start": "Start position",  # Peptide and ion
@@ -857,6 +864,75 @@ class FragPipeReader(ResultReader):
         if rewrite_modifications and rename_columns:
             df = self._add_peptide_modification_entries(df)
             df = self._add_modification_localization_string(df, prefix_column_tags)
+        return df
+
+    def import_psm_evidence(
+        self,
+        filename: Optional[str] = None,
+        rename_columns: bool = True,
+        rewrite_modifications: bool = True,
+    ):
+        """Concatenate all "psm.tsv" files and return a processed dataframe.
+
+        Args:
+            filename: Allows specifying an alternative filename, otherwise the default
+                filename is used.
+            rename_columns: If True, columns are renamed according to the MsReport
+                convention; default True.
+            rewrite_modifications: If True, the peptide format in "Modified sequence" is
+                changed according to the MsReport convention, and a "Modifications" is
+                added to contains the amino acid position for all modifications.
+                Requires 'rename_columns' to be true. Default True.
+
+        Returns:
+            A DataFrame containing the processed psm evidence tables.
+        """
+        if filename is None:
+            filename = self.default_filenames["psm_evidence"]
+
+        psm_table_paths = []
+        for path in pathlib.Path(self.data_directory).iterdir():
+            psm_table_path = path / filename
+            if path.is_dir() and psm_table_path.exists():
+                psm_table_paths.append(psm_table_path)
+
+        psm_tables = []
+        for filepath in psm_table_paths:
+            table = pd.read_csv(filepath, sep="\t", low_memory=False)
+            str_cols = table.select_dtypes(include=["object"]).columns
+            table.loc[:, str_cols] = table.loc[:, str_cols].fillna("")
+
+            table["Sample"] = filepath.parent.name
+            psm_tables.append(table)
+        df = pd.concat(psm_tables, ignore_index=True)
+
+        df["Protein reported by software"] = _extract_protein_ids(df["Protein"])
+        df["Representative protein"] = df["Protein reported by software"]
+
+        # FP only lists additional mapped proteins in the "Mapped Proteins" column
+        # MsReport reports all matching proteins in the "Mapped proteins" column
+        mapped_proteins_entries = []
+        for protein, mapped_protein_fp in zip(
+            df["Representative protein"], df["Mapped Proteins"], strict=True
+        ):
+            if mapped_protein_fp == "":
+                mapped_proteins = [protein]
+            else:
+                additional_mapped_proteins = msreport.reader._extract_protein_ids(
+                    mapped_protein_fp.split(", ")
+                )
+                mapped_proteins = [protein] + additional_mapped_proteins
+            mapped_proteins_entries.append(";".join(mapped_proteins))
+        df["Mapped proteins"] = mapped_proteins_entries
+
+        if rename_columns:
+            df = self._rename_columns(df, prefix_tag=True)
+        if rewrite_modifications and rename_columns:
+            mod_entries = _generate_modification_entries_from_assigned_modifications(
+                df["Peptide sequence"], df["Assigned Modifications"]
+            )
+            df["Modified sequence"] = mod_entries["Modified sequence"]
+            df["Modifications"] = mod_entries["Modifications"]
         return df
 
     def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -2139,6 +2215,57 @@ def _generate_modification_entries(
         "Modifications": modification_entries,
     }
     return entries
+
+
+def _generate_modification_entries_from_assigned_modifications(
+    sequences: Iterable[str],
+    assigned_modifications: Iterable[str],
+) -> dict[str, list[str]]:
+    modified_sequence_entries = []
+    modification_entries = []
+    for sequence, modifications_entry in zip(sequences, assigned_modifications):
+        modifications = _extract_fragpipe_assigned_modifications(
+            modifications_entry, sequence
+        )
+        modified_sequence = helper.modify_peptide(sequence, modifications)
+        modification_entry = ";".join([f"{pos}:{mod}" for pos, mod in modifications])
+        modified_sequence_entries.append(modified_sequence)
+        modification_entries.append(modification_entry)
+
+    entries = {
+        "Modified sequence": modified_sequence_entries,
+        "Modifications": modification_entries,
+    }
+    return entries
+
+
+def _extract_fragpipe_assigned_modifications(
+    modifications_entry: str,
+    sequence: str,
+) -> list[tuple[int, str]]:
+    """Extracts modifications from a FragPipe "Modifications" entry.
+
+    Example for a modification entry: "N-term(42.0106),8C(57.0215)"
+
+    Returns:
+        A list of tuples, where each tuple contains the position of the modification and
+        the modification text. The position is one-indexed, meaning that the first amino
+        acid position is 1. N-term and C-term are represented as 0 and len(sequence)
+        respectively.
+    """
+    if modifications_entry == "":
+        return []
+    modifications = []
+    for mod_entry in modifications_entry.split(","):
+        position_entry, modification = mod_entry.split(")")[0].split("(")
+        if position_entry == "N-term":
+            position = 0
+        elif position_entry == "C-term":
+            position = len(sequence)
+        else:
+            position = int(position_entry[:-1])
+        modifications.append((position, modification))
+    return modifications
 
 
 def extract_maxquant_localization_probabilities(localization_entry: str) -> dict:
