@@ -908,6 +908,7 @@ class FragPipeReader(ResultReader):
 
         df["Protein reported by software"] = _extract_protein_ids(df["Protein"])
         df["Representative protein"] = df["Protein reported by software"]
+        df["Mapped Proteins"] = df["Mapped Proteins"].astype(str).replace("nan", "")
 
         # FP only lists additional mapped proteins in the "Mapped Proteins" column
         # MsReport reports all matching proteins in the "Mapped proteins" column

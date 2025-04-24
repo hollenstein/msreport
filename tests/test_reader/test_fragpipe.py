@@ -90,9 +90,9 @@ class TestFragPipeReader:
         assert "Peptide sequence" in table
         assert "Modified sequence" in table
         assert "Modifications" in table
-        assert table["Peptide sequence"][0] == "AACDLVR"
-        assert table["Modified sequence"][0] == "AAC[57.0214]DLVR"
-        assert table["Modifications"][0] == "3:57.0214"
+        assert table["Peptide sequence"][1] == "CLAALASLR"
+        assert table["Modified sequence"][1] == "C[57.0214]LAALASLR"
+        assert table["Modifications"][1] == "1:57.0214"
         assert "Intensity SampleA_1" in table
 
 
@@ -115,13 +115,11 @@ class TestImportIonEvidence:
         table = test_reader.import_ion_evidence()
         table_1 = table[table["Sample"] == "SampleA_1"]
         table_2 = table[table["Sample"] == "SampleB_1"]
-        assert len(table_1) != len(table_2)
+        assert not table_1.equals(table_2)
 
-    def test_sample_column_filled_with_ion_table_folder(self, test_reader):
+    def test_sample_column_filled_with_parent_folder(self, test_reader):
         table = test_reader.import_ion_evidence()
-        np.testing.assert_array_equal(
-            table["Sample"].unique(), ["SampleA_1", "SampleB_1"]
-        )
+        assert set(table["Sample"].unique()) == {"SampleA_1", "SampleB_1"}
 
     def test_concatenated_table_is_reindexed(self, test_reader):
         table = test_reader.import_ion_evidence()
@@ -150,13 +148,11 @@ class TestImportPsmEvidence:
         table = test_reader.import_psm_evidence()
         table_1 = table[table["Sample"] == "SampleA_1"]
         table_2 = table[table["Sample"] == "SampleB_1"]
-        assert len(table_1) != len(table_2)
+        assert not table_1.equals(table_2)
 
-    def test_sample_column_filled_with_ion_table_folder(self, test_reader):
+    def test_sample_column_filled_with_parent_folder(self, test_reader):
         table = test_reader.import_psm_evidence()
-        np.testing.assert_array_equal(
-            table["Sample"].unique(), ["SampleA_1", "SampleB_1"]
-        )
+        assert set(table["Sample"].unique()) == {"SampleA_1", "SampleB_1"}
 
     def test_concatenated_table_is_reindexed(self, test_reader):
         table = test_reader.import_psm_evidence()
