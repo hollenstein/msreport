@@ -89,7 +89,7 @@ command as described above.
 ### Additional requirements
 
 MsReport provides an interface to the R package LIMMA for differential expression
-analysis, which requires a local installation of R (R version 3.4 or higher) and the
+analysis, which requires a local installation of R (R version 4.0 or higher) and the
 system environment variable "R_HOME" to be set to the R home directory. Note that it
 might be necessary to restart the computer after adding the "R_HOME" variable. The R
 home directory can also be found from within R by using the command below, and might
