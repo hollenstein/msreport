@@ -1,7 +1,8 @@
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
-
-
 # MsReport
+
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fhollenstein%2Fmsreport%2Fmain%2Fpyproject.toml)
+[![Run tests](https://github.com/hollenstein/msreport/actions/workflows/run-tests.yml/badge.svg)](https://github.com/hollenstein/msreport/actions/workflows/run-tests.yml)
 
 
 ## Introduction
