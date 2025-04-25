@@ -66,11 +66,23 @@ _LIBRARY_STYLE_PATHS: dict[str, str] = _get_library_styles()
 
 @contextmanager
 def use_active_style():
-    """Context manager to temporarily apply the active style for plotting."""
+    """Context manager to temporarily apply the active style for plotting.
+
+    The rc parameters 'backend' and 'interactive' will not be reset by the context
+    manager. This is required for compatibility with jupyter notebooks automatically
+    setting up the backend and interactive mode for inline plotting.
+    """
     active_style_context_arg = _get_active_style_context_arg()
-    with matplotlib.rc_context():
+
+    orig = dict(matplotlib.rcParams.copy())
+    del orig["backend"]
+    del orig["interactive"]
+    try:
         matplotlib.style.use(active_style_context_arg)
         yield
+    finally:
+        # Use `.update` instead of `._update_raw` for matplotlib backward compatibility
+        matplotlib.rcParams.update(orig)
 
 
 def with_active_style(func):
@@ -78,9 +90,7 @@ def with_active_style(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        active_style_context_arg = _get_active_style_context_arg()
-        with matplotlib.rc_context():
-            matplotlib.style.use(active_style_context_arg)
+        with use_active_style():
             return func(*args, **kwargs)
 
     return wrapper
