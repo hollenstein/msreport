@@ -6,13 +6,12 @@ build-backend = "setuptools.build_meta"
 name = "msreport"
 description = "Post processing and analysis of quantitative proteomics data"
 readme = "README.md"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
 authors = [
   { name = "David M. Hollenstein", email = "hollenstein.david@gmail.com" },
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "License :: OSI Approved :: Apache Software License",
+  "Development Status :: 4 - Beta",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -42,6 +41,10 @@ dependencies = [
   "typing_extensions >= 4",
 ]
 dynamic = ["version"]
+
+[project.urls]
+homepage = "https://github.com/hollenstein/msreport"
+changelog = "https://github.com/hollenstein/msreport/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
