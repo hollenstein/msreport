@@ -320,6 +320,7 @@ class TestTwoGroupComparison:
             msreport.analyze.two_group_comparison(example_qtable, experiment_pair)
 
 
+@pytest.mark.skipif(not msreport.analyze._rinterface_available, reason="Test requires the R interface")  # fmt: skip
 class TestCalculateMultiGroupLimma:
     @pytest.mark.parametrize(
         "experiment_pairs",
@@ -335,6 +336,7 @@ class TestCalculateMultiGroupLimma:
             msreport.analyze.calculate_multi_group_limma(example_qtable, experiment_pairs)  # fmt: skip
 
 
+@pytest.mark.skipif(not msreport.analyze._rinterface_available, reason="Test requires the R interface")  # fmt: skip
 class TestTwoGroupLimma:
     @pytest.mark.parametrize(
         "experiment_pair",

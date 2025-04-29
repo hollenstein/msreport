@@ -9,9 +9,18 @@ import numpy as np
 import pandas as pd
 
 import msreport.normalize
-import msreport.rinterface
+from msreport.errors import OptionalDependencyError
 from msreport.helper import find_sample_columns
 from msreport.qtable import Qtable
+
+try:
+    import msreport.rinterface
+
+    _rinterface_available = True
+    _rinterface_error = ""
+except OptionalDependencyError as err:
+    _rinterface_available = False
+    _rinterface_error = str(err)
 
 
 class Transformer(Protocol):
@@ -528,8 +537,10 @@ def calculate_multi_group_limma(
         ValueError: If all values from qtable.design["Batch"] are identical when 'batch'
             is set to True.
     """
-    _validate_experiment_pairs(qtable, experiment_pairs)
+    if not _rinterface_available:
+        raise OptionalDependencyError(_rinterface_error)
 
+    _validate_experiment_pairs(qtable, experiment_pairs)
     # TODO: not tested #
     if batch and "Batch" not in qtable.get_design():
         raise KeyError(
@@ -618,8 +629,10 @@ def calculate_two_group_limma(
             must have exactly two entries and the two entries must not be the same. Both
             experiments must be present in qtable.design.
     """
-    _validate_experiment_pair(qtable, experiment_pair)
+    if not _rinterface_available:
+        raise OptionalDependencyError(_rinterface_error)
 
+    _validate_experiment_pair(qtable, experiment_pair)
     # TODO: LIMMA function not tested #
     table = qtable.make_expression_table(samples_as_columns=True)
     comparison_tag = " vs "
