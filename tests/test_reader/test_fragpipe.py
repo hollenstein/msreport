@@ -90,10 +90,12 @@ class TestFragPipeReader:
         assert "Peptide sequence" in table
         assert "Modified sequence" in table
         assert "Modifications" in table
+        assert "Intensity SampleA_1" in table
+        assert "Ion ID" in table
         assert table["Peptide sequence"][1] == "CLAALASLR"
         assert table["Modified sequence"][1] == "C[57.0214]LAALASLR"
         assert table["Modifications"][1] == "1:57.0214"
-        assert "Intensity SampleA_1" in table
+        assert table["Ion ID"][1] == "C[57.0214]LAALASLR_c2"
 
 
 class TestImportIonEvidence:
@@ -110,6 +112,19 @@ class TestImportIonEvidence:
         assert "Modified sequence" in table
         assert "Modifications" in table
         assert "Intensity" in table
+        assert "Ion ID" in table
+
+    def test_integration_import_ion_evidence(self, test_reader):
+        table = test_reader.import_ion_evidence(
+            rename_columns=True,
+            rewrite_modifications=True,
+            prefix_column_tags=True,
+        )
+        assert sorted(table["Sample"].unique()) == ["SampleA_1", "SampleB_1"]
+
+        table_sample_b = table[table["Sample"] == "SampleB_1"].reset_index()
+        assert table_sample_b["Ion ID"][1] == "C[57.0214]YEM[15.9949]ASHLR_c3"
+        assert table_sample_b["Modifications"][1] == "1:57.0214;4:15.9949"
 
     def test_tables_from_different_samples_are_different(self, test_reader):
         table = test_reader.import_ion_evidence()
