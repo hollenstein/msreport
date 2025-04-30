@@ -1,100 +1,97 @@
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
-
-
 # MsReport
 
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fhollenstein%2Fmsreport%2Fmain%2Fpyproject.toml)
+[![Run tests](https://github.com/hollenstein/msreport/actions/workflows/run-tests.yml/badge.svg)](https://github.com/hollenstein/msreport/actions/workflows/run-tests.yml)
 
-## Introduction
+**MsReport** is a Python library for post-processing quantitative proteomics data from
+bottom-up mass spectrometry experiments.
 
-MsReport is a python library that allows simple and standardized post processing of
-quantitative proteomics data from bottom up, mass spectrometry experiments. Currently
-working with label free protein quantification reports from MaxQuant and FragPipe is
-fully supported. Other data analysis pipelines can be added by writing a software
-specific reader function.
+## Table of Contents
 
-MsReport is primarily developed as a tool for the Mass Spectrometry Facility at the Max
-Perutz Labs (University of Vienna), to allow the generation of Quantitative Protein and
-PTM reports, and to facilitate project specific data analysis tasks.
+- [What is MsReport?](#what-is-msreport)
+  - [Key features of MsReport](#key-features-of-msreport)
+- [Installation](#installation)
+    - [Installation when using Anaconda](#installation-when-using-anaconda)
+    - [Additional requirements](#additional-requirements)
+    - [Optional Dependencies](#optional-dependencies)
+- [Development status](#development-status)
 
+## What is MsReport?
 
-## Release
+MsReport is a Python library designed to simplify the post-processing and analysis of quantitative proteomics data from bottom-up mass spectrometry experiments. It provides a high-level, abstraction-focused API for efficient and standardized workflows. The modular design of the library provides the flexibility to meet project specific data processing needs and customize workflows as required.
 
-Development is currently in early alpha and the interface is not yet stable.
+The library supports importing protein and peptide-level quantification results from MaxQuant, FragPipe, and Spectronaut, as well as post-translational modification (PTM) data from MaxQuant and FragPipe. MsReport provides tools for data annotation, normalization and transformation, statistical testing, and data visualization.
 
+### Key features of MsReport
 
-## Scope
+#### Data Import and Standardization
 
-The `reader` module contains software specific reader classes that provide access to the
-outputs of the respective software. Reader instances allow importing protein and ion
-tables, and provide the ability to standardize column names and data formats during the
-import. To do so, reader classes must know the file structure and naming conventions of
-the respective software.
+The `reader` module provides software-specific reader classes for importing data from MaxQuant, FragPipe, and Spectronaut that enable the import of protein, peptide and ion tables. During the import process, these classes transform tables column names and table values into a standardized format to ensure that the rest of the library can operate in a tool-agnostic manner.
 
-The `qtable` class allows storing and accessing quantitative data from a particular
-level of abstraction, such as proteins or ions, and an experimental design table that
-describes to which experiment a sample belongs to. The quantitative data are in the wide
-format, i.e. the quantification data of each sample is stored in a separate column. The
-`Qtable` allows convenient handling and access to quantitative data through information
-from the experimental design, and represents the data structure used by the `analyze`,
-`plot`, and `export` modules.
+#### Data management
 
-The `analyze` module provides a high-level interface for post-processing of quantitative
-data, such as filtering valid values, normalization between samples, imputation of
-missing values, and statistical testing with the R package LIMMA.
+The `qtable` module provides a structured approach to managing quantitative data through its central `Qtable` class. This class combines quantitative data with an experimental design table that defines the relationship between samples and experimental conditions. The quantitative data is stored in a wide format, where each sample's measurements are stored in separate columns. The `Qtable` class serves as the foundation for data analysis workflows in MsReport, providing the standardized data structure used by the `analyze`, `plot`, and `export` modules.
 
-The `plot` module allows generation of quality control and data analysis plots.
+#### Data processing and analysis
 
-Using methods from the `export` module allows conversion and export of quantitative data
-into the Amica input format, and generating contaminant tables for the inspection of
-potential contaminants.
+The `analyze` module provides tools for post-processing of mass spectrometry data generated by software such as MaxQuant, FragPipe, or Spectronaut. It includes functions for filtering, normalization, imputation of missing values, and statistical testing. The library integrates with the R package LIMMA to enable differential expression analysis.
 
-Additional scripts
+> [!NOTE]  
+> In order to use the R integration you need to install msreport with optional dependencies, see [Optional Dependencies](#optional-dependencies) for more information.
 
-- The `excel_report` module enables the creation of a formatted excel protein report
-  by using the XlsxReport library.
-- The `benchmark` module contains functions to generate benchmark plots from multiple
-  `Qtable` instances, and can be used for method or software comparison.
+#### Data visualization
 
+The `plot` module supports the generation of visualizations for quality control and data analysis. It includes functions for creating various plots, such as intensity and ratio distributions, heatmaps, volcano plots, and PCA plots.
 
-## Install
+#### Data export
 
-If you do not already have a Python installation, we recommend installing the
-[Anaconda distribution](https://www.continuum.io/downloads) of Continuum Analytics,
-which already contains a large number of popular Python packages for Data Science.
-Alternatively, you can also get Python from the
-[Python homepage](https://www.python.org/downloads/windows). MsReport requires Python
-version 3.9 or higher.
+Finally, the `export` module enables the conversion and export into formats compatible with external tools. This includes generating input files for [Amica](https://bioapps.maxperutzlabs.ac.at/app/amica) and exporting tables for easier integration with Perseus. 
 
-You can use pip to install MsReport from the distribution file with the following
-command:
+## Installation
 
-```
-pip install msreport-X.Y.Z-py3-none-any.whl
+If you do not already have a Python installation, we recommend installing the [Anaconda distribution](https://www.anaconda.com/download) or [Miniconda](https://docs.anaconda.com/free/miniconda/index.html) distribution from Continuum Analytics, which already contains a large number of popular Python packages for Data Science. Alternatively, you can also get Python from the [Python homepage](https://www.python.org/downloads/windows). Note that MsReport requires Python version 3.10 or higher.
+
+The following command will install MsReport and its dependencies by using a wheel file.
+
+```shell
+pip install msreport
 ```
 
-To uninstall the MsReport library type:
+To uninstall the MsReport library use:
 
-```
+```shell
 pip uninstall msreport
 ```
 
-
 ### Installation when using Anaconda
-If you are using Anaconda, you will need to install the MsReport package into a conda
-environment. Open the Anaconda navigator, activate the conda environment you want to
-use, run the "CMD.exe" application to open a terminal, and then use the pip install
-command as described above.
 
+To install the MsReport library using Anaconda, you need to either activate a custom conda environment or install it into the default base environment. Open the Anaconda Navigator, activate the desired conda environment or use the base environment, and then open a command line by running the "CMD.exe" application. Finally, use the `pip install` command as before.
 
-### Additional requirements
+### Optional Dependencies
 
-MsReport provides an interface to the R package LIMMA for differential expression
-analysis, which requires a local installation of R (R version 4.0 or higher) and the
-system environment variable "R_HOME" to be set to the R home directory. Note that it
-might be necessary to restart the computer after adding the "R_HOME" variable. The R
-home directory can also be found from within R by using the command below, and might
-look similar to "C:\Program Files\R\R-4.2.1" on windows.
+#### R Integration
 
+MsReport provides an interface to the R package LIMMA for differential expression analysis. To use this functionality, you need:
+
+- A local installation of **R (version 4.0 or higher)**.
+- The system environment variable R_HOME set to the R home directory.
+- To install msreport with the optional dependencies for R integration.
+
+```shell
+pip install msreport[R]
 ```
+
+#### Setting the R_HOME environment variable
+
+On Windows, you may need to restart your computer after modifying the system environment variables for the changes to take effect. To find the R home directory, you can run the following command in R:
+
+```R
 normalizePath(R.home("home"))
 ```
+
+For example, the R home directory might look like this on Windows: `C:\Program Files\R\R-4.2.1`
+
+## Development status
+
+MsReport is a stable and reliable library that has been used on a daily basis for over two years in the Mass Spectrometry Facility at the Max Perutz Labs and the Mass Spectrometry Facility of IMP/IMBA/GMI. While the current interface of MsReport is stable, the library is still under active development, with new features being added regularly. Please note that a major rewrite is planned, which may introduce changes to the API in the future.

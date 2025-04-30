@@ -84,9 +84,11 @@ class TestMaxQuantReader:
         assert "Peptide sequence" in table
         assert "Modified sequence" in table
         assert "Modifications" in table
-        assert table["Peptide sequence"][4] == "AAGPISER"
-        assert table["Modified sequence"][4] == "[Acetyl (Protein N-term)]AAGPISER"
-        assert table["Modifications"][4] == "0:Acetyl (Protein N-term)"
+        assert "Ion ID" in table
+        assert table["Peptide sequence"][13] == "NMSVIAHVDHGK"
+        assert table["Modified sequence"][13] == "NM[Oxidation (M)]SVIAHVDHGK"
+        assert table["Modifications"][13] == "2:Oxidation (M)"
+        assert table["Ion ID"][13] == "NM[Oxidation (M)]SVIAHVDHGK_c3"
         assert not table["Leading razor protein"].str.contains("REV__").any()
 
 

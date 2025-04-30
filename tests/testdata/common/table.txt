@@ -1,0 +1,6 @@
+Column 1	Column 2	Column 3	A_tag Column 1	A_tag Column 2	Column 3 A_tag	Another_tag Column 1	Another_tag Column 2
+1	A	+	x	y	z	xx	yy
+2	B	+	x	y	z	xx	yy
+3	C	+	x	y	z	xx	yy
+4	D	+	x	y	z	xx	yy
+5	E	+	x	y	z	xx	yy

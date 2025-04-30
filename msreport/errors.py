@@ -7,3 +7,7 @@ class NotFittedError(ValueError, AttributeError):
 
 class ProteinsNotInFastaWarning(UserWarning):
     """Warning raised when queried proteins are absent from a FASTA file."""
+
+
+class OptionalDependencyError(ImportError):
+    """Raised when an optional dependency is required but not installed."""
