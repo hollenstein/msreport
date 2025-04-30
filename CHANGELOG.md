@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.0.29 - Optional R dependencies and Ion ID support
-Released: pending
+Released: 2025-04-30
 
 ### Added
 - Added `reader.FragPipeReader.import_psm_evidence()` to concatenate all PSM tables from a FragPipe result folder into a single table.
