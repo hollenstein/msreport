@@ -1,6 +1,7 @@
 # MsReport
 
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15309090.svg)](https://doi.org/10.5281/zenodo.15309090)
 ![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fhollenstein%2Fmsreport%2Fmain%2Fpyproject.toml)
 [![Run tests](https://github.com/hollenstein/msreport/actions/workflows/run-tests.yml/badge.svg)](https://github.com/hollenstein/msreport/actions/workflows/run-tests.yml)
 
@@ -16,6 +17,7 @@ bottom-up mass spectrometry experiments.
     - [Additional requirements](#additional-requirements)
     - [Optional Dependencies](#optional-dependencies)
 - [Development status](#development-status)
+- [How to cite](#how-to-cite)
 
 ## What is MsReport?
 
@@ -95,3 +97,9 @@ For example, the R home directory might look like this on Windows: `C:\Program F
 ## Development status
 
 MsReport is a stable and reliable library that has been used on a daily basis for over two years in the Mass Spectrometry Facility at the Max Perutz Labs and the Mass Spectrometry Facility of IMP/IMBA/GMI. While the current interface of MsReport is stable, the library is still under active development, with new features being added regularly. Please note that a major rewrite is planned, which may introduce changes to the API in the future.
+
+## How to cite
+
+If you use MsReport for your research or publications, please include the following citation and consider giving the project a star on GitHub.
+
+> Hollenstein, D. M., & Hartl, M. (2025). hollenstein/msreport: v0.0.29 (0.0.29). Zenodo. https://doi.org/10.5281/zenodo.15309090
