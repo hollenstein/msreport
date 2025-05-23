@@ -569,7 +569,7 @@ class Qtable:
         self._expression_sample_mapping = {}
 
     def __copy__(self) -> Qtable:
-        new_instance = Qtable(self.data, self.design)
+        new_instance = Qtable(self.data, self.design, self.id_column)
         # Copy all private attributes
         for attr in dir(self):
             if (
