@@ -437,6 +437,11 @@ class Qtable:
 
         Returns:
             An instance of Qtable loaded from the specified files.
+
+        Raises:
+            ValueError: If the loaded config file does not contain the
+                "Unique ID column" key. This is due to the qtable being saved with a
+                version of msreport <= 0.0.27.
         """
         filepaths = _get_qtable_export_filepaths(directory, basename)
         with open(filepaths["config"]) as openfile:
@@ -457,13 +462,20 @@ class Qtable:
                 filepaths["design"], sep="\t", index_col=0, keep_default_na=True
             )
 
-        qtable = Qtable(data, design)
+        if "Unique ID column" not in config_data:
+            # Mention that the qtable was likely saved with a version of msreport <= 0.0.27
+            raise ValueError(
+                "The qtable config file does not contain the 'Unique ID column' key. "
+                "This is likely due to the qtable being saved with a version of "
+                "msreport <= 0.0.27."
+            )
+        id_column = config_data["Unique ID column"]
+
+        qtable = Qtable(data, design, id_column)
         qtable._expression_columns = config_data["Expression columns"]
         qtable._expression_features = config_data["Expression features"]
         qtable._expression_sample_mapping = config_data["Expression sample mapping"]
         # This check is required for backwards compatibility with msreport <= 0.0.27
-        if "Unique ID column" in config_data:
-            qtable._id_column = config_data["Unique ID column"]
         return qtable
 
     def to_tsv(self, path: str, index: bool = False):
