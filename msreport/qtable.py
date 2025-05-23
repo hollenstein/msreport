@@ -32,7 +32,7 @@ class Qtable:
     def __init__(
         self,
         data: pd.DataFrame,
-        design: Optional[pd.DataFrame] = None,
+        design: pd.DataFrame,
         id_column: str = "Representative protein",
     ):
         """Initializes the Qtable.
@@ -76,8 +76,7 @@ class Qtable:
         self._id_column = id_column
         if "Valid" not in self.data.columns:
             self.data["Valid"] = True
-        if design is not None:
-            self.add_design(design)
+        self.add_design(design)
 
         self._expression_columns: list[str] = []
         self._expression_features: list[str] = []

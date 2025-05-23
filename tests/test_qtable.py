@@ -77,7 +77,7 @@ def example_qtable(example_data):
 
 class TestQtableInitialization:
     def test_data_is_added_to_qtable(self, example_data):
-        qtable = msreport.qtable.Qtable(example_data["data"])
+        qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])  # fmt: skip
         assert qtable.data.equals(example_data["data"])
 
     def test_design_is_added_to_qtable(self, example_data):
@@ -85,26 +85,26 @@ class TestQtableInitialization:
         assert qtable.design.equals(example_data["design"])
 
     def test_id_column_is_added_to_qtable(self, example_data):
-        qtable = msreport.qtable.Qtable(example_data["data"], id_column="id")
-        assert qtable.id_column == "id"
+        qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"], id_column="id")  # fmt: skip
+        assert qtable._id_column == "id"
 
     def test_non_unique_data_index_raises_error(self, example_data):
         example_data["data"].index = [0 for _ in range(len(example_data["data"]))]
         with pytest.raises(ValueError):
-            msreport.qtable.Qtable(example_data["data"])
+            msreport.qtable.Qtable(example_data["data"], design=example_data["design"])
 
     def test_non_existing_id_column_raises_error(self, example_data):
         with pytest.raises(KeyError):
-            msreport.qtable.Qtable(example_data["data"], id_column="non_existing_column")  # fmt: skip
+            msreport.qtable.Qtable(example_data["data"], design=example_data["design"], id_column="non_existing_column")  # fmt: skip
 
     def test_id_column_containing_non_unique_values_raises_error(self, example_data):
         example_data["data"]["id"] = "1"
         with pytest.raises(ValueError):
-            msreport.qtable.Qtable(example_data["data"], id_column="id")
+            msreport.qtable.Qtable(example_data["data"], design=example_data["design"], id_column="id")  # fmt: skip
 
 
 def test_qtable_add_design(example_data):
-    qtable = msreport.qtable.Qtable(example_data["data"])
+    qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])
     qtable.add_design(example_data["design"])
     assert qtable.design.equals(example_data["design"])
 
@@ -285,7 +285,7 @@ class TestQtableResetExpression:
         self.qtable._reset_expression()
         data_columns = self.qtable.data.columns
         all_expression_columns_absent_in_data = not any(
-            [c in data_columns for c in example_data["expression_columns"]]
+            c in data_columns for c in example_data["expression_columns"]
         )
         assert all_expression_columns_absent_in_data
 
