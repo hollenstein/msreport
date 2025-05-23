@@ -49,7 +49,7 @@ def example_data():
 
 @pytest.fixture
 def example_qtable(example_data):
-    qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])
+    qtable = msreport.qtable.Qtable(example_data["data"], example_data["design"], id_column="Representative protein")  # fmt: skip
     qtable.set_expression_by_tag("Intensity")
     return qtable
 

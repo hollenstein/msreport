@@ -68,20 +68,18 @@ def example_data():
 
 @pytest.fixture
 def example_qtable(example_data):
-    qtable = msreport.qtable.Qtable(
-        example_data["data"], design=example_data["design"], id_column="id"
-    )
+    qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"], id_column="id")  # fmt: skip
     qtable.set_expression_by_tag("Intensity")
     return qtable
 
 
 class TestQtableInitialization:
     def test_data_is_added_to_qtable(self, example_data):
-        qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])  # fmt: skip
+        qtable = msreport.qtable.Qtable(example_data["data"], example_data["design"], id_column="Representative protein")  # fmt: skip
         assert qtable.data.equals(example_data["data"])
 
     def test_design_is_added_to_qtable(self, example_data):
-        qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])  # fmt: skip
+        qtable = msreport.qtable.Qtable(example_data["data"], example_data["design"], id_column="Representative protein")  # fmt: skip
         assert qtable.design.equals(example_data["design"])
 
     def test_id_column_is_added_to_qtable(self, example_data):
@@ -91,7 +89,7 @@ class TestQtableInitialization:
     def test_non_unique_data_index_raises_error(self, example_data):
         example_data["data"].index = [0 for _ in range(len(example_data["data"]))]
         with pytest.raises(ValueError):
-            msreport.qtable.Qtable(example_data["data"], design=example_data["design"])
+            msreport.qtable.Qtable(example_data["data"], design=example_data["design"], id_column="Representative protein")  # fmt: skip
 
     def test_non_existing_id_column_raises_error(self, example_data):
         with pytest.raises(KeyError):
@@ -104,7 +102,7 @@ class TestQtableInitialization:
 
 
 def test_qtable_add_design(example_data):
-    qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])
+    qtable = msreport.qtable.Qtable(example_data["data"], example_data["design"], id_column="Representative protein")  # fmt: skip
     qtable.add_design(example_data["design"])
     assert qtable.design.equals(example_data["design"])
 
@@ -192,9 +190,7 @@ class TestMatchSamplesToTagColumns:
 class TestQtableGetData:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
-        self.qtable = msreport.qtable.Qtable(
-            example_data["data"], design=example_data["design"]
-        )
+        self.qtable = msreport.qtable.Qtable(example_data["data"], example_data["design"], id_column="Representative protein")  # fmt: skip
 
     def test_get_data(self, example_data):
         assert self.qtable.get_data().equals(example_data["data"])
@@ -229,7 +225,7 @@ def test_qtable_contains(example_qtable, key, is_present):
 
 
 def test_qtable_get_design(example_data):
-    qtable = msreport.qtable.Qtable(example_data["data"], design=example_data["design"])
+    qtable = msreport.qtable.Qtable(example_data["data"], example_data["design"], id_column="Representative protein")  # fmt: skip
     assert qtable.get_design().equals(example_data["design"])
 
 
@@ -265,9 +261,7 @@ class TestQtableGetExperiments:
 class TestQtableResetExpression:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
-        self.qtable = msreport.qtable.Qtable(
-            example_data["data"], design=example_data["design"]
-        )
+        self.qtable = msreport.qtable.Qtable(example_data["data"], example_data["design"], id_column="Representative protein")  # fmt: skip
 
     def test_reset_of_parameters(self):
         self.qtable._expression_columns = ["test"]
@@ -303,9 +297,7 @@ class TestQtableResetExpression:
 class TestQtableSetExpression:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
-        self.qtable = msreport.qtable.Qtable(
-            example_data["data"], design=example_data["design"]
-        )
+        self.qtable = msreport.qtable.Qtable(example_data["data"], example_data["design"], id_column="Representative protein")  # fmt: skip
 
     def test_correct_setting_of_private_variables(self, example_data):
         self.qtable._set_expression(example_data["intensity_cols_to_samples"])
@@ -377,9 +369,7 @@ class TestQtableSetExpression:
 class TestQtableSetExpressionByTag:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
-        self.qtable = msreport.qtable.Qtable(
-            example_data["data"], design=example_data["design"]
-        )
+        self.qtable = msreport.qtable.Qtable(example_data["data"], example_data["design"], id_column="Representative protein")  # fmt: skip
 
     def test_set_expression_by_tag(self, example_data):
         self.qtable.set_expression_by_tag(example_data["expression_tag"])
@@ -413,9 +403,7 @@ class TestQtableSetExpressionByTag:
 class TestQtableSetExpressionByColumn:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
-        self.qtable = msreport.qtable.Qtable(
-            example_data["data"], design=example_data["design"]
-        )
+        self.qtable = msreport.qtable.Qtable(example_data["data"], example_data["design"], id_column="Representative protein")  # fmt: skip
 
     def test_set_expression_by_column(self, example_data):
         self.qtable.set_expression_by_column(example_data["intensity_cols_to_samples"])
@@ -450,9 +438,7 @@ class TestQtableSetExpressionByColumn:
 class TestQtableAddExpressionFeature:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_data):
-        self.qtable = msreport.qtable.Qtable(
-            example_data["data"], design=example_data["design"]
-        )
+        self.qtable = msreport.qtable.Qtable(example_data["data"], example_data["design"], id_column="Representative protein")  # fmt: skip
 
     def test_with_series(self):
         new_data = self.qtable.data["id"].copy()
