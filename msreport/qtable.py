@@ -27,13 +27,11 @@ class Qtable:
         design: A pandas.DataFrame describing the experimental design.
     """
 
-    _default_id_column = "Representative protein"
-
     def __init__(
         self,
         data: pd.DataFrame,
         design: pd.DataFrame,
-        id_column: str = "Representative protein",
+        id_column: str,
     ):
         """Initializes the Qtable.
 
@@ -42,12 +40,13 @@ class Qtable:
 
         Args:
             data: A dataframe containing quantitative proteomics data in a wide format.
+                The index of the dataframe must contain unique values.
             design: A dataframe describing the experimental design that must at least
                 contain the columns "Sample" and "Experiment". The "Sample" entries
                 should correspond to the Sample names present in the quantitative
                 columns of the data.
             id_column: The name of the column that contains the unique identifiers for
-                the entries in the data table. Default is "Representative protein".
+                the entries in the data table.
 
         Raises:
             KeyError: If the specified id_column is not found in data.
