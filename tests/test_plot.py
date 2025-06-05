@@ -54,6 +54,16 @@ def example_qtable(example_data):
     return qtable
 
 
+class TestExperimentRatios:
+    @pytest.fixture(autouse=True)
+    def _init_qtable(self, example_qtable):
+        self.qtable = example_qtable
+
+    def test_non_default_df_index_does_not_raise_error(self):
+        self.qtable.data.index = range(2, len(self.qtable.data) + 2)
+        fig, axes = msreport.plot.experiment_ratios(self.qtable)
+
+
 class TestVolcanoMa:
     @pytest.fixture(autouse=True)
     def _init_qtable(self, example_qtable):

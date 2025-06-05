@@ -204,7 +204,8 @@ def experiment_ratios(
     mask = np.all([(qtable.data[f"Events {exp}"] > 0) for exp in experiments], axis=0)
     if exclude_invalid:
         mask = mask & qtable["Valid"]
-    experiment_data = experiment_data[mask]
+    # Use `mask.to_numpy` to solve issue with different indices of mask and dataframe
+    experiment_data = experiment_data[mask.to_numpy()]
     pseudo_reference = np.nanmean(experiment_data, axis=1)
     ratio_data = experiment_data.subtract(pseudo_reference, axis=0)
 
