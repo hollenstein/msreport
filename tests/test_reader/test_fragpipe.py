@@ -20,6 +20,10 @@ class TestFragPipeReader:
     def test_testdata_setup(self, test_reader):
         assert os.path.isdir(test_reader.data_directory)
 
+    def test_init_with_sil_and_isobar_raises_value_error(self):
+        with pytest.raises(ValueError):
+            msreport.reader.FragPipeReader("", sil=True, isobar=True)
+
     def test_collect_leading_protein_entries(self, test_reader):
         table = pd.DataFrame(
             {
@@ -34,6 +38,13 @@ class TestFragPipeReader:
             ["x|G|g", "x|H|h", "x|I|i"],
         ]
         leading_proteins = test_reader._collect_leading_protein_entries(table)
+        assert leading_proteins == expected
+
+    def test_collect_leading_protein_entries_in_sil_mode(self):
+        reader = msreport.reader.FragPipeReader("", sil=True)
+        table = pd.DataFrame({"Protein": ["x|B|b", "x|D|d", "x|E|e", "x|G|g"]})
+        expected = [["x|B|b"], ["x|D|d"], ["x|E|e"], ["x|G|g"]]
+        leading_proteins = reader._collect_leading_protein_entries(table)
         assert leading_proteins == expected
 
     def test_add_protein_entries(self, test_reader):

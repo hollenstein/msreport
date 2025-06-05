@@ -589,6 +589,12 @@ class FragPipeReader(ResultReader):
         "peptides": "peptide.tsv",
         "ions": "ion.tsv",
     }
+    sil_filenames: dict[str, str] = {
+        "proteins": "combined_protein_label_quant.tsv",
+        "peptides": "combined_modified_peptide_label_quant.tsv",
+        "ions": "combined_ion_label_quant.tsv",
+    }
+
     protected_columns: list[str] = []
     sample_column_tags: list[str] = [
         "Spectral Count",
@@ -638,7 +644,11 @@ class FragPipeReader(ResultReader):
     protein_info_tags: list[str] = []
 
     def __init__(
-        self, directory: str, isobar: bool = False, contaminant_tag: str = "contam_"
+        self,
+        directory: str,
+        isobar: bool = False,
+        sil: bool = False,
+        contaminant_tag: str = "contam_",
     ) -> None:
         """Initializes the FragPipeReader.
 
@@ -646,16 +656,23 @@ class FragPipeReader(ResultReader):
             directory: Location of the FragPipe result folder
             isobar: Set to True if quantification strategy was TMT, iTRAQ or similar;
                 default False.
+            sil: Set to True if the FragPipe result files are from a stable isotope
+                labeling experiment, such as SILAC; default False.
             contaminant_tag: Prefix of Protein ID entries to identify contaminants;
                 default "contam_".
         """
+        if sil and isobar:
+            raise ValueError("Cannot set both 'isobar' and 'sil' to True.")
         self._add_data_directory(directory)
         self._isobar: bool = isobar
+        self._sil: bool = sil
         self._contaminant_tag: str = contaminant_tag
-        if not isobar:
-            self.filenames = self.default_filenames
-        else:
+        if isobar:
             self.filenames = self.isobar_filenames
+        elif sil:
+            self.filenames = self.sil_filenames
+        else:
+            self.filenames = self.default_filenames
 
     def import_proteins(
         self,
@@ -995,6 +1012,9 @@ class FragPipeReader(ResultReader):
             A list of the same length as the input dataframe. Each position contains a
             list of leading protein entries, which a minimum of one entry.
         """
+        if self._sil:  # No "Indistinguishable Proteins" columns in 'SIL' data
+            return [[p] for p in df["Protein"]]
+
         leading_protein_entries = []
         for protein_entry, indist_protein_entry in zip(
             df["Protein"], df["Indistinguishable Proteins"].fillna("").astype(str)
