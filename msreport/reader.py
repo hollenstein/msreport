@@ -615,6 +615,7 @@ class FragPipeReader(ResultReader):
         "Modified Sequence": "Modified sequence",  # Modified peptide and ion
         "Start": "Start position",  # Peptide and ion
         "End": "End position",  # Peptide and ion
+        "Mapped Proteins": "Mapped proteins",  # All PSM, ion, and peptide tables
         "Combined Total Peptides": "Total peptides",  # From LFQ
         "Total Peptides": "Total peptides",  # From TMT
         "Description": "Protein name",
@@ -754,6 +755,7 @@ class FragPipeReader(ResultReader):
         df = self._read_file("peptides" if filename is None else filename)
         df["Protein reported by software"] = _extract_protein_ids(df["Protein"])
         df["Representative protein"] = df["Protein reported by software"]
+        df["Mapped Proteins"] = self._collect_mapped_proteins(df)
         # Note that _add_protein_entries would need to be adapted for the peptide table.
         # df = self._add_protein_entries(df)
         if rename_columns:
@@ -810,6 +812,8 @@ class FragPipeReader(ResultReader):
         #         'Indistinguishable Proteins' to the ion table.
         df["Protein reported by software"] = _extract_protein_ids(df["Protein"])
         df["Representative protein"] = df["Protein reported by software"]
+        df["Mapped Proteins"] = self._collect_mapped_proteins(df)
+
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
         if rewrite_modifications and rename_columns:
@@ -896,6 +900,8 @@ class FragPipeReader(ResultReader):
         #         'Indistinguishable Proteins' to the ion table.
         df["Protein reported by software"] = _extract_protein_ids(df["Protein"])
         df["Representative protein"] = df["Protein reported by software"]
+        df["Mapped Proteins"] = self._collect_mapped_proteins(df)
+
         if rename_columns:
             df = self._rename_columns(df, prefix_column_tags)
         if rewrite_modifications and rename_columns:
@@ -945,23 +951,7 @@ class FragPipeReader(ResultReader):
 
         df["Protein reported by software"] = _extract_protein_ids(df["Protein"])
         df["Representative protein"] = df["Protein reported by software"]
-        df["Mapped Proteins"] = df["Mapped Proteins"].astype(str).replace("nan", "")
-
-        # FP only lists additional mapped proteins in the "Mapped Proteins" column
-        # MsReport reports all matching proteins in the "Mapped proteins" column
-        mapped_proteins_entries = []
-        for protein, mapped_protein_fp in zip(
-            df["Representative protein"], df["Mapped Proteins"], strict=True
-        ):
-            if mapped_protein_fp == "":
-                mapped_proteins = [protein]
-            else:
-                additional_mapped_proteins = msreport.reader._extract_protein_ids(
-                    mapped_protein_fp.split(", ")
-                )
-                mapped_proteins = [protein] + additional_mapped_proteins
-            mapped_proteins_entries.append(";".join(mapped_proteins))
-        df["Mapped proteins"] = mapped_proteins_entries
+        df["Mapped Proteins"] = self._collect_mapped_proteins(df)
 
         if rename_columns:
             df = self._rename_columns(df, prefix_tag=True)
@@ -996,6 +986,35 @@ class FragPipeReader(ResultReader):
         for key in protein_entry_table:
             df[key] = protein_entry_table[key]
         return df
+
+    def _collect_mapped_proteins(self, df: pd.DataFrame) -> list[str]:
+        """Generates a list of mapped proteins entries.
+
+        This method extracts protein IDs from the 'Representative protein' and the
+        'Mapped Proteins' column and combines them into a single string for each row,
+        where multiple protein IDs are separated by semicolons.
+
+        Args:
+            df: DataFrame containing the 'Mapped Proteins' column.
+
+        Returns:
+            A list of mapped proteins entries.
+        """
+        mapped_proteins_entries = []
+        for protein, mapped_protein_fp in zip(
+            df["Representative protein"],
+            df["Mapped Proteins"].astype(str).replace("nan", ""),
+            strict=True,
+        ):
+            if mapped_protein_fp == "":
+                mapped_proteins = [protein]
+            else:
+                additional_mapped_proteins = msreport.reader._extract_protein_ids(
+                    mapped_protein_fp.split(", ")
+                )
+                mapped_proteins = [protein] + additional_mapped_proteins
+            mapped_proteins_entries.append(";".join(mapped_proteins))
+        return mapped_proteins_entries
 
     def _collect_leading_protein_entries(self, df: pd.DataFrame) -> list[list[str]]:
         """Generates a list of leading protein entries.

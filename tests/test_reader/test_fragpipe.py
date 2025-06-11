@@ -66,7 +66,21 @@ class TestFragPipeReader:
             == protein_reported_by_software
         )
 
-    def test_integration_import_proteins(self, test_reader):
+    def test_collect_mapped_proteins(self):
+        reader = msreport.reader.FragPipeReader("")
+        table = pd.DataFrame(
+            {
+                "Representative protein": ["B", "D", "E", "G"],
+                "Mapped Proteins": ["A", "", "", "H;I"],
+            }
+        )
+        expected_mapped_proteins = ["B;A", "D", "E", "G;H;I"]
+        mapped_proteins = reader._collect_mapped_proteins(table)
+        assert mapped_proteins == expected_mapped_proteins
+
+
+class TestImportProteins:
+    def test_correct_columns_after_renaming(self, test_reader):
         table = test_reader.import_proteins(
             rename_columns=True,
             prefix_column_tags=True,
@@ -78,18 +92,30 @@ class TestFragPipeReader:
         assert "Intensity SampleA_1" in table
         assert "Protein Length" not in table.columns
 
-    def test_integration_import_peptides(self, test_reader):
+
+class TestImportPeptides:
+    def test_correct_columns_after_renaming(self, test_reader):
         table = test_reader.import_peptides(
             rename_columns=True,
             prefix_column_tags=True,
         )
         assert "Protein reported by software" in table
         assert "Representative protein" in table
+        assert "Mapped proteins" in table
         assert "Peptide sequence" in table
         assert "Start position" in table
         assert "Intensity SampleA_1" in table
 
-    def test_integration_import_ions(self, test_reader):
+    def test_column_values_processed_after_import(self, test_reader):
+        table = test_reader.import_psm_evidence(
+            rename_columns=True,
+            rewrite_modifications=True,
+        )
+        assert not (table["Mapped proteins"] == "").any()
+
+
+class TestImportIons:
+    def test_correct_columns_after_renaming(self, test_reader):
         table = test_reader.import_ions(
             rename_columns=True,
             rewrite_modifications=True,
@@ -97,6 +123,7 @@ class TestFragPipeReader:
         )
         assert "Protein reported by software" in table
         assert "Representative protein" in table
+        assert "Mapped proteins" in table
         assert "Start position" in table
         assert "Peptide sequence" in table
         assert "Modified sequence" in table
@@ -108,6 +135,13 @@ class TestFragPipeReader:
         assert table["Modifications"][1] == "1:57.0214"
         assert table["Ion ID"][1] == "C[57.0214]LAALASLR_c2"
 
+    def test_column_values_processed_after_import(self, test_reader):
+        table = test_reader.import_psm_evidence(
+            rename_columns=True,
+            rewrite_modifications=True,
+        )
+        assert not (table["Mapped proteins"] == "").any()
+
 
 class TestImportIonEvidence:
     def test_correct_columns_after_renaming(self, test_reader):
@@ -118,12 +152,20 @@ class TestImportIonEvidence:
         )
         assert "Protein reported by software" in table
         assert "Representative protein" in table
+        assert "Mapped proteins" in table
         assert "Start position" in table
         assert "Peptide sequence" in table
         assert "Modified sequence" in table
         assert "Modifications" in table
         assert "Intensity" in table
         assert "Ion ID" in table
+
+    def test_column_values_processed_after_import(self, test_reader):
+        table = test_reader.import_psm_evidence(
+            rename_columns=True,
+            rewrite_modifications=True,
+        )
+        assert not (table["Mapped proteins"] == "").any()
 
     def test_integration_import_ion_evidence(self, test_reader):
         table = test_reader.import_ion_evidence(
@@ -169,6 +211,13 @@ class TestImportPsmEvidence:
         assert "Modifications" in table
         assert "Missed cleavage" in table
         assert "Intensity" in table
+
+    def test_column_values_processed_after_import(self, test_reader):
+        table = test_reader.import_psm_evidence(
+            rename_columns=True,
+            rewrite_modifications=True,
+        )
+        assert not (table["Mapped proteins"] == "").any()
 
     def test_tables_from_different_samples_are_different(self, test_reader):
         table = test_reader.import_psm_evidence()
