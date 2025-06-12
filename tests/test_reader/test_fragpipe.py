@@ -79,6 +79,23 @@ class TestFragPipeReader:
         assert mapped_proteins == expected_mapped_proteins
 
 
+class TestImportDesign:
+    def test_manifest_file_processed_correctly(self, test_reader):
+        table = test_reader.import_design()
+        expected_design_table = pd.DataFrame(
+            {
+                "Sample": ["SampleA_1", "SampleB_1"],
+                "Experiment": ["SampleA", "SampleB"],
+                "Replicate": ["1", "1"],
+                "Rawfile": [
+                    "20220926_E2_RSLC2_FAIMS_PepSep_Q4L_iso_0c4_cgf_4c4_01_CV70.raw",
+                    "20220928_E2_RSLC2_FAIMS_PepSep_Q4L_iso_0c4_cgf_4c4_01_CV70.raw",
+                ],
+            }
+        )
+        pd.testing.assert_frame_equal(table, expected_design_table)
+
+
 class TestImportProteins:
     def test_correct_columns_after_renaming(self, test_reader):
         table = test_reader.import_proteins(
@@ -91,6 +108,10 @@ class TestImportProteins:
         assert "Total peptides" in table
         assert "Intensity SampleA_1" in table
         assert "Protein Length" not in table.columns
+
+    def test_non_existing_file_raises_error(self):
+        with pytest.raises(FileNotFoundError):
+            msreport.reader.FragPipeReader("non_existing_file").import_proteins()
 
 
 class TestImportPeptides:

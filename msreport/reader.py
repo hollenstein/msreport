@@ -541,6 +541,8 @@ class FragPipeReader(ResultReader):
     """FragPipe result reader.
 
     Methods:
+        import_design: Reads a "fragpipe-files.fp-manifest" file and returns a
+            processed design dataframe.
         import_proteins: Reads a "combined_protein.tsv" or "protein.tsv" file and
             returns a processed dataframe, conforming to the MsReport naming
             convention.
@@ -583,6 +585,7 @@ class FragPipeReader(ResultReader):
         "ions": "combined_ion.tsv",
         "ion_evidence": "ion.tsv",
         "psm_evidence": "psm.tsv",
+        "design": "fragpipe-files.fp-manifest",
     }
     isobar_filenames: dict[str, str] = {
         "proteins": "protein.tsv",
@@ -674,6 +677,52 @@ class FragPipeReader(ResultReader):
             self.filenames = self.sil_filenames
         else:
             self.filenames = self.default_filenames
+
+    def import_design(
+        self, filename: Optional[str] = None, sort: bool = False
+    ) -> pd.DataFrame:
+        """Reads a 'fp-manifest' file and returns a processed design dataframe.
+
+        Args:
+            filename: Allows specifying an alternative filename, otherwise the default
+                filename is used.
+            sort: If True, the design dataframe is sorted by "Experiment" and
+                "Replicate"; default False.
+
+        Returns:
+            A dataframe containing the processed design table with columns:
+            "Sample", "Experiment", "Replicate", "Rawfile".
+
+        Raises:
+            FileNotFoundError: If the specified manifest file does not exist.
+        """
+        if filename is None:
+            filepath = os.path.join(self.data_directory, self.filenames["design"])
+        else:
+            filepath = os.path.join(self.data_directory, filename)
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(
+                f"File '{filepath}' does not exist. Please check the file path."
+            )
+        fp_manifest = pd.read_csv(filepath, sep="\t", header=None, dtype=str)
+        fp_manifest.columns = ["Path", "Experiment", "Bioreplicate", "Data type"]
+
+        design = pd.DataFrame(
+            {
+                "Sample": fp_manifest["Experiment"] + "_" + fp_manifest["Bioreplicate"],
+                "Experiment": fp_manifest["Experiment"],
+                "Replicate": fp_manifest["Bioreplicate"],
+                "Rawfile": fp_manifest["Path"].apply(
+                    # Required to handle Windows and Unix style paths on either system
+                    lambda x: x.replace("\\", "/").split("/")[-1]
+                ),
+            }
+        )
+
+        if sort:
+            design.sort_values(by=["Experiment", "Replicate"], inplace=True)
+            design.reset_index(drop=True, inplace=True)
+        return design
 
     def import_proteins(
         self,
