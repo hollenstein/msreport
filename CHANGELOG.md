@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.0.30 - FragPipeReader updates
+Released: 2025-06-17
+
+### Added
+- Added `import_design` method to `reader.FragPipeReader` for importing experimental design tables from FragPipe manifest files.
+- Added processing of the "Mapped Proteins" column in FragPipeReader for peptide, ion, and evidence tables.
+- Introduced a `sil` (stable isotope label) mode to FragPipeReader, enabling support for stable isotope quantification workflows.
+
+### Changed
+- (!) The `id_column` argument is now mandatory when initializing a `Qtable` instance. This change enforces explicit definition of a unique identifier column.
+- (!) The `design` argument is now mandatory when initializing a `Qtable` instance, ensuring that experimental design information is always provided.
+
+### Fixed
+- Fixed an error in `plot.experiment_ratios` when `Qtable.data` used a custom index (i.e., not the default integer range starting from 0).
+- Fixed issues with `Qtable.load` and `Qtable.copy` to ensure the `id_column` attribute is correctly set and preserved.
+
+### Dependencies
+- Restricted the `rpy2` dependency to versions `<3.5.13` for Windows compatibility, as  `rpy2 > 3.5.12 < 3.6.0` caused build errors on Windows and `rpy2 >= 3.6.0` requires `sh` and `make`, which are not available on Windows by default.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.29 - Optional R dependencies and Ion ID support
 Released: 2025-04-30
 
