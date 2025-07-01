@@ -209,6 +209,64 @@ def apply_transformer(
     qtable.data[data_table.columns] = data_table
 
 
+def apply_category_transformer(
+    qtable: Qtable,
+    transformer: CategoryTransformer,
+    tag: str,
+    exclude_invalid: bool,
+    remove_invalid: bool,
+    new_tag: Optional[str] = None,
+) -> None:
+    """Apply a category transformer to Qtable columns selected by tag.
+
+    Args:
+        qtable: A Qtable instance, to which the transformer is applied.
+        transformer: The CategoryTransformer to apply.
+        tag: The tag used to identify the columns for applying the transformer.
+        exclude_invalid: Exclude invalid values from the transformation.
+        remove_invalid: Remove invalid values from the table after the transformation.
+        new_tag: Optional, if specified than the tag is replaced with this value in the
+            column names and the transformed data is stored to these new columns.
+
+    Raises:
+        KeyError: If the category column of the `transformer` is not found in the
+            `qtable.data`.
+        ValueError: If no sample columns are found for the specified tag.
+    """
+    category_column = transformer.get_category_column()
+    if category_column not in qtable.data.columns:
+        raise KeyError(
+            f'The category column "{category_column}" in the transformer '
+            f"is not found in `qtable.data`."
+        )
+
+    valid = qtable.data["Valid"]
+    samples = qtable.get_samples()
+    sample_columns = find_sample_columns(qtable.data, tag, samples)
+
+    if not sample_columns:
+        raise ValueError(f"No sample columns found for tag '{tag}'.")
+
+    if new_tag is not None:
+        sample_columns = [c.replace(tag, new_tag) for c in sample_columns]
+    column_mapping = dict(zip(samples, sample_columns))
+
+    data_table = qtable.make_sample_table(tag, samples_as_columns=True)
+    data_table[category_column] = qtable.data[category_column]
+
+    if exclude_invalid:
+        data_table.loc[valid, :] = transformer.transform(data_table.loc[valid, :])
+    else:
+        data_table = transformer.transform(data_table)
+    data_table = data_table.drop(columns=[category_column])
+
+    if remove_invalid:
+        data_table[~valid] = np.nan
+
+    data_table.columns = [column_mapping[s] for s in data_table.columns]
+    qtable.data[data_table.columns] = data_table
+
+
 def normalize_expression(
     qtable: Qtable,
     normalizer: Transformer,

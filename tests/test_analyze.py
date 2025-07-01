@@ -152,6 +152,76 @@ class TestApplyTransformer:
         assert new_column_samples == example_qtable.get_samples()
 
 
+class TestApplyCategoryTransformer:
+    @pytest.fixture(autouse=True)
+    def _init_transformer(self, example_qtable):
+        class MockCategoryTransformer:
+            def fit(self, table: pd.DataFrame):
+                return self
+
+            def is_fitted(self):
+                return True
+
+            def transform(self, table: pd.DataFrame):
+                _table = table.copy()
+                _table[_table.columns.difference(["Representative protein"])] = -1
+                return _table
+
+            def get_category_column(self):
+                return "Representative protein"
+
+        self.transformer = MockCategoryTransformer()
+
+    def test_applies_transformation_to_all_samples(self, example_qtable):
+        msreport.analyze.apply_category_transformer(
+            example_qtable, self.transformer, "Expression", False, False
+        )
+        table = example_qtable.make_expression_table()
+        assert (table == -1).all().all()
+
+    def test_category_column_is_preserved(self, example_qtable):
+        msreport.analyze.apply_category_transformer(
+            example_qtable, self.transformer, "Expression", False, False
+        )
+        assert "Representative protein" in example_qtable.data.columns
+
+    def test_new_tag_creates_new_columns(self, example_qtable):
+        msreport.analyze.apply_category_transformer(
+            example_qtable, self.transformer, "Expression", False, False, "Transformed"
+        )
+        new_table = example_qtable.make_sample_table(
+            "Transformed", samples_as_columns=True
+        )
+        assert (new_table == -1).all().all()
+        assert new_table.columns.tolist() == example_qtable.get_samples()
+
+    def test_exclude_invalid_rows(self, example_qtable):
+        example_qtable.data.loc[0, "Valid"] = False
+        msreport.analyze.apply_category_transformer(
+            example_qtable,
+            self.transformer,
+            "Expression",
+            exclude_invalid=True,
+            remove_invalid=False,
+        )
+        table = example_qtable.make_expression_table()
+        assert table.loc[1:, :].eq(-1).all().all()
+        assert not table.loc[0, :].eq(-1).all()
+
+    def test_remove_invalid_rows(self, example_qtable):
+        example_qtable.data.loc[0, "Valid"] = False
+        msreport.analyze.apply_category_transformer(
+            example_qtable,
+            self.transformer,
+            "Expression",
+            exclude_invalid=False,
+            remove_invalid=True,
+        )
+        table = example_qtable.make_expression_table()
+        assert table.loc[0, :].isna().all()
+        assert table.loc[1:, :].eq(-1).all().all()
+
+
 class TestNormalizeExpression:
     def test_normalization_with_fitted_normalizer(self, example_qtable):
         shift = 1
