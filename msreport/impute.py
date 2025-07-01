@@ -7,8 +7,6 @@ transformation returns a new copy of the table with the imputed values, leaving 
 original table unchanged.
 """
 
-from __future__ import annotations
-
 from typing import Any, Optional
 
 import numpy as np

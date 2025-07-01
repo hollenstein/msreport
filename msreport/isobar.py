@@ -8,8 +8,6 @@ its intensity values. The transformation returns a new copy of the table with th
 processed values, leaving the original table unchanged.
 """
 
-from __future__ import annotations
-
 import functools
 from typing import Protocol
 

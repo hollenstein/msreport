@@ -12,8 +12,6 @@ The transformation returns a new copy of the table with the normalized/scaled va
 leaving the original table unchanged.
 """
 
-from __future__ import annotations
-
 from typing import Callable, Iterable, Optional, Protocol
 
 import numpy as np

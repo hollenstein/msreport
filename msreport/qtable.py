@@ -13,8 +13,6 @@ facilitates seamless integration with the high-level modules `analyze`, `plot` a
 `export`, which all directly operate on `Qtable` instances.
 """
 
-from __future__ import annotations
-
 import copy
 import os
 import warnings

@@ -5,8 +5,6 @@ module provides functionality for data evaluation, normalization, imputation of 
 values, and statistical testing, including integration with R's LIMMA package.
 """
 
-from __future__ import annotations
-
 import warnings
 from typing import Iterable, Optional, Protocol, Sequence
 
