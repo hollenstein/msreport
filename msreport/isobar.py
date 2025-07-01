@@ -16,13 +16,14 @@ from typing import Protocol
 import numpy as np
 import pandas as pd
 import scipy
+from typing_extensions import Self
 
 import msreport.helper
 from msreport.errors import NotFittedError
 
 
 class Transformer(Protocol):
-    def fit(self, table: pd.DataFrame) -> Transformer:
+    def fit(self, table: pd.DataFrame) -> Self:
         """Fits the Transformer and returns a fitted Transformer instance."""
 
     def is_fitted(self) -> bool:
@@ -38,7 +39,7 @@ class IsotopeImpurityCorrecter:
     def __init__(self):
         self._impurity_matrix = None
 
-    def fit(self, impurity_matrix: np.ndarray) -> IsotopeImpurityCorrecter:
+    def fit(self, impurity_matrix: np.ndarray) -> Self:
         """Fits the isotope impurity correcter to a given impurity matrix.
 
         Args:

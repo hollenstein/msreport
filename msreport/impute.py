@@ -13,6 +13,7 @@ from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
+from typing_extensions import Self
 
 from msreport.errors import NotFittedError
 
@@ -51,7 +52,7 @@ class FixedValueImputer:
         self.column_wise = column_wise
         self._sample_fill_values: dict[str, float] = {}
 
-    def fit(self, table: pd.DataFrame) -> FixedValueImputer:
+    def fit(self, table: pd.DataFrame) -> Self:
         """Fits the FixedValueImputer.
 
         Args:
@@ -117,7 +118,7 @@ class GaussianImputer:
         self.sigma = sigma
         self.seed = seed
 
-    def fit(self, table: pd.DataFrame) -> GaussianImputer:
+    def fit(self, table: pd.DataFrame) -> Self:
         """Fits the GaussianImputer, altough this is not necessary.
 
         Args:
@@ -191,9 +192,9 @@ class PerseusImputer:
         self.std_width = std_width
         self.column_wise = column_wise
         self.seed = seed
-        self._column_params: dict[str, dict] = {}
+        self._column_params: dict[str, dict[str, float]] = {}
 
-    def fit(self, table: pd.DataFrame) -> PerseusImputer:
+    def fit(self, table: pd.DataFrame) -> Self:
         """Fits the PerseusImputer.
 
         Args:
@@ -275,7 +276,7 @@ def confirm_is_fitted(imputer: Any, msg: Optional[str] = None) -> None:
         raise NotFittedError(msg % {"name": type(imputer).__name__})
 
 
-def _calculate_integer_below_min(table) -> int:
+def _calculate_integer_below_min(table: pd.DataFrame) -> int:
     minimal_value = np.nanmin(table.to_numpy().flatten())
     below_minimal = np.floor(minimal_value)
     if minimal_value <= below_minimal:

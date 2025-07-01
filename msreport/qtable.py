@@ -24,6 +24,7 @@ from typing import Any, Generator, Iterable, Optional
 import numpy as np
 import pandas as pd
 import yaml
+from typing_extensions import Self
 
 import msreport.helper as helper
 
@@ -437,7 +438,7 @@ class Qtable:
         self.design.to_csv(filepaths["design"], sep="\t", index=True)
 
     @classmethod
-    def load(cls, directory: str, basename: str) -> Qtable:
+    def load(cls, directory: str, basename: str) -> Self:
         """Load a qtable from disk by reading a data, design, and config file.
 
         Loading a qtable will first import the three files generated during saving, then
@@ -485,7 +486,7 @@ class Qtable:
             )
         id_column = config_data["Unique ID column"]
 
-        qtable = Qtable(data, design, id_column)
+        qtable = cls(data, design, id_column)
         qtable._expression_columns = config_data["Expression columns"]
         qtable._expression_features = config_data["Expression features"]
         qtable._expression_sample_mapping = config_data["Expression sample mapping"]
@@ -501,11 +502,11 @@ class Qtable:
         )
         self.data.to_csv(path, sep="\t", index=index)
 
-    def to_clipboard(self, index: bool = False):
+    def to_clipboard(self, index: bool = False) -> None:
         """Writes the data table to the system clipboard."""
         self.data.to_clipboard(sep="\t", index=index)
 
-    def copy(self) -> Qtable:
+    def copy(self) -> Self:
         """Returns a copy of this Qtable instance."""
         return self.__copy__()
 
@@ -594,8 +595,8 @@ class Qtable:
         self._expression_features = []
         self._expression_sample_mapping = {}
 
-    def __copy__(self) -> Qtable:
-        new_instance = Qtable(self.data, self.design, self.id_column)
+    def __copy__(self) -> Self:
+        new_instance = type(self)(self.data, self.design, self.id_column)
         # Copy all private attributes
         for attr in dir(self):
             if (
@@ -624,7 +625,7 @@ def _match_samples_to_tag_columns(
     samples: Iterable[str],
     columns: Iterable[str],
     tag: str,
-) -> dict:
+) -> dict[str, str]:
     """Mapping of samples to columns which contain the sample and the tag.
 
     Args:
@@ -647,7 +648,7 @@ def _match_samples_to_tag_columns(
     return mapping
 
 
-def _get_qtable_export_filepaths(directory: str, name: str):
+def _get_qtable_export_filepaths(directory: str, name: str) -> dict[str, str]:
     """Returns a dictionary of standard filepaths for loading and saving a qtable."""
     filenames = {
         "data": f"{name}.data.tsv",

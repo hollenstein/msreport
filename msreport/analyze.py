@@ -12,6 +12,7 @@ from typing import Iterable, Optional, Protocol, Sequence
 
 import numpy as np
 import pandas as pd
+from typing_extensions import Self
 
 import msreport.normalize
 from msreport.errors import OptionalDependencyError
@@ -29,7 +30,7 @@ except OptionalDependencyError as err:
 
 
 class Transformer(Protocol):
-    def fit(self, table: pd.DataFrame) -> Transformer:
+    def fit(self, table: pd.DataFrame) -> Self:
         """Fits the Transformer and returns a fitted Transformer instance."""
 
     def is_fitted(self) -> bool:
@@ -40,7 +41,7 @@ class Transformer(Protocol):
 
 
 class CategoryTransformer(Protocol):
-    def fit(self, table: pd.DataFrame) -> Transformer:
+    def fit(self, table: pd.DataFrame) -> Self:
         """Fits the Transformer and returns a fitted Transformer instance."""
 
     def is_fitted(self) -> bool:
@@ -167,7 +168,7 @@ def validate_proteins(
 
 
 def apply_transformer(
-    qtable: msreport.Qtable,
+    qtable: Qtable,
     transformer: Transformer,
     tag: str,
     exclude_invalid: bool,

@@ -19,7 +19,7 @@ class Peptide:
     def __init__(
         self,
         modified_sequence: str,
-        localization_probabilities: Optional[dict] = None,
+        localization_probabilities: Optional[dict[str, dict[int, float]]] = None,
         protein_position: Optional[int] = None,
     ):
         plain_sequence, modifications = parse_modified_sequence(
@@ -37,7 +37,7 @@ class Peptide:
             self.modification_positions[mod_tag].append(position)
             self.modified_residues[position] = mod_tag
 
-    def make_modified_sequence(self, include: Optional[list] = None) -> str:
+    def make_modified_sequence(self, include: Optional[list[str]] = None) -> str:
         """Returns a modified sequence string.
 
         Args:
