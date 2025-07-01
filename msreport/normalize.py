@@ -469,6 +469,26 @@ class ZscoreScaler:
         return scaled_table
 
 
+class Log2Transformer:
+    """Apply log2 transformation to column values."""
+
+    def fit(self, table: pd.DataFrame) -> Self:
+        """Returns the instance itself."""
+        return self
+
+    def is_fitted(self) -> bool:
+        """Returns True if the transformer is fitted."""
+        return True
+
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Applies a log2 transformation to each column of the table.
+
+        Zero values are replaced with NaN before the transformation to avoid an error
+        during the log2 calculation.
+        """
+        return pd.DataFrame(np.log2(table.replace({0: np.nan})))
+
+
 def confirm_is_fitted(
     normalizer: AbstractTransformer, msg: Optional[str] = None
 ) -> None:

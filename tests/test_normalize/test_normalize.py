@@ -188,3 +188,23 @@ class TestZscoreScaler:
         assert np.allclose(
             table_scaled["D"].to_numpy(), np.array([1.0, 1.0]), equal_nan=True
         )
+
+
+class TestLog2Transformer:
+    def test_is_always_fitted(self):
+        transformer = msreport.normalize.Log2Transformer()
+        assert transformer.is_fitted()
+
+    def test_transform_applies_log2(self):
+        transformer = msreport.normalize.Log2Transformer()
+        table = pd.DataFrame({"A": [1, 2, 4], "B": [8, 16, 32]})
+        table_log2 = transformer.transform(table)
+        expected = np.log2(table)
+        pd.testing.assert_frame_equal(table_log2, expected)
+
+    def test_transform_handles_zeros_as_nan(self):
+        transformer = msreport.normalize.Log2Transformer()
+        table = pd.DataFrame({"A": [0, 1, 2], "B": [4, 0, 8]})
+        table_log2 = transformer.transform(table)
+
+        assert np.isnan(table_log2.loc[0, "A"]) & np.isnan(table_log2.loc[1, "B"])
