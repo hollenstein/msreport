@@ -224,6 +224,56 @@ def test_process_protein_entries():
         assert table[column].tolist() == expected_values
 
 
+class TestAddProteinSiteIdentifiers:
+    @pytest.fixture(autouse=True)
+    def _init_table(self):
+        self.table = pd.DataFrame(
+            {
+                "Representative protein": ["P60709", "P60709"],
+                "Gene name": ["ACTB", "ACTB"],
+                "Site": ["14", "14;18"],
+            }
+        )
+
+    def test_raises_value_error_if_site_column_missing(self, example_protein_db):  # fmt: skip
+        with pytest.raises(ValueError):
+            msreport.reader.add_protein_site_identifiers(
+                self.table, example_protein_db, site_column="NonExistent", protein_name_column="Gene name"
+            )  # fmt: skip
+
+    def test_raises_value_error_if_protein_name_column_missing(self, example_protein_db):  # fmt: skip
+        with pytest.raises(ValueError):
+            msreport.reader.add_protein_site_identifiers(
+                self.table, example_protein_db, site_column="Site", protein_name_column="NonExistent"
+            )  # fmt: skip
+
+    def test_raises_value_error_if_representative_protein_column_missing(self, example_protein_db):  # fmt: skip
+        self.table = self.table.drop(columns=["Representative protein"])
+        with pytest.raises(ValueError):
+            msreport.reader.add_protein_site_identifiers(
+                self.table, example_protein_db, site_column="Site", protein_name_column="Gene name"
+            )  # fmt: skip
+
+    def test_site_identifiers_created_correctly(self, example_protein_db):
+        msreport.reader.add_protein_site_identifiers(
+            self.table, example_protein_db, site_column="Site", protein_name_column="Gene name"
+        )  # fmt: skip
+        expected_identifiers = ["ACTB - S14", "ACTB - S14 / K18"]
+
+        assert self.table["Protein site identifier"].tolist() == expected_identifiers
+
+    def test_fall_back_to_protein_accesssion_if_protein_name_missing(
+        self, example_protein_db
+    ):
+        self.table["Gene name"] = ""
+        msreport.reader.add_protein_site_identifiers(
+            self.table, example_protein_db, site_column="Site", protein_name_column="Gene name"
+        )  # fmt: skip
+        expected_identifiers = ["P60709 - S14", "P60709 - S14 / K18"]
+
+        assert self.table["Protein site identifier"].tolist() == expected_identifiers
+
+
 class TestAddSequenceCoverage:
     def test_calculate_correct_coverage(self):
         peptide_table = pd.DataFrame(
