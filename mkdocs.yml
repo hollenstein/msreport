@@ -1,0 +1,52 @@
+site_name: MsReport documentation
+repo_url: https://github.com/hollenstein/msreport
+repo_name: hollenstein/msreport
+
+theme:
+  name: "material"
+  features:
+    - navigation.instant
+    - navigation.top
+    - navigation.footer
+    - content.code.copy  # Code blocks
+  #palette:
+  #  scheme: slate
+  font:
+    text: Source Sans Pro
+    code: Source Code Pro
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+
+plugins:
+  - awesome-nav  # customize navigation structure 
+  - macros:
+      module_name: docs/assets/scripts/macros
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [msreport]
+          options:
+            # Headings
+            show_root_toc_entry: false
+            show_symbol_type_heading: true
+            # Members
+            filters: ["!^_"]
+            members_order: source
+            summary: true
+            # Docstrings
+            docstring_style: google
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+            # Signature
+            show_signature_annotations: true
+            separate_signature: true
+            signature_crossrefs: true
+          import:
+            - url: https://docs.python.org/3/objects.inv
+              domains: [py, std]
+            - url: https://typing-extensions.readthedocs.io/en/latest/objects.inv
+  - roamlinks  # simplifies relative linking between documents by allowing [[roamlinks]]
+  - search     # enable the built-in search plugin 
