@@ -1,16 +1,9 @@
-"""
-Columns that are not yet present in the amica output at the moment:
-Index([
-    'Protein Probability',
-    'Top Peptide Probability',
-    'Total peptides',
-    'Leading proteins',
-    'Protein entry name',
-    'Fasta header',
-    'Protein length',
-    'iBAQ peptides',
-    'Sequence coverage',
-], dtype='object')
+"""Exporting of proteomics data from `Qtable` into external formats.
+
+This module offers functionalities to convert and save `Qtable` data into files
+compatible with external tools (Amica and Perseus), and creating sequence coverage maps
+in HTML format. While most functions operate on `Qtable` instances, some may accept
+other data structures.
 """
 
 import os

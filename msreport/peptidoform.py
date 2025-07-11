@@ -1,3 +1,12 @@
+"""Defines the `Peptide` class and associated utilities for handling peptidoforms.
+
+This module provides a `Peptide` class for representing modified peptide sequences,
+and their site localization probabilities. It offers methods to access and manipulate
+peptide information, summarize isoform probabilities, and retrieve modification sites.
+Additionally, it includes utility functions for parsing modified sequence strings and
+converting site localization probabilities to and from a standardized string format.
+"""
+
 from collections import defaultdict as ddict
 from typing import Optional
 

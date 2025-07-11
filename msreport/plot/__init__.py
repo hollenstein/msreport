@@ -1,4 +1,4 @@
-"""This module provides various plotting functions for visualizing data within a Qtable.
+"""Plotting functions for visualizing proteomics data from `Qtable`.
 
 The functions in this module generate a wide range of plots, including heatmaps, PCA
 plots, volcano plots, and histograms, to analyze and compare expression values,
@@ -6,8 +6,8 @@ missingness, contaminants, and other features in proteomics datasets. The plots 
 designed to work with the Qtable class as input, which provides structured access to
 proteomics data and experimental design information.
 
-The style of the plots can be customized using the `set_active_style` function, which
-allows applying style sheets from the msreport library or those available in matplotlib.
+Users can customize plot styles via the `set_active_style` function, which allows
+applying style sheets from the msreport library or those available in matplotlib.
 """
 
 from .comparison import expression_comparison, pvalue_histogram, volcano_ma

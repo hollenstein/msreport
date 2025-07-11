@@ -1,3 +1,12 @@
+"""Transformer classes for imputing missing values in quantitative proteomics data.
+
+This module defines transformer classes that can be fitted to a table containing
+quantitative values to learn imputation parameters. Once fitted, these transformers can
+then be applied to another table to transform it by filling in missing values. The
+transformation returns a new copy of the table with the imputed values, leaving the
+original table unchanged.
+"""
+
 from __future__ import annotations
 
 from typing import Any, Optional

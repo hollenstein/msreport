@@ -1,3 +1,18 @@
+"""Defines the `Qtable` class, the central container for quantitative proteomics data.
+
+The `Qtable` class serves as the standardized data structure for `msreport`,
+storing a main table with quantitative values and associated metadata for its entries;
+it also maintains the name of the unique ID column for the main table. Additionally,
+it stores an experimental design table that links sample names to experimental
+conditions and replicate information.
+
+`Qtable` provides convenience methods for creating subtables and accessing design
+related information (e.g., samples per experiment), and instances of `Qtable` can be
+easily saved to disk and loaded back. As the central data container, the `Qtable`
+facilitates seamless integration with the high-level modules `analyze`, `plot` and
+`export`, which all directly operate on `Qtable` instances.
+"""
+
 from __future__ import annotations
 
 import copy

@@ -1,3 +1,17 @@
+"""Transformer classes for normalizing and transforming quantitative proteomics data.
+
+This module defines various transformer classes for normalizing and scaling quantitative
+values in tabular data. Examples include normalizers like median, mode, and LOWESS, as
+well as scalers such as PercentageScaler and ZScoreScaler. A specialized
+`CategoricalNormalizer` is also provided, which, when appropriately fitted and applied,
+can be used for complex transformations such as iBAQ or site-to-protein normalization.
+
+These transformers can be fitted to a table containing quantitative values to learn
+parameters. Once fitted, they can then be applied to another table to adjust its values.
+The transformation returns a new copy of the table with the normalized/scaled values,
+leaving the original table unchanged.
+"""
+
 from __future__ import annotations
 
 from typing import Callable, Iterable, Optional, Protocol

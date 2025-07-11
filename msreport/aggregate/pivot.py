@@ -1,3 +1,11 @@
+"""Functionalities for reshaping tabular quantitative proteomics data.
+
+This module offers methods to transform data from a "long" format into a "wide" format,
+which is a common and often necessary step before aggregation or analysis. It supports
+pivoting data based on specified index and grouping columns, and can handle both
+quantitative values and annotation columns.
+"""
+
 from typing import Iterable
 
 import pandas as pd

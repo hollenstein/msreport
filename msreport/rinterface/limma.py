@@ -1,4 +1,4 @@
-"""Python interface to custome R scripts."""
+"""Python interface to the 'limma.R' script."""
 
 import os
 

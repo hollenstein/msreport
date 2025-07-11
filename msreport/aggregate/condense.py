@@ -1,3 +1,12 @@
+"""Low-level functions for aggregating numerical and string data.
+
+This module defines fundamental "condenser" functions that operate directly on NumPy
+arrays. These functions are designed to be applied to groups of data, performing
+operations such as summing values, finding maximum/minimum, counting or joining unique
+elements, and calculating abundance profiles. It includes the core implementations for
+MaxLFQ summation.
+"""
+
 import numpy as np
 
 import msreport.helper.maxlfq as MAXLFQ

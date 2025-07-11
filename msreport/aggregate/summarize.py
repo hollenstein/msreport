@@ -1,3 +1,13 @@
+"""High-level functions for aggregating quantitative proteomics data.
+
+This module offers functions to summarize data from a lower level of abstraction (e.g.
+ions, peptides) to a higher level (e.g., peptides, proteins, PTMs). It operates directly
+on pandas DataFrames, allowing users to specify a grouping column and the columns to be
+summarized. These functions often leverage low-level condenser operations defined in
+`msreport.aggregate.condense`. It includes specific functions for MaxLFQ summation, as
+well as general counting, joining, and summing of columns.
+"""
+
 from typing import Callable, Iterable, Optional
 
 import numpy as np

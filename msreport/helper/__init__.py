@@ -1,3 +1,9 @@
+"""A collection of widely used helper and utility functions.
+
+This module re-exports commonly used functions from various `msreport.helper`
+submodules for convenience.
+"""
+
 from .calc import (
     calculate_monoisotopic_mass,
     calculate_sequence_coverage,

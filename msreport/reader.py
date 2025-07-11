@@ -1,17 +1,18 @@
-"""Module for reading result tables from various MS analysis tools and converting them
-to a standardized format following the MsReport convention.
+"""Provides tools for importing and standardizing quantitative proteomics data.
 
-Currently for MaxQuant and FragPipe protein, peptide, and ion tables are supported, and
-for Spectronaut protein tables are supported when exported with the correct report
-scheme.
+This module offers software-specific reader classes to import raw result tables (e.g.,
+proteins, peptides, ions) from various proteomics software (MaxQuant, FragPipe,
+Spectronaut) and convert them into a standardized `msreport` format. Additionally, it
+provides functions for annotating imported data with biological metadata, such as
+protein information (e.g., sequence length, molecular weight) and peptide positions,
+extracted from a ProteinDatabase (FASTA file).
 
-New column names:
+New columns added to imported protein tables:
 - Representative protein
 - Leading proteins
 - Protein reported by software
 
-Unified column names:
-- Total peptides
+Standardized column names for quantitative values (if available in the software output):
 - Spectral count "sample name"
 - Unique spectral count "sample name"
 - Total spectral count "sample name"

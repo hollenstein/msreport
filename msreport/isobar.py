@@ -1,3 +1,13 @@
+"""Provides a transformer class for processing isobarically labeled proteomics data.
+
+This module defines the `IsotopeImpurityCorrecter` class for processing of isobaric
+(e.g., TMT, iTRAQ) reporter intensities. This transformer must be fitted with an isotope
+impurity matrix to correct interference in reporter intensities. Once fitted, the
+transformer can then be applied to a table containing reporter ion intensities to adjust
+its intensity values. The transformation returns a new copy of the table with the
+processed values, leaving the original table unchanged.
+"""
+
 from __future__ import annotations
 
 import functools

@@ -1,3 +1,10 @@
+"""Functionalities for import and access to protein sequence databases from FASTA files.
+
+This module serves as an interface to the `profasta` library, offering a convenient way
+to generate a `profasta.db.ProteinDatabase` from one or multiple FASTA files. It
+supports custom FASTA header parsing through a configurable header parser.
+"""
+
 import pathlib
 from typing import Iterable
 

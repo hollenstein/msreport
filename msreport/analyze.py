@@ -1,4 +1,9 @@
-"""The analyze module contains methods for analysing quantification results."""
+"""Tools for post-processing and statistical analysis of `Qtable` data.
+
+All functions in this module take a `Qtable` object and modify its data in place. The
+module provides functionality for data evaluation, normalization, imputation of missing
+values, and statistical testing, including integration with R's LIMMA package.
+"""
 
 from __future__ import annotations
 
