@@ -1,5 +1,5 @@
 from collections import defaultdict as ddict
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
@@ -55,7 +55,7 @@ class Peptide:
             return 0
         return len(self.modification_positions[modification])
 
-    def isoform_probability(self, modification: str) -> Union[float, None]:
+    def isoform_probability(self, modification: str) -> float | None:
         """Calculates the isoform probability for a given modification.
 
         Returns:
@@ -66,12 +66,13 @@ class Peptide:
         """
         probabilities = []
         for site in self.list_modified_peptide_sites(modification):
-            probabilities.append(self.get_peptide_site_probability(site))
-        if None in probabilities:
-            return None
+            probability = self.get_peptide_site_probability(site)
+            if probability is None:
+                return None
+            probabilities.append(probability)
         return float(np.prod(probabilities))
 
-    def get_peptide_site_probability(self, position: int) -> Optional[float]:
+    def get_peptide_site_probability(self, position: int) -> float | None:
         """Return the modification localization probability of the peptide position.
 
         Args:
@@ -85,7 +86,7 @@ class Peptide:
         """
         return self._get_site_probability(position, is_protein_position=False)
 
-    def get_protein_site_probability(self, position: int) -> Optional[float]:
+    def get_protein_site_probability(self, position: int) -> float | None:
         """Return the modification localization probability of the protein position.
 
         Args:
@@ -109,7 +110,7 @@ class Peptide:
 
     def _get_site_probability(
         self, position: int, is_protein_position: bool
-    ) -> Optional[float]:
+    ) -> float | None:
         """Return the modification localization probability of the peptide position.
 
         Args:
@@ -224,7 +225,7 @@ def modify_peptide(
 
 
 def make_localization_string(
-    localization_probabilities: dict, decimal_places: int = 3
+    localization_probabilities: dict[str, dict[int, float]], decimal_places: int = 3
 ) -> str:
     """Generates a site localization probability string.
 

@@ -314,7 +314,7 @@ def sample_intensities(
 
 @with_active_style
 def sample_correlation(
-    qtable, exclude_invalid: bool = True, labels: bool = False
+    qtable: Qtable, exclude_invalid: bool = True, labels: bool = False
 ) -> tuple[plt.Figure, list[plt.Axes]]:
     """Generates a pair-wise correlation matrix of samples 'Expression' values.
 

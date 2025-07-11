@@ -497,7 +497,9 @@ class MaxQuantReader(ResultReader):
         mod_probability_columns = msreport.helper.find_columns(new_df, "Probabilities")
         localization_string_column = "Modification localization string"
 
-        mod_localization_probabilities = [{} for _ in range(new_df.shape[0])]
+        mod_localization_probabilities: list[dict[str, dict[int, float]]] = [
+            {} for _ in range(new_df.shape[0])
+        ]
         for probability_column in mod_probability_columns:
             # FUTURE: Type should be checked and enforced during the import
             if not pd.api.types.is_string_dtype(new_df[probability_column].dtype):
@@ -963,7 +965,7 @@ class FragPipeReader(ResultReader):
         filename: Optional[str] = None,
         rename_columns: bool = True,
         rewrite_modifications: bool = True,
-    ):
+    ) -> pd.DataFrame:
         """Concatenate all "psm.tsv" files and return a processed dataframe.
 
         Args:
@@ -1639,7 +1641,7 @@ def sort_leading_proteins(
     db_origins_present = "Leading proteins database origin" in table
 
     if database_order is not None:
-        database_encoding = defaultdict(lambda: 999)
+        database_encoding: dict[str, int] = defaultdict(lambda: 999)
         database_encoding.update({db: i for i, db in enumerate(database_order)})
     if penalize_contaminants is not None:
         contaminant_encoding = {"False": 0, "True": 1, False: 0, True: 1}
@@ -1647,7 +1649,7 @@ def sort_leading_proteins(
     for _, row in table.iterrows():
         protein_ids = row["Leading proteins"].split(";")
 
-        sorting_info = [[] for _ in protein_ids]
+        sorting_info: list[list] = [[] for _ in protein_ids]
         if special_proteins is not None:
             for i, _id in enumerate(protein_ids):
                 sorting_info[i].append(_id not in special_proteins)
@@ -1787,7 +1789,7 @@ def add_protein_site_annotation(
     protein_db: ProteinDatabase,
     protein_column: str = "Representative protein",
     site_column: str = "Protein site",
-):
+) -> pd.DataFrame:
     """Uses a FASTA protein database to add protein site annotation columns.
 
     Adds the columns "Modified residue", which corresponds to the amino acid at the
@@ -2384,7 +2386,9 @@ def _extract_fragpipe_assigned_modifications(
     return modifications
 
 
-def extract_maxquant_localization_probabilities(localization_entry: str) -> dict:
+def extract_maxquant_localization_probabilities(
+    localization_entry: str,
+) -> dict[int, float]:
     """Extract localization probabilites from a MaxQuant "Probabilities" entry.
 
     Args:
@@ -2554,8 +2558,8 @@ def _create_multi_protein_annotations_from_db(
                 query_result.append(query_function(db_entry, default_value))
             else:
                 query_result.append(default_value)
-        query_result = ";".join(map(str, query_result))
-        annotation_values.append(query_result)
+        annotation_value = ";".join(map(str, query_result))
+        annotation_values.append(annotation_value)
     return annotation_values
 
 

@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, Optional, Union
+from typing import Callable, Iterable, Optional
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ from msreport.helper import find_sample_columns
 def count_unique(
     table: pd.DataFrame,
     group_by: str,
-    input_column: Union[str, Iterable],
+    input_column: str | Iterable[str],
     output_column: str = "Unique counts",
     is_sorted: bool = False,
 ) -> pd.DataFrame:
@@ -55,7 +55,7 @@ def count_unique(
 def join_unique(
     table: pd.DataFrame,
     group_by: str,
-    input_column: Union[str, Iterable],
+    input_column: str | Iterable[str],
     output_column: str = "Unique values",
     sep: str = ";",
     is_sorted: bool = False,
@@ -215,7 +215,7 @@ def sum_columns_maxlfq(
 def aggregate_unique_groups(
     table: pd.DataFrame,
     group_by: str,
-    columns_to_aggregate: Union[str, Iterable],
+    columns_to_aggregate: str | Iterable[str],
     condenser: Callable,
     is_sorted: bool,
 ) -> tuple[np.ndarray, np.ndarray]:

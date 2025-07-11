@@ -14,6 +14,7 @@ Index([
 """
 
 import os
+import pathlib
 import warnings
 from collections import defaultdict as ddict
 from typing import Iterable, Optional, Protocol, Sequence
@@ -99,7 +100,7 @@ def contaminants_to_clipboard(qtable: Qtable) -> None:
 
 def to_perseus_matrix(
     qtable: Qtable,
-    directory,
+    directory: str | pathlib.Path,
     table_name: str = "perseus_matrix.tsv",
 ) -> None:
     """Exports a qtable to a perseus matrix file in tsv format.
@@ -151,7 +152,7 @@ def to_perseus_matrix(
 
 def to_amica(
     qtable: Qtable,
-    directory,
+    directory: str | pathlib.Path,
     table_name: str = "amica_table.tsv",
     design_name: str = "amica_design.tsv",
 ) -> None:

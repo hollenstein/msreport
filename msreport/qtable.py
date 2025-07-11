@@ -4,7 +4,7 @@ import copy
 import os
 import warnings
 from contextlib import contextmanager
-from typing import Any, Iterable, Optional
+from typing import Any, Generator, Iterable, Optional
 
 import numpy as np
 import pandas as pd
@@ -359,7 +359,7 @@ class Qtable:
         keep_experiments: Optional[Iterable[str]] = None,
         exclude_samples: Optional[Iterable[str]] = None,
         keep_samples: Optional[Iterable[str]] = None,
-    ):
+    ) -> Generator[None, None, None]:
         """Context manager to temporarily modify the design table.
 
         Args:

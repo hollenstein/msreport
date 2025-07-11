@@ -1,11 +1,11 @@
 import pathlib
-from typing import Iterable, Union
+from typing import Iterable
 
 from profasta.db import ProteinDatabase
 
 
 def import_protein_database(
-    fasta_path: Union[str, pathlib.Path, Iterable[Union[str, pathlib.Path]]],
+    fasta_path: str | pathlib.Path | Iterable[str | pathlib.Path],
     header_parser: str = "uniprot",
 ) -> ProteinDatabase:
     """Generates a protein database from one or a list of fasta files.
