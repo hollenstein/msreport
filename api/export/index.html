@@ -779,18 +779,11 @@
 
     <div class="doc doc-contents first">
 
-        <p>Columns that are not yet present in the amica output at the moment:
-Index([
-    'Protein Probability',
-    'Top Peptide Probability',
-    'Total peptides',
-    'Leading proteins',
-    'Protein entry name',
-    'Fasta header',
-    'Protein length',
-    'iBAQ peptides',
-    'Sequence coverage',
-], dtype='object')</p>
+        <p>Exporting of proteomics data from <code>Qtable</code> into external formats.</p>
+<p>This module offers functionalities to convert and save <code>Qtable</code> data into files
+compatible with external tools (Amica and Perseus), and creating sequence coverage maps
+in HTML format. While most functions operate on <code>Qtable</code> instances, some may accept
+other data structures.</p>
 
 
 
@@ -1043,7 +1036,13 @@ conventions.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\export.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">45</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
 <span class="normal">46</span>
 <span class="normal">47</span>
 <span class="normal">48</span>
@@ -1089,13 +1088,7 @@ conventions.</p>
 <span class="normal">88</span>
 <span class="normal">89</span>
 <span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span>
-<span class="normal">95</span>
-<span class="normal">96</span>
-<span class="normal">97</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">contaminants_to_clipboard</span><span class="p">(</span><span class="n">qtable</span><span class="p">:</span> <span class="n">Qtable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">91</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">contaminants_to_clipboard</span><span class="p">(</span><span class="n">qtable</span><span class="p">:</span> <span class="n">Qtable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a contaminant table and writes it to the system clipboard.</span>
 
 <span class="sd">    The contaminant table contains &quot;iBAQ rank&quot;, &quot;riBAQ&quot;, &quot;iBAQ intensity&quot;, &quot;Intensity&quot;,</span>
@@ -1162,7 +1155,11 @@ conventions.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_perseus_matrix</span><span class="p">(</span><span class="n">qtable</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Qtable (msreport.qtable.Qtable)" href="../qtable/#msreport.qtable.Qtable">Qtable</a></span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;perseus_matrix.tsv&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_perseus_matrix</span><span class="p">(</span>
+    <span class="n">qtable</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Qtable (msreport.qtable.Qtable)" href="../qtable/#msreport.qtable.Qtable">Qtable</a></span><span class="p">,</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span>
+    <span class="n">table_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;perseus_matrix.tsv&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1213,6 +1210,7 @@ T = Text</p>
                 <code>directory</code>
             </td>
             <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1246,7 +1244,13 @@ T = Text</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\export.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">100</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
 <span class="normal">101</span>
 <span class="normal">102</span>
 <span class="normal">103</span>
@@ -1289,15 +1293,9 @@ T = Text</p>
 <span class="normal">140</span>
 <span class="normal">141</span>
 <span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_perseus_matrix</span><span class="p">(</span>
+<span class="normal">143</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_perseus_matrix</span><span class="p">(</span>
     <span class="n">qtable</span><span class="p">:</span> <span class="n">Qtable</span><span class="p">,</span>
-    <span class="n">directory</span><span class="p">,</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span>
     <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;perseus_matrix.tsv&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Exports a qtable to a perseus matrix file in tsv format.</span>
@@ -1359,7 +1357,12 @@ T = Text</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_amica</span><span class="p">(</span><span class="n">qtable</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Qtable (msreport.qtable.Qtable)" href="../qtable/#msreport.qtable.Qtable">Qtable</a></span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;amica_table.tsv&#39;</span><span class="p">,</span> <span class="n">design_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;amica_design.tsv&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_amica</span><span class="p">(</span>
+    <span class="n">qtable</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            Qtable (msreport.qtable.Qtable)" href="../qtable/#msreport.qtable.Qtable">Qtable</a></span><span class="p">,</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span>
+    <span class="n">table_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;amica_table.tsv&quot;</span><span class="p">,</span>
+    <span class="n">design_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;amica_design.tsv&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1402,6 +1405,7 @@ columns are included from samples that are present in the qtable design.</p>
                 <code>directory</code>
             </td>
             <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1452,7 +1456,13 @@ columns are included from samples that are present in the qtable design.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\export.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">152</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
 <span class="normal">153</span>
 <span class="normal">154</span>
 <span class="normal">155</span>
@@ -1472,15 +1482,9 @@ columns are included from samples that are present in the qtable design.</p>
 <span class="normal">169</span>
 <span class="normal">170</span>
 <span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_amica</span><span class="p">(</span>
+<span class="normal">172</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_amica</span><span class="p">(</span>
     <span class="n">qtable</span><span class="p">:</span> <span class="n">Qtable</span><span class="p">,</span>
-    <span class="n">directory</span><span class="p">,</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span>
     <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;amica_table.tsv&quot;</span><span class="p">,</span>
     <span class="n">design_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;amica_design.tsv&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1519,7 +1523,18 @@ columns are included from samples that are present in the qtable design.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">write_html_coverage_map</span><span class="p">(</span><span class="n">filepath</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">protein_id</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">peptide_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">protein_db</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ProteinDatabase (msreport.export.ProteinDatabase)" href="#msreport.export.ProteinDatabase">ProteinDatabase</a></span><span class="p">,</span> <span class="n">displayed_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">coverage_color</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;#E73C40&#39;</span><span class="p">,</span> <span class="n">highlight_positions</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">highlight_color</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;#1E90FF&#39;</span><span class="p">,</span> <span class="n">column_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">row_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">50</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">write_html_coverage_map</span><span class="p">(</span>
+    <span class="n">filepath</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">protein_id</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">peptide_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">protein_db</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ProteinDatabase (msreport.export.ProteinDatabase)" href="#msreport.export.ProteinDatabase">ProteinDatabase</a></span><span class="p">,</span>
+    <span class="n">displayed_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">coverage_color</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;#E73C40&quot;</span><span class="p">,</span>
+    <span class="n">highlight_positions</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">highlight_color</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;#1E90FF&quot;</span><span class="p">,</span>
+    <span class="n">column_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">row_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+<span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1713,7 +1728,13 @@ one-indexed, which means that the first amino acid positions is 1.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\export.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">181</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
 <span class="normal">182</span>
 <span class="normal">183</span>
 <span class="normal">184</span>
@@ -1794,13 +1815,7 @@ one-indexed, which means that the first amino acid positions is 1.</p>
 <span class="normal">259</span>
 <span class="normal">260</span>
 <span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span>
-<span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_html_coverage_map</span><span class="p">(</span>
+<span class="normal">262</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">write_html_coverage_map</span><span class="p">(</span>
     <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">protein_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">peptide_table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>

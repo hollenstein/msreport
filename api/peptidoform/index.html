@@ -899,6 +899,13 @@
 
     <div class="doc doc-contents first">
 
+        <p>Defines the <code>Peptide</code> class and associated utilities for handling peptidoforms.</p>
+<p>This module provides a <code>Peptide</code> class for representing modified peptide sequences,
+and their site localization probabilities. It offers methods to access and manipulate
+peptide information, summarize isoform probabilities, and retrieve modification sites.
+Additionally, it includes utility functions for parsing modified sequence strings and
+converting site localization probabilities to and from a standardized string format.</p>
+
 
 
 
@@ -995,7 +1002,11 @@
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Peptide</span><span class="p">(</span><span class="n">modified_sequence</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">localization_probabilities</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">protein_position</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">Peptide</span><span class="p">(</span>
+    <span class="n">modified_sequence</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">localization_probabilities</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">protein_position</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1084,16 +1095,7 @@
 
                   <details class="quote">
                     <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">19</span>
 <span class="normal">20</span>
 <span class="normal">21</span>
 <span class="normal">22</span>
@@ -1103,7 +1105,16 @@
 <span class="normal">26</span>
 <span class="normal">27</span>
 <span class="normal">28</span>
-<span class="normal">29</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">modified_sequence</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">localization_probabilities</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1146,7 +1157,9 @@
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">make_modified_sequence</span><span class="p">(</span><span class="n">include</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">make_modified_sequence</span><span class="p">(</span>
+    <span class="n">include</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1231,16 +1244,7 @@ sequence string. By default all modifications are added.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
 <span class="normal">41</span>
 <span class="normal">42</span>
 <span class="normal">43</span>
@@ -1250,7 +1254,16 @@ sequence string. By default all modifications are added.</p>
 <span class="normal">47</span>
 <span class="normal">48</span>
 <span class="normal">49</span>
-<span class="normal">50</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">make_modified_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">make_modified_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a modified sequence string.</span>
 
 <span class="sd">    Args:</span>
@@ -1294,11 +1307,11 @@ sequence string. By default all modifications are added.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_modification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modification</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_modification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modification</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns how often the a specified modification occurs.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">modification</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modification_positions</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
@@ -1317,7 +1330,7 @@ sequence string. By default all modifications are added.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">isoform_probability</span><span class="p">(</span><span class="n">modification</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">isoform_probability</span><span class="p">(</span><span class="n">modification</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1336,7 +1349,7 @@ sequence string. By default all modifications are added.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, None]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1346,7 +1359,7 @@ sequence string. By default all modifications are added.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, None]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1356,7 +1369,7 @@ sequence string. By default all modifications are added.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, None]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1366,7 +1379,7 @@ sequence string. By default all modifications are added.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, None]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1380,21 +1393,22 @@ sequence string. By default all modifications are added.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">67</span>
 <span class="normal">68</span>
 <span class="normal">69</span>
 <span class="normal">70</span>
 <span class="normal">71</span>
-<span class="normal">72</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">isoform_probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modification</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">isoform_probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modification</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the isoform probability for a given modification.</span>
 
 <span class="sd">    Returns:</span>
@@ -1405,9 +1419,10 @@ sequence string. By default all modifications are added.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">probabilities</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_modified_peptide_sites</span><span class="p">(</span><span class="n">modification</span><span class="p">):</span>
-        <span class="n">probabilities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_peptide_site_probability</span><span class="p">(</span><span class="n">site</span><span class="p">))</span>
-    <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">probabilities</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">probability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_peptide_site_probability</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">probability</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">probabilities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">probability</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">probabilities</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1423,7 +1438,7 @@ sequence string. By default all modifications are added.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_peptide_site_probability</span><span class="p">(</span><span class="n">position</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_peptide_site_probability</span><span class="p">(</span><span class="n">position</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1474,7 +1489,7 @@ returned.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1484,7 +1499,7 @@ returned.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1494,7 +1509,7 @@ returned.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1508,19 +1523,19 @@ returned.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">84</span>
 <span class="normal">85</span>
-<span class="normal">86</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_peptide_site_probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span>
+<span class="normal">96</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_peptide_site_probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the modification localization probability of the peptide position.</span>
 
 <span class="sd">    Args:</span>
@@ -1547,7 +1562,7 @@ returned.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_protein_site_probability</span><span class="p">(</span><span class="n">position</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_protein_site_probability</span><span class="p">(</span><span class="n">position</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1598,7 +1613,7 @@ returned.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1608,7 +1623,7 @@ returned.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1618,7 +1633,7 @@ returned.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a> | None</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1632,19 +1647,19 @@ returned.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 88</span>
-<span class="normal"> 89</span>
-<span class="normal"> 90</span>
-<span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 98</span>
 <span class="normal"> 99</span>
-<span class="normal">100</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_protein_site_probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_protein_site_probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the modification localization probability of the protein position.</span>
 
 <span class="sd">    Args:</span>
@@ -1681,9 +1696,9 @@ returned.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_modified_peptide_sites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modification</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_modified_peptide_sites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modification</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a list of peptide positions containing the specified modification.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_modified_sites</span><span class="p">(</span><span class="n">modification</span><span class="p">,</span> <span class="n">use_protein_position</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -1710,9 +1725,9 @@ returned.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_modified_protein_sites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modification</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">list_modified_protein_sites</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">modification</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a list of protein positions containing the specified modification.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_modified_sites</span><span class="p">(</span><span class="n">modification</span><span class="p">,</span> <span class="n">use_protein_position</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -1738,7 +1753,9 @@ returned.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">parse_modified_sequence</span><span class="p">(</span><span class="n">modified_sequence</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">tag_open</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">tag_close</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]]]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">parse_modified_sequence</span><span class="p">(</span>
+    <span class="n">modified_sequence</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">tag_open</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">tag_close</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1854,17 +1871,7 @@ returned.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">172</span>
 <span class="normal">173</span>
 <span class="normal">174</span>
 <span class="normal">175</span>
@@ -1893,7 +1900,17 @@ returned.</p>
 <span class="normal">198</span>
 <span class="normal">199</span>
 <span class="normal">200</span>
-<span class="normal">201</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">parse_modified_sequence</span><span class="p">(</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">parse_modified_sequence</span><span class="p">(</span>
     <span class="n">modified_sequence</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">tag_open</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">tag_close</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1947,7 +1964,12 @@ returned.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">modify_peptide</span><span class="p">(</span><span class="n">sequence</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">modifications</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]],</span> <span class="n">tag_open</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;[&#39;</span><span class="p">,</span> <span class="n">tag_close</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;]&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">modify_peptide</span><span class="p">(</span>
+    <span class="n">sequence</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">modifications</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]],</span>
+    <span class="n">tag_open</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;[&quot;</span><span class="p">,</span>
+    <span class="n">tag_close</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;]&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1990,17 +2012,7 @@ returned.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">214</span>
 <span class="normal">215</span>
 <span class="normal">216</span>
 <span class="normal">217</span>
@@ -2009,7 +2021,17 @@ returned.</p>
 <span class="normal">220</span>
 <span class="normal">221</span>
 <span class="normal">222</span>
-<span class="normal">223</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">modify_peptide</span><span class="p">(</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">modify_peptide</span><span class="p">(</span>
     <span class="n">sequence</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">modifications</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
     <span class="n">tag_open</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;[&quot;</span><span class="p">,</span>
@@ -2043,7 +2065,10 @@ returned.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">make_localization_string</span><span class="p">(</span><span class="n">localization_probabilities</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span><span class="p">,</span> <span class="n">decimal_places</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">make_localization_string</span><span class="p">(</span>
+    <span class="n">localization_probabilities</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">]],</span>
+    <span class="n">decimal_places</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2067,7 +2092,7 @@ returned.</p>
                 <code>localization_probabilities</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2175,17 +2200,7 @@ and probabilitiesa are floats ranging from 0 to 1.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span>
-<span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">236</span>
 <span class="normal">237</span>
 <span class="normal">238</span>
 <span class="normal">239</span>
@@ -2204,8 +2219,18 @@ and probabilitiesa are floats ranging from 0 to 1.</p>
 <span class="normal">252</span>
 <span class="normal">253</span>
 <span class="normal">254</span>
-<span class="normal">255</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">make_localization_string</span><span class="p">(</span>
-    <span class="n">localization_probabilities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">decimal_places</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">make_localization_string</span><span class="p">(</span>
+    <span class="n">localization_probabilities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">decimal_places</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a site localization probability string.</span>
 
@@ -2248,7 +2273,9 @@ and probabilitiesa are floats ranging from 0 to 1.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">read_localization_string</span><span class="p">(</span><span class="n">localization_string</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">]]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">read_localization_string</span><span class="p">(</span>
+    <span class="n">localization_string</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2328,17 +2355,7 @@ For example "15.9949@11:1.000;79.9663@3:0.200,4:0.800"</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\peptidoform.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span>
-<span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span>
-<span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">268</span>
 <span class="normal">269</span>
 <span class="normal">270</span>
 <span class="normal">271</span>
@@ -2355,7 +2372,17 @@ For example "15.9949@11:1.000;79.9663@3:0.200,4:0.800"</p>
 <span class="normal">282</span>
 <span class="normal">283</span>
 <span class="normal">284</span>
-<span class="normal">285</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_localization_string</span><span class="p">(</span><span class="n">localization_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_localization_string</span><span class="p">(</span><span class="n">localization_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts a site localization probability string into a dictionary.</span>
 
 <span class="sd">    Args:</span>

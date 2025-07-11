@@ -1157,6 +1157,15 @@
 
     <div class="doc doc-contents first">
 
+        <p>A comprehensive set of tools for aggregating and reshaping tabular proteomics data.</p>
+<p>The <code>aggregation</code> module contains submodules that offer functionalities to transform
+data from lower levels of abstraction (e.g. ions, peptides) to higher levels (e.g.
+peptides, proteins, PTMs) through various summarization and condensation techniques.
+It also includes methods for reshaping tables from "long" to "wide" format, a common
+prerequisite for aggregation. The MaxLFQ algorithm is integrated for specific
+quantitative summarizations, enabling users to build customized, higher-level data
+tables.</p>
+
 
 
 
@@ -1175,7 +1184,7 @@
             <td><code><a class="autorefs autorefs-internal" title="            condense (msreport.aggregate.condense)" href="#msreport.aggregate.condense">condense</a></code></td>
             <td>
               <div class="doc-md-description">
-                
+                <p>Low-level functions for aggregating numerical and string data.</p>
               </div>
             </td>
           </tr>
@@ -1183,7 +1192,7 @@
             <td><code><a class="autorefs autorefs-internal" title="            pivot (msreport.aggregate.pivot)" href="#msreport.aggregate.pivot">pivot</a></code></td>
             <td>
               <div class="doc-md-description">
-                
+                <p>Functionalities for reshaping tabular quantitative proteomics data.</p>
               </div>
             </td>
           </tr>
@@ -1191,7 +1200,7 @@
             <td><code><a class="autorefs autorefs-internal" title="            summarize (msreport.aggregate.summarize)" href="#msreport.aggregate.summarize">summarize</a></code></td>
             <td>
               <div class="doc-md-description">
-                
+                <p>High-level functions for aggregating quantitative proteomics data.</p>
               </div>
             </td>
           </tr>
@@ -1228,6 +1237,13 @@
 </h2>
 
     <div class="doc doc-contents ">
+
+        <p>Low-level functions for aggregating numerical and string data.</p>
+<p>This module defines fundamental "condenser" functions that operate directly on NumPy
+arrays. These functions are designed to be applied to groups of data, performing
+operations such as summing values, finding maximum/minimum, counting or joining unique
+elements, and calculating abundance profiles. It includes the core implementations for
+MaxLFQ summation.</p>
 
 
 
@@ -1395,16 +1411,16 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 6</span>
-<span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_str</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_str</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a joined string of sorted values from the array.</span>
 
 <span class="sd">    Note that empty strings or np.nan are not included in the joined string.</span>
@@ -1428,7 +1444,9 @@
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">join_str_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;;&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">join_str_per_column</span><span class="p">(</span>
+    <span class="n">array</span><span class="p">:</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1439,12 +1457,12 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_str_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_str_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns for each column a joined string of sorted values.</span>
 
 <span class="sd">    Note that empty strings or np.nan are not included in the joined string.</span>
@@ -1474,13 +1492,13 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_unique_str</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_unique_str</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a joined string of unique sorted values from the array.&quot;&quot;&quot;</span>
     <span class="n">elements</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">array</span><span class="o">.</span><span class="n">flatten</span><span class="p">():</span>
@@ -1501,7 +1519,9 @@
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">join_unique_str_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;;&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">join_unique_str_per_column</span><span class="p">(</span>
+    <span class="n">array</span><span class="p">:</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1511,9 +1531,9 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_unique_str_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_unique_str_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns for each column a joined strings of unique sorted values.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">join_unique_str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">array</span><span class="o">.</span><span class="n">transpose</span><span class="p">()])</span>
 </code></pre></div></td></tr></table></div>
@@ -1541,16 +1561,16 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sum</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sum</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns sum of values from one or multiple columns.</span>
 
 <span class="sd">    Note that if no finite values are present in the array np.nan is returned.</span>
@@ -1585,12 +1605,12 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sum_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sum_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns for each column the sum of values.</span>
 
 <span class="sd">    Note that if no finite values are present in a column np.nan is returned.</span>
@@ -1620,13 +1640,13 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">maximum</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">maximum</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the highest finitevalue from one or multiple columns.&quot;&quot;&quot;</span>
     <span class="n">array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">array</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
@@ -1657,9 +1677,9 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">maximum_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">maximum_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns for each column the highest finite value.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">maximum</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">array</span><span class="o">.</span><span class="n">transpose</span><span class="p">()])</span>
 </code></pre></div></td></tr></table></div>
@@ -1686,13 +1706,13 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">minimum</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">minimum</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the lowest finite value from one or multiple columns.&quot;&quot;&quot;</span>
     <span class="n">array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">array</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
@@ -1723,9 +1743,9 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">minimum_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">minimum_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns for each column the lowest finite value.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">minimum</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">array</span><span class="o">.</span><span class="n">transpose</span><span class="p">()])</span>
 </code></pre></div></td></tr></table></div>
@@ -1753,17 +1773,17 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span>
-<span class="normal">95</span>
-<span class="normal">96</span>
-<span class="normal">97</span>
-<span class="normal">98</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_unique</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_unique</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the number of unique values from one or multiple columns.</span>
 
 <span class="sd">    Note that empty strings or np.nan are not counted as unique values.</span>
@@ -1799,15 +1819,15 @@
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_unique_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_unique_per_column</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns for each column the number of unique values.</span>
 
 <span class="sd">    Note that empty strings or np.nan are not counted as unique values.</span>
@@ -1830,7 +1850,9 @@
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">profile_by_median_ratio_regression</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">profile_by_median_ratio_regression</span><span class="p">(</span>
+    <span class="n">array</span><span class="p">:</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1908,16 +1930,7 @@ Abundance values must not be log transformed.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">121</span>
 <span class="normal">122</span>
 <span class="normal">123</span>
 <span class="normal">124</span>
@@ -1931,7 +1944,16 @@ Abundance values must not be log transformed.</p>
 <span class="normal">132</span>
 <span class="normal">133</span>
 <span class="normal">134</span>
-<span class="normal">135</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">profile_by_median_ratio_regression</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">profile_by_median_ratio_regression</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates abundance profiles by lstsq regression of pair-wise median ratios.</span>
 
 <span class="sd">    The function performs a least squares regression of pair-wise median ratios to</span>
@@ -2049,16 +2071,7 @@ Abundance values must not be log transformed.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\condense.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">147</span>
 <span class="normal">148</span>
 <span class="normal">149</span>
 <span class="normal">150</span>
@@ -2074,7 +2087,16 @@ Abundance values must not be log transformed.</p>
 <span class="normal">160</span>
 <span class="normal">161</span>
 <span class="normal">162</span>
-<span class="normal">163</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sum_by_median_ratio_regression</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sum_by_median_ratio_regression</span><span class="p">(</span><span class="n">array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates summed abundance by lstsq regression of pair-wise median ratios.</span>
 
 <span class="sd">    The function performs a least squares regression of pair-wise median ratios to</span>
@@ -2125,6 +2147,12 @@ Abundance values must not be log transformed.</p>
 </h2>
 
     <div class="doc doc-contents ">
+
+        <p>Functionalities for reshaping tabular quantitative proteomics data.</p>
+<p>This module offers methods to transform data from a "long" format into a "wide" format,
+which is a common and often necessary step before aggregation or analysis. It supports
+pivoting data based on specified index and grouping columns, and can handle both
+quantitative values and annotation columns.</p>
 
 
 
@@ -2193,7 +2221,13 @@ Abundance values must not be log transformed.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">pivot_table</span><span class="p">(</span><span class="n">long_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">annotation_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span> <span class="n">pivoting_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">])</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">pivot_table</span><span class="p">(</span>
+    <span class="n">long_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">index</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">annotation_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span>
+    <span class="n">pivoting_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2214,13 +2248,15 @@ Abundance values must not be log transformed.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>table</code>
+                <code>long_table</code>
             </td>
             <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Dataframe in long format that is used to generate a table in wide format.</p>
+                <p>Dataframe in long format that is used to generate a table in wide
+format.</p>
               </div>
             </td>
             <td>
@@ -2311,6 +2347,7 @@ to generate new columns in the pivoted table.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2320,6 +2357,7 @@ to generate new columns in the pivoted table.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2357,15 +2395,7 @@ pivot_table(table, "ID", "Sample", ["Annotation"], ["Quant"])
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\pivot.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">17</span>
 <span class="normal">18</span>
 <span class="normal">19</span>
 <span class="normal">20</span>
@@ -2405,17 +2435,27 @@ pivot_table(table, "ID", "Sample", ["Annotation"], ["Quant"])
 <span class="normal">54</span>
 <span class="normal">55</span>
 <span class="normal">56</span>
-<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">pivot_table</span><span class="p">(</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">pivot_table</span><span class="p">(</span>
     <span class="n">long_table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">index</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">group_by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">annotation_columns</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">pivoting_columns</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-<span class="p">):</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a pivoted table in wide format.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        table: Dataframe in long format that is used to generate a table in wide format.</span>
+<span class="sd">        long_table: Dataframe in long format that is used to generate a table in wide</span>
+<span class="sd">            format.</span>
 <span class="sd">        index: One or multiple column names that are used to group the table for</span>
 <span class="sd">            pivoting.</span>
 <span class="sd">        group_by: Column that is used to split the table on its unique entries.</span>
@@ -2468,7 +2508,12 @@ pivot_table(table, "ID", "Sample", ["Annotation"], ["Quant"])
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">pivot_column</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">],</span> <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">pivot_column</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">index</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span>
+    <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">values</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2513,7 +2558,7 @@ column names are composed of the 'values' column and the unique entries from
                 <code>index</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2608,45 +2653,45 @@ B          1.0         2.0</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\pivot.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span>
-<span class="normal">95</span>
-<span class="normal">96</span>
-<span class="normal">97</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">pivot_column</span><span class="p">(</span>
-    <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">],</span> <span class="n">group_by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="nb">str</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">pivot_column</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">group_by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a reshaped dataframe, generated by pivoting the table on one column.</span>
 
@@ -2697,7 +2742,11 @@ B          1.0         2.0</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">join_unique</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">join_unique</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">index</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span>
+    <span class="n">values</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2737,7 +2786,7 @@ B          1.0         2.0</p>
                 <code>index</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2816,16 +2865,7 @@ B           B1</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\pivot.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">109</span>
 <span class="normal">110</span>
 <span class="normal">111</span>
 <span class="normal">112</span>
@@ -2849,8 +2889,17 @@ B           B1</p>
 <span class="normal">130</span>
 <span class="normal">131</span>
 <span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_unique</span><span class="p">(</span>
-    <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="nb">str</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_unique</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a new dataframe with unique values from a column and grouped by &#39;index&#39;.</span>
 
@@ -2908,6 +2957,14 @@ B           B1</p>
 </h2>
 
     <div class="doc doc-contents ">
+
+        <p>High-level functions for aggregating quantitative proteomics data.</p>
+<p>This module offers functions to summarize data from a lower level of abstraction (e.g.
+ions, peptides) to a higher level (e.g., peptides, proteins, PTMs). It operates directly
+on pandas DataFrames, allowing users to specify a grouping column and the columns to be
+summarized. These functions often leverage low-level condenser operations defined in
+<code>msreport.aggregate.condense</code>. It includes specific functions for MaxLFQ summation, as
+well as general counting, joining, and summing of columns.</p>
 
 
 
@@ -2992,7 +3049,13 @@ B           B1</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">count_unique</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">input_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">],</span> <span class="n">output_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;Unique counts&#39;</span><span class="p">,</span> <span class="n">is_sorted</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">count_unique</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">input_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span>
+    <span class="n">output_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;Unique counts&quot;</span><span class="p">,</span>
+    <span class="n">is_sorted</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3050,7 +3113,7 @@ aggregation.</p>
                 <code>input_column</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3156,17 +3219,7 @@ C              2</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\summarize.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">20</span>
 <span class="normal">21</span>
 <span class="normal">22</span>
 <span class="normal">23</span>
@@ -3198,10 +3251,20 @@ C              2</p>
 <span class="normal">49</span>
 <span class="normal">50</span>
 <span class="normal">51</span>
-<span class="normal">52</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_unique</span><span class="p">(</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">count_unique</span><span class="p">(</span>
     <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">group_by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">input_column</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">],</span>
+    <span class="n">input_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">output_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Unique counts&quot;</span><span class="p">,</span>
     <span class="n">is_sorted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -3255,7 +3318,14 @@ C              2</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">join_unique</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">input_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">],</span> <span class="n">output_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;Unique values&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;;&#39;</span><span class="p">,</span> <span class="n">is_sorted</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">join_unique</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">input_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span>
+    <span class="n">output_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;Unique values&quot;</span><span class="p">,</span>
+    <span class="n">sep</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">,</span>
+    <span class="n">is_sorted</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3313,7 +3383,7 @@ aggregation.</p>
                 <code>input_column</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3446,17 +3516,7 @@ C         c1;c2</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\summarize.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 55</span>
-<span class="normal"> 56</span>
-<span class="normal"> 57</span>
-<span class="normal"> 58</span>
-<span class="normal"> 59</span>
-<span class="normal"> 60</span>
-<span class="normal"> 61</span>
-<span class="normal"> 62</span>
-<span class="normal"> 63</span>
-<span class="normal"> 64</span>
-<span class="normal"> 65</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 65</span>
 <span class="normal"> 66</span>
 <span class="normal"> 67</span>
 <span class="normal"> 68</span>
@@ -3496,10 +3556,20 @@ C         c1;c2</p>
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
-<span class="normal">105</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_unique</span><span class="p">(</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">join_unique</span><span class="p">(</span>
     <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">group_by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">input_column</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">],</span>
+    <span class="n">input_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">output_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Unique values&quot;</span><span class="p">,</span>
     <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">,</span>
     <span class="n">is_sorted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -3561,7 +3631,14 @@ C         c1;c2</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">sum_columns</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">samples</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span> <span class="n">input_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">output_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">is_sorted</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">sum_columns</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">samples</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span>
+    <span class="n">input_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">output_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">is_sorted</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3743,17 +3820,7 @@ C       3       6</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\summarize.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">118</span>
 <span class="normal">119</span>
 <span class="normal">120</span>
 <span class="normal">121</span>
@@ -3791,7 +3858,17 @@ C       3       6</p>
 <span class="normal">153</span>
 <span class="normal">154</span>
 <span class="normal">155</span>
-<span class="normal">156</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sum_columns</span><span class="p">(</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sum_columns</span><span class="p">(</span>
     <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">group_by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">samples</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
@@ -3854,7 +3931,14 @@ C       3       6</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">sum_columns_maxlfq</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">samples</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span> <span class="n">input_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">output_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">is_sorted</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">sum_columns_maxlfq</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">samples</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span>
+    <span class="n">input_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">output_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">is_sorted</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4040,17 +4124,7 @@ C     3.0     6.0</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\summarize.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">169</span>
 <span class="normal">170</span>
 <span class="normal">171</span>
 <span class="normal">172</span>
@@ -4093,7 +4167,17 @@ C     3.0     6.0</p>
 <span class="normal">209</span>
 <span class="normal">210</span>
 <span class="normal">211</span>
-<span class="normal">212</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sum_columns_maxlfq</span><span class="p">(</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sum_columns_maxlfq</span><span class="p">(</span>
     <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">group_by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">samples</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
@@ -4161,7 +4245,13 @@ C     3.0     6.0</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">aggregate_unique_groups</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">columns_to_aggregate</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">],</span> <span class="n">condenser</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">,</span> <span class="n">is_sorted</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">aggregate_unique_groups</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">group_by</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">columns_to_aggregate</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">],</span>
+    <span class="n">condenser</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Callable" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">,</span>
+    <span class="n">is_sorted</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4222,7 +4312,7 @@ aggregation.</p>
                 <code>columns_to_aggregate</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4310,17 +4400,7 @@ to the 'group_by' column.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\aggregate\summarize.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">225</span>
 <span class="normal">226</span>
 <span class="normal">227</span>
 <span class="normal">228</span>
@@ -4349,10 +4429,20 @@ to the 'group_by' column.</p>
 <span class="normal">251</span>
 <span class="normal">252</span>
 <span class="normal">253</span>
-<span class="normal">254</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">aggregate_unique_groups</span><span class="p">(</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">aggregate_unique_groups</span><span class="p">(</span>
     <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">group_by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">columns_to_aggregate</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">],</span>
+    <span class="n">columns_to_aggregate</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">condenser</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
     <span class="n">is_sorted</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>

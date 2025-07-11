@@ -1263,17 +1263,18 @@
 
     <div class="doc doc-contents first">
 
-        <p>Module for reading result tables from various MS analysis tools and converting them
-to a standardized format following the MsReport convention.</p>
-<p>Currently for MaxQuant and FragPipe protein, peptide, and ion tables are supported, and
-for Spectronaut protein tables are supported when exported with the correct report
-scheme.</p>
-<p>New column names:
+        <p>Provides tools for importing and standardizing quantitative proteomics data.</p>
+<p>This module offers software-specific reader classes to import raw result tables (e.g.,
+proteins, peptides, ions) from various proteomics software (MaxQuant, FragPipe,
+Spectronaut) and convert them into a standardized <code>msreport</code> format. Additionally, it
+provides functions for annotating imported data with biological metadata, such as
+protein information (e.g., sequence length, molecular weight) and peptide positions,
+extracted from a ProteinDatabase (FASTA file).</p>
+<p>New columns added to imported protein tables:
 - Representative protein
 - Leading proteins
 - Protein reported by software</p>
-<p>Unified column names:
-- Total peptides
+<p>Standardized column names for quantitative values (if available in the software output):
 - Spectral count "sample name"
 - Unique spectral count "sample name"
 - Total spectral count "sample name"
@@ -1599,9 +1600,9 @@ scheme.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>msreport\reader.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">data_directory</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">filenames</span> <span class="o">=</span> <span class="p">{}</span>
 </code></pre></div></td></tr></table></div>
@@ -1636,7 +1637,11 @@ scheme.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">MaxQuantReader</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">isobar</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">contaminant_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;CON__&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">MaxQuantReader</span><span class="p">(</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">isobar</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">contaminant_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;CON__&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1884,8 +1889,7 @@ potential contaminants.</p>
 
                   <details class="quote">
                     <summary>Source code in <code>msreport\reader.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">215</span>
-<span class="normal">216</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">216</span>
 <span class="normal">217</span>
 <span class="normal">218</span>
 <span class="normal">219</span>
@@ -1897,7 +1901,8 @@ potential contaminants.</p>
 <span class="normal">225</span>
 <span class="normal">226</span>
 <span class="normal">227</span>
-<span class="normal">228</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">228</span>
+<span class="normal">229</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">isobar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">contaminant_tag</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;CON__&quot;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initializes the MaxQuantReader.</span>
@@ -1934,7 +1939,14 @@ potential contaminants.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_proteins</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">drop_decoy</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">drop_idbysite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">drop_protein_info</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_proteins</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">drop_decoy</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">drop_idbysite</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">drop_protein_info</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2100,8 +2112,7 @@ for a full list of columns that will be removed. Default False.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">230</span>
-<span class="normal">231</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">231</span>
 <span class="normal">232</span>
 <span class="normal">233</span>
 <span class="normal">234</span>
@@ -2160,7 +2171,8 @@ for a full list of columns that will be removed. Default False.</p>
 <span class="normal">287</span>
 <span class="normal">288</span>
 <span class="normal">289</span>
-<span class="normal">290</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_proteins</span><span class="p">(</span>
+<span class="normal">290</span>
+<span class="normal">291</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_proteins</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rename_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -2235,7 +2247,12 @@ for a full list of columns that will be removed. Default False.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_peptides</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">drop_decoy</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_peptides</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">drop_decoy</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2356,8 +2373,7 @@ dropped; default True.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">292</span>
-<span class="normal">293</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">293</span>
 <span class="normal">294</span>
 <span class="normal">295</span>
 <span class="normal">296</span>
@@ -2396,7 +2412,8 @@ dropped; default True.</p>
 <span class="normal">329</span>
 <span class="normal">330</span>
 <span class="normal">331</span>
-<span class="normal">332</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_peptides</span><span class="p">(</span>
+<span class="normal">332</span>
+<span class="normal">333</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_peptides</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rename_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -2451,7 +2468,12 @@ dropped; default True.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_ion_evidence</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_modifications</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">drop_decoy</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_ion_evidence</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">rewrite_modifications</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">drop_decoy</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2583,8 +2605,7 @@ dropped; default True.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">334</span>
-<span class="normal">335</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">335</span>
 <span class="normal">336</span>
 <span class="normal">337</span>
 <span class="normal">338</span>
@@ -2643,7 +2664,8 @@ dropped; default True.</p>
 <span class="normal">391</span>
 <span class="normal">392</span>
 <span class="normal">393</span>
-<span class="normal">394</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_ion_evidence</span><span class="p">(</span>
+<span class="normal">394</span>
+<span class="normal">395</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_ion_evidence</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rename_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -2727,7 +2749,12 @@ dropped; default True.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">FragPipeReader</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">isobar</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">sil</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">contaminant_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;contam_&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">FragPipeReader</span><span class="p">(</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+    <span class="n">isobar</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">sil</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">contaminant_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;contam_&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3028,10 +3055,7 @@ default "contam_".</p>
 
                   <details class="quote">
                     <summary>Source code in <code>msreport\reader.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">650</span>
-<span class="normal">651</span>
-<span class="normal">652</span>
-<span class="normal">653</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">653</span>
 <span class="normal">654</span>
 <span class="normal">655</span>
 <span class="normal">656</span>
@@ -3057,7 +3081,10 @@ default "contam_".</p>
 <span class="normal">676</span>
 <span class="normal">677</span>
 <span class="normal">678</span>
-<span class="normal">679</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">679</span>
+<span class="normal">680</span>
+<span class="normal">681</span>
+<span class="normal">682</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">isobar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -3110,7 +3137,9 @@ default "contam_".</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_design</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sort</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_design</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sort</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3225,10 +3254,7 @@ filename is used.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">681</span>
-<span class="normal">682</span>
-<span class="normal">683</span>
-<span class="normal">684</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">684</span>
 <span class="normal">685</span>
 <span class="normal">686</span>
 <span class="normal">687</span>
@@ -3269,7 +3295,10 @@ filename is used.</p>
 <span class="normal">722</span>
 <span class="normal">723</span>
 <span class="normal">724</span>
-<span class="normal">725</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_design</span><span class="p">(</span>
+<span class="normal">725</span>
+<span class="normal">726</span>
+<span class="normal">727</span>
+<span class="normal">728</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_design</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sort</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads a &#39;fp-manifest&#39; file and returns a processed design dataframe.</span>
@@ -3328,7 +3357,12 @@ filename is used.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_proteins</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">drop_protein_info</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_proteins</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">drop_protein_info</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3461,10 +3495,7 @@ for a full list of columns that will be removed. Default False.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">727</span>
-<span class="normal">728</span>
-<span class="normal">729</span>
-<span class="normal">730</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">730</span>
 <span class="normal">731</span>
 <span class="normal">732</span>
 <span class="normal">733</span>
@@ -3511,7 +3542,10 @@ for a full list of columns that will be removed. Default False.</p>
 <span class="normal">774</span>
 <span class="normal">775</span>
 <span class="normal">776</span>
-<span class="normal">777</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_proteins</span><span class="p">(</span>
+<span class="normal">777</span>
+<span class="normal">778</span>
+<span class="normal">779</span>
+<span class="normal">780</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_proteins</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rename_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -3576,7 +3610,11 @@ for a full list of columns that will be removed. Default False.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_peptides</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_peptides</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3679,10 +3717,7 @@ True.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">779</span>
-<span class="normal">780</span>
-<span class="normal">781</span>
-<span class="normal">782</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">782</span>
 <span class="normal">783</span>
 <span class="normal">784</span>
 <span class="normal">785</span>
@@ -3712,7 +3747,10 @@ True.</p>
 <span class="normal">809</span>
 <span class="normal">810</span>
 <span class="normal">811</span>
-<span class="normal">812</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_peptides</span><span class="p">(</span>
+<span class="normal">812</span>
+<span class="normal">813</span>
+<span class="normal">814</span>
+<span class="normal">815</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_peptides</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rename_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -3760,7 +3798,12 @@ True.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_ions</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_modifications</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_ions</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">rewrite_modifications</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3894,10 +3937,7 @@ True.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">814</span>
-<span class="normal">815</span>
-<span class="normal">816</span>
-<span class="normal">817</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">817</span>
 <span class="normal">818</span>
 <span class="normal">819</span>
 <span class="normal">820</span>
@@ -3956,7 +3996,10 @@ True.</p>
 <span class="normal">873</span>
 <span class="normal">874</span>
 <span class="normal">875</span>
-<span class="normal">876</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_ions</span><span class="p">(</span>
+<span class="normal">876</span>
+<span class="normal">877</span>
+<span class="normal">878</span>
+<span class="normal">879</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_ions</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rename_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -4033,7 +4076,12 @@ True.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_ion_evidence</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_modifications</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_ion_evidence</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">rewrite_modifications</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4167,10 +4215,7 @@ True.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">878</span>
-<span class="normal">879</span>
-<span class="normal">880</span>
-<span class="normal">881</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">881</span>
 <span class="normal">882</span>
 <span class="normal">883</span>
 <span class="normal">884</span>
@@ -4248,7 +4293,10 @@ True.</p>
 <span class="normal">956</span>
 <span class="normal">957</span>
 <span class="normal">958</span>
-<span class="normal">959</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_ion_evidence</span><span class="p">(</span>
+<span class="normal">959</span>
+<span class="normal">960</span>
+<span class="normal">961</span>
+<span class="normal">962</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_ion_evidence</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rename_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -4344,7 +4392,11 @@ True.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_psm_evidence</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">rewrite_modifications</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_psm_evidence</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">rewrite_modifications</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4431,6 +4483,7 @@ Requires 'rename_columns' to be true. Default True.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4444,10 +4497,7 @@ Requires 'rename_columns' to be true. Default True.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 961</span>
-<span class="normal"> 962</span>
-<span class="normal"> 963</span>
-<span class="normal"> 964</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 964</span>
 <span class="normal"> 965</span>
 <span class="normal"> 966</span>
 <span class="normal"> 967</span>
@@ -4496,12 +4546,15 @@ Requires 'rename_columns' to be true. Default True.</p>
 <span class="normal">1010</span>
 <span class="normal">1011</span>
 <span class="normal">1012</span>
-<span class="normal">1013</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_psm_evidence</span><span class="p">(</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span>
+<span class="normal">1015</span>
+<span class="normal">1016</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_psm_evidence</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rename_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">rewrite_modifications</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<span class="p">):</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Concatenate all &quot;psm.tsv&quot; files and return a processed dataframe.</span>
 
 <span class="sd">    Args:</span>
@@ -4572,7 +4625,9 @@ Requires 'rename_columns' to be true. Default True.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">SpectronautReader</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">contaminant_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;contam_&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">SpectronautReader</span><span class="p">(</span>
+    <span class="n">directory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">contaminant_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;contam_&quot;</span>
+<span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4798,10 +4853,7 @@ default "contam_".</p>
 
                   <details class="quote">
                     <summary>Source code in <code>msreport\reader.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1284</span>
-<span class="normal">1285</span>
-<span class="normal">1286</span>
-<span class="normal">1287</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1287</span>
 <span class="normal">1288</span>
 <span class="normal">1289</span>
 <span class="normal">1290</span>
@@ -4809,7 +4861,10 @@ default "contam_".</p>
 <span class="normal">1292</span>
 <span class="normal">1293</span>
 <span class="normal">1294</span>
-<span class="normal">1295</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">contaminant_tag</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;contam_&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">1295</span>
+<span class="normal">1296</span>
+<span class="normal">1297</span>
+<span class="normal">1298</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">contaminant_tag</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;contam_&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initializes the SpectronautReader.</span>
 
 <span class="sd">    Args:</span>
@@ -4844,7 +4899,10 @@ default "contam_".</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_design</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">filetag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_design</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">filetag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4937,10 +4995,7 @@ a substring, instead of specifying a filename.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1297</span>
-<span class="normal">1298</span>
-<span class="normal">1299</span>
-<span class="normal">1300</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1300</span>
 <span class="normal">1301</span>
 <span class="normal">1302</span>
 <span class="normal">1303</span>
@@ -4996,7 +5051,10 @@ a substring, instead of specifying a filename.</p>
 <span class="normal">1353</span>
 <span class="normal">1354</span>
 <span class="normal">1355</span>
-<span class="normal">1356</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_design</span><span class="p">(</span>
+<span class="normal">1356</span>
+<span class="normal">1357</span>
+<span class="normal">1358</span>
+<span class="normal">1359</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_design</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">filetag</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads a ConditionSetup file and returns an experimental design table.</span>
@@ -5070,7 +5128,13 @@ a substring, instead of specifying a filename.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_proteins</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">filetag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">drop_protein_info</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_proteins</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">filetag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">drop_protein_info</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5218,10 +5282,7 @@ be removed. Default False.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1358</span>
-<span class="normal">1359</span>
-<span class="normal">1360</span>
-<span class="normal">1361</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1361</span>
 <span class="normal">1362</span>
 <span class="normal">1363</span>
 <span class="normal">1364</span>
@@ -5290,7 +5351,10 @@ be removed. Default False.</p>
 <span class="normal">1427</span>
 <span class="normal">1428</span>
 <span class="normal">1429</span>
-<span class="normal">1430</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_proteins</span><span class="p">(</span>
+<span class="normal">1430</span>
+<span class="normal">1431</span>
+<span class="normal">1432</span>
+<span class="normal">1433</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_proteins</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">filetag</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5377,7 +5441,12 @@ be removed. Default False.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_peptides</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">filetag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_peptides</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">filetag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">prefix_column_tags</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5504,10 +5573,7 @@ True.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1432</span>
-<span class="normal">1433</span>
-<span class="normal">1434</span>
-<span class="normal">1435</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1435</span>
 <span class="normal">1436</span>
 <span class="normal">1437</span>
 <span class="normal">1438</span>
@@ -5564,7 +5630,10 @@ True.</p>
 <span class="normal">1489</span>
 <span class="normal">1490</span>
 <span class="normal">1491</span>
-<span class="normal">1492</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_peptides</span><span class="p">(</span>
+<span class="normal">1492</span>
+<span class="normal">1493</span>
+<span class="normal">1494</span>
+<span class="normal">1495</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_peptides</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">filetag</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5639,7 +5708,11 @@ True.</p>
 
 
 </h3>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_ion_evidence</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">filetag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_ion_evidence</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">filetag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rename_columns</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -5744,10 +5817,7 @@ convention; default True.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1497</span>
-<span class="normal">1498</span>
-<span class="normal">1499</span>
-<span class="normal">1500</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1500</span>
 <span class="normal">1501</span>
 <span class="normal">1502</span>
 <span class="normal">1503</span>
@@ -5799,7 +5869,10 @@ convention; default True.</p>
 <span class="normal">1549</span>
 <span class="normal">1550</span>
 <span class="normal">1551</span>
-<span class="normal">1552</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_ion_evidence</span><span class="p">(</span>
+<span class="normal">1552</span>
+<span class="normal">1553</span>
+<span class="normal">1554</span>
+<span class="normal">1555</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_ion_evidence</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">filetag</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5878,7 +5951,13 @@ convention; default True.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">sort_leading_proteins</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">alphanumeric</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">penalize_contaminants</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">special_proteins</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">database_order</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">sort_leading_proteins</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">alphanumeric</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">penalize_contaminants</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">special_proteins</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">database_order</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Optional" href="https://docs.python.org/3/library/typing.html#typing.Optional">Optional</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6021,10 +6100,7 @@ the fasta header "&gt;sp|P60709|ACTB_HUMAN Actin".</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1601</span>
-<span class="normal">1602</span>
-<span class="normal">1603</span>
-<span class="normal">1604</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1604</span>
 <span class="normal">1605</span>
 <span class="normal">1606</span>
 <span class="normal">1607</span>
@@ -6111,7 +6187,10 @@ the fasta header "&gt;sp|P60709|ACTB_HUMAN Actin".</p>
 <span class="normal">1688</span>
 <span class="normal">1689</span>
 <span class="normal">1690</span>
-<span class="normal">1691</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sort_leading_proteins</span><span class="p">(</span>
+<span class="normal">1691</span>
+<span class="normal">1692</span>
+<span class="normal">1693</span>
+<span class="normal">1694</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sort_leading_proteins</span><span class="p">(</span>
     <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">alphanumeric</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">penalize_contaminants</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -6152,7 +6231,7 @@ the fasta header "&gt;sp|P60709|ACTB_HUMAN Actin".</p>
     <span class="n">db_origins_present</span> <span class="o">=</span> <span class="s2">&quot;Leading proteins database origin&quot;</span> <span class="ow">in</span> <span class="n">table</span>
 
     <span class="k">if</span> <span class="n">database_order</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">database_encoding</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">999</span><span class="p">)</span>
+        <span class="n">database_encoding</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">999</span><span class="p">)</span>
         <span class="n">database_encoding</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">db</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">db</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">database_order</span><span class="p">)})</span>
     <span class="k">if</span> <span class="n">penalize_contaminants</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">contaminant_encoding</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;False&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;True&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">True</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
@@ -6160,7 +6239,7 @@ the fasta header "&gt;sp|P60709|ACTB_HUMAN Actin".</p>
     <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
         <span class="n">protein_ids</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Leading proteins&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">)</span>
 
-        <span class="n">sorting_info</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">protein_ids</span><span class="p">]</span>
+        <span class="n">sorting_info</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">protein_ids</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">special_proteins</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_id</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">protein_ids</span><span class="p">):</span>
                 <span class="n">sorting_info</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">special_proteins</span><span class="p">)</span>
@@ -6216,7 +6295,19 @@ the fasta header "&gt;sp|P60709|ACTB_HUMAN Actin".</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_protein_annotation</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">protein_db</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ProteinDatabase (msreport.reader.ProteinDatabase)" href="#msreport.reader.ProteinDatabase">ProteinDatabase</a></span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;Representative protein&#39;</span><span class="p">,</span> <span class="n">gene_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">protein_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">protein_entry</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">protein_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">molecular_weight</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">fasta_header</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">ibaq_peptides</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">database_origin</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_protein_annotation</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">protein_db</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ProteinDatabase (msreport.reader.ProteinDatabase)" href="#msreport.reader.ProteinDatabase">ProteinDatabase</a></span><span class="p">,</span>
+    <span class="n">id_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;Representative protein&quot;</span><span class="p">,</span>
+    <span class="n">gene_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">protein_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">protein_entry</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">protein_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">molecular_weight</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">fasta_header</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">ibaq_peptides</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">database_origin</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6448,10 +6539,7 @@ a length between 7 and 30.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1694</span>
-<span class="normal">1695</span>
-<span class="normal">1696</span>
-<span class="normal">1697</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1697</span>
 <span class="normal">1698</span>
 <span class="normal">1699</span>
 <span class="normal">1700</span>
@@ -6536,7 +6624,10 @@ a length between 7 and 30.</p>
 <span class="normal">1779</span>
 <span class="normal">1780</span>
 <span class="normal">1781</span>
-<span class="normal">1782</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_protein_annotation</span><span class="p">(</span>
+<span class="normal">1782</span>
+<span class="normal">1783</span>
+<span class="normal">1784</span>
+<span class="normal">1785</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_protein_annotation</span><span class="p">(</span>
     <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">protein_db</span><span class="p">:</span> <span class="n">ProteinDatabase</span><span class="p">,</span>
     <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Representative protein&quot;</span><span class="p">,</span>
@@ -6639,7 +6730,12 @@ a length between 7 and 30.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_protein_site_annotation</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">protein_db</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ProteinDatabase (msreport.reader.ProteinDatabase)" href="#msreport.reader.ProteinDatabase">ProteinDatabase</a></span><span class="p">,</span> <span class="n">protein_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;Representative protein&#39;</span><span class="p">,</span> <span class="n">site_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;Protein site&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_protein_site_annotation</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">protein_db</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ProteinDatabase (msreport.reader.ProteinDatabase)" href="#msreport.reader.ProteinDatabase">ProteinDatabase</a></span><span class="p">,</span>
+    <span class="n">protein_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;Representative protein&quot;</span><span class="p">,</span>
+    <span class="n">site_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;Protein site&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6746,6 +6842,7 @@ one-indexed, meaining the first amino acid of the protein is position 1.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6759,10 +6856,7 @@ one-indexed, meaining the first amino acid of the protein is position 1.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1785</span>
-<span class="normal">1786</span>
-<span class="normal">1787</span>
-<span class="normal">1788</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1788</span>
 <span class="normal">1789</span>
 <span class="normal">1790</span>
 <span class="normal">1791</span>
@@ -6814,12 +6908,15 @@ one-indexed, meaining the first amino acid of the protein is position 1.</p>
 <span class="normal">1837</span>
 <span class="normal">1838</span>
 <span class="normal">1839</span>
-<span class="normal">1840</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_protein_site_annotation</span><span class="p">(</span>
+<span class="normal">1840</span>
+<span class="normal">1841</span>
+<span class="normal">1842</span>
+<span class="normal">1843</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_protein_site_annotation</span><span class="p">(</span>
     <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">protein_db</span><span class="p">:</span> <span class="n">ProteinDatabase</span><span class="p">,</span>
     <span class="n">protein_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Representative protein&quot;</span><span class="p">,</span>
     <span class="n">site_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Protein site&quot;</span><span class="p">,</span>
-<span class="p">):</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Uses a FASTA protein database to add protein site annotation columns.</span>
 
 <span class="sd">    Adds the columns &quot;Modified residue&quot;, which corresponds to the amino acid at the</span>
@@ -6884,7 +6981,17 @@ one-indexed, meaining the first amino acid of the protein is position 1.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_leading_proteins_annotation</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">protein_db</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ProteinDatabase (msreport.reader.ProteinDatabase)" href="#msreport.reader.ProteinDatabase">ProteinDatabase</a></span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;Leading proteins&#39;</span><span class="p">,</span> <span class="n">gene_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">protein_entry</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">protein_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">fasta_header</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">ibaq_peptides</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">database_origin</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_leading_proteins_annotation</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">protein_db</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ProteinDatabase (msreport.reader.ProteinDatabase)" href="#msreport.reader.ProteinDatabase">ProteinDatabase</a></span><span class="p">,</span>
+    <span class="n">id_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;Leading proteins&quot;</span><span class="p">,</span>
+    <span class="n">gene_name</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">protein_entry</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">protein_length</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">fasta_header</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">ibaq_peptides</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">database_origin</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7082,10 +7189,7 @@ peptides with a length between 7 and 30.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1843</span>
-<span class="normal">1844</span>
-<span class="normal">1845</span>
-<span class="normal">1846</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1846</span>
 <span class="normal">1847</span>
 <span class="normal">1848</span>
 <span class="normal">1849</span>
@@ -7164,7 +7268,10 @@ peptides with a length between 7 and 30.</p>
 <span class="normal">1922</span>
 <span class="normal">1923</span>
 <span class="normal">1924</span>
-<span class="normal">1925</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_leading_proteins_annotation</span><span class="p">(</span>
+<span class="normal">1925</span>
+<span class="normal">1926</span>
+<span class="normal">1927</span>
+<span class="normal">1928</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_leading_proteins_annotation</span><span class="p">(</span>
     <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">protein_db</span><span class="p">:</span> <span class="n">ProteinDatabase</span><span class="p">,</span>
     <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Leading proteins&quot;</span><span class="p">,</span>
@@ -7261,7 +7368,11 @@ peptides with a length between 7 and 30.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_sequence_coverage</span><span class="p">(</span><span class="n">protein_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">peptide_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">id_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;Protein reported by software&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_sequence_coverage</span><span class="p">(</span>
+    <span class="n">protein_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">peptide_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">id_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;Protein reported by software&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7341,10 +7452,7 @@ calculation of the protein sequence coverage.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1928</span>
-<span class="normal">1929</span>
-<span class="normal">1930</span>
-<span class="normal">1931</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1931</span>
 <span class="normal">1932</span>
 <span class="normal">1933</span>
 <span class="normal">1934</span>
@@ -7389,7 +7497,10 @@ calculation of the protein sequence coverage.</p>
 <span class="normal">1973</span>
 <span class="normal">1974</span>
 <span class="normal">1975</span>
-<span class="normal">1976</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_sequence_coverage</span><span class="p">(</span>
+<span class="normal">1976</span>
+<span class="normal">1977</span>
+<span class="normal">1978</span>
+<span class="normal">1979</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_sequence_coverage</span><span class="p">(</span>
     <span class="n">protein_table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">peptide_table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">id_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Protein reported by software&quot;</span><span class="p">,</span>
@@ -7452,7 +7563,13 @@ calculation of the protein sequence coverage.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_ibaq_intensities</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">normalize</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">ibaq_peptide_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;iBAQ peptides&#39;</span><span class="p">,</span> <span class="n">intensity_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;Intensity&#39;</span><span class="p">,</span> <span class="n">ibaq_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;iBAQ intensity&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_ibaq_intensities</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">normalize</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">ibaq_peptide_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;iBAQ peptides&quot;</span><span class="p">,</span>
+    <span class="n">intensity_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;Intensity&quot;</span><span class="p">,</span>
+    <span class="n">ibaq_tag</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;iBAQ intensity&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7564,10 +7681,7 @@ the 'intensity_tag' with the 'ibaq_tag'.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1979</span>
-<span class="normal">1980</span>
-<span class="normal">1981</span>
-<span class="normal">1982</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1982</span>
 <span class="normal">1983</span>
 <span class="normal">1984</span>
 <span class="normal">1985</span>
@@ -7601,7 +7715,10 @@ the 'intensity_tag' with the 'ibaq_tag'.</p>
 <span class="normal">2013</span>
 <span class="normal">2014</span>
 <span class="normal">2015</span>
-<span class="normal">2016</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_ibaq_intensities</span><span class="p">(</span>
+<span class="normal">2016</span>
+<span class="normal">2017</span>
+<span class="normal">2018</span>
+<span class="normal">2019</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_ibaq_intensities</span><span class="p">(</span>
     <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">ibaq_peptide_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;iBAQ peptides&quot;</span><span class="p">,</span>
@@ -7653,7 +7770,12 @@ the 'intensity_tag' with the 'ibaq_tag'.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_peptide_positions</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">protein_db</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ProteinDatabase (msreport.reader.ProteinDatabase)" href="#msreport.reader.ProteinDatabase">ProteinDatabase</a></span><span class="p">,</span> <span class="n">peptide_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;Peptide sequence&#39;</span><span class="p">,</span> <span class="n">protein_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;Representative protein&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_peptide_positions</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
+    <span class="n">protein_db</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="            ProteinDatabase (msreport.reader.ProteinDatabase)" href="#msreport.reader.ProteinDatabase">ProteinDatabase</a></span><span class="p">,</span>
+    <span class="n">peptide_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;Peptide sequence&quot;</span><span class="p">,</span>
+    <span class="n">protein_column</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;Representative protein&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -7748,10 +7870,7 @@ find matching entries in the FASTA files.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2019</span>
-<span class="normal">2020</span>
-<span class="normal">2021</span>
-<span class="normal">2022</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2022</span>
 <span class="normal">2023</span>
 <span class="normal">2024</span>
 <span class="normal">2025</span>
@@ -7793,7 +7912,10 @@ find matching entries in the FASTA files.</p>
 <span class="normal">2061</span>
 <span class="normal">2062</span>
 <span class="normal">2063</span>
-<span class="normal">2064</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_peptide_positions</span><span class="p">(</span>
+<span class="normal">2064</span>
+<span class="normal">2065</span>
+<span class="normal">2066</span>
+<span class="normal">2067</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_peptide_positions</span><span class="p">(</span>
     <span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">protein_db</span><span class="p">:</span> <span class="n">ProteinDatabase</span><span class="p">,</span>
     <span class="n">peptide_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Peptide sequence&quot;</span><span class="p">,</span>
@@ -7896,10 +8018,7 @@ column are increase according to the peptide positions ("Start position"] column
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2067</span>
-<span class="normal">2068</span>
-<span class="normal">2069</span>
-<span class="normal">2070</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2070</span>
 <span class="normal">2071</span>
 <span class="normal">2072</span>
 <span class="normal">2073</span>
@@ -7916,7 +8035,10 @@ column are increase according to the peptide positions ("Start position"] column
 <span class="normal">2084</span>
 <span class="normal">2085</span>
 <span class="normal">2086</span>
-<span class="normal">2087</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_protein_modifications</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+<span class="normal">2087</span>
+<span class="normal">2088</span>
+<span class="normal">2089</span>
+<span class="normal">2090</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_protein_modifications</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds a &quot;Protein sites&quot; column.</span>
 
 <span class="sd">    To generate the &quot;Protein modifications&quot; the positions from the &quot;Modifications&quot;</span>
@@ -7951,7 +8073,9 @@ column are increase according to the peptide positions ("Start position"] column
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">propagate_representative_protein</span><span class="p">(</span><span class="n">target_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">source_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">propagate_representative_protein</span><span class="p">(</span>
+    <span class="n">target_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">source_table</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8012,10 +8136,7 @@ propagated.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2090</span>
-<span class="normal">2091</span>
-<span class="normal">2092</span>
-<span class="normal">2093</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2093</span>
 <span class="normal">2094</span>
 <span class="normal">2095</span>
 <span class="normal">2096</span>
@@ -8037,7 +8158,10 @@ propagated.</p>
 <span class="normal">2112</span>
 <span class="normal">2113</span>
 <span class="normal">2114</span>
-<span class="normal">2115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">propagate_representative_protein</span><span class="p">(</span>
+<span class="normal">2115</span>
+<span class="normal">2116</span>
+<span class="normal">2117</span>
+<span class="normal">2118</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">propagate_representative_protein</span><span class="p">(</span>
     <span class="n">target_table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">source_table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Propagates &quot;Representative protein&quot; column from the source to the target table.</span>
@@ -8160,10 +8284,7 @@ white spaces from the resulting strings.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2118</span>
-<span class="normal">2119</span>
-<span class="normal">2120</span>
-<span class="normal">2121</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2121</span>
 <span class="normal">2122</span>
 <span class="normal">2123</span>
 <span class="normal">2124</span>
@@ -8176,7 +8297,10 @@ white spaces from the resulting strings.</p>
 <span class="normal">2131</span>
 <span class="normal">2132</span>
 <span class="normal">2133</span>
-<span class="normal">2134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">extract_sample_names</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">tag</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="normal">2134</span>
+<span class="normal">2135</span>
+<span class="normal">2136</span>
+<span class="normal">2137</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">extract_sample_names</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">tag</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Extracts sample names from columns containing the &#39;tag&#39; substring.</span>
 
 <span class="sd">    Sample names are extracted from column names containing the &#39;tag&#39; string, by</span>
@@ -8207,7 +8331,9 @@ white spaces from the resulting strings.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">extract_maxquant_localization_probabilities</span><span class="p">(</span><span class="n">localization_entry</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">extract_maxquant_localization_probabilities</span><span class="p">(</span>
+    <span class="n">localization_entry</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8258,7 +8384,7 @@ msms.txt, evidence.txt or Sites.txt table.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -8268,7 +8394,7 @@ msms.txt, evidence.txt or Sites.txt table.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -8291,10 +8417,7 @@ msms.txt, evidence.txt or Sites.txt table.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2387</span>
-<span class="normal">2388</span>
-<span class="normal">2389</span>
-<span class="normal">2390</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2390</span>
 <span class="normal">2391</span>
 <span class="normal">2392</span>
 <span class="normal">2393</span>
@@ -8312,7 +8435,14 @@ msms.txt, evidence.txt or Sites.txt table.</p>
 <span class="normal">2405</span>
 <span class="normal">2406</span>
 <span class="normal">2407</span>
-<span class="normal">2408</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">extract_maxquant_localization_probabilities</span><span class="p">(</span><span class="n">localization_entry</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="normal">2408</span>
+<span class="normal">2409</span>
+<span class="normal">2410</span>
+<span class="normal">2411</span>
+<span class="normal">2412</span>
+<span class="normal">2413</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">extract_maxquant_localization_probabilities</span><span class="p">(</span>
+    <span class="n">localization_entry</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract localization probabilites from a MaxQuant &quot;Probabilities&quot; entry.</span>
 
 <span class="sd">    Args:</span>
@@ -8348,7 +8478,9 @@ msms.txt, evidence.txt or Sites.txt table.</p>
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">extract_fragpipe_localization_probabilities</span><span class="p">(</span><span class="n">localization_entry</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">extract_fragpipe_localization_probabilities</span><span class="p">(</span>
+    <span class="n">localization_entry</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/reference/expressions.html#dict">dict</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -8444,12 +8576,7 @@ ions.tsv or combined_ions.tsv table.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\reader.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2411</span>
-<span class="normal">2412</span>
-<span class="normal">2413</span>
-<span class="normal">2414</span>
-<span class="normal">2415</span>
-<span class="normal">2416</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2416</span>
 <span class="normal">2417</span>
 <span class="normal">2418</span>
 <span class="normal">2419</span>
@@ -8474,7 +8601,12 @@ ions.tsv or combined_ions.tsv table.</p>
 <span class="normal">2438</span>
 <span class="normal">2439</span>
 <span class="normal">2440</span>
-<span class="normal">2441</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">extract_fragpipe_localization_probabilities</span><span class="p">(</span><span class="n">localization_entry</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="normal">2441</span>
+<span class="normal">2442</span>
+<span class="normal">2443</span>
+<span class="normal">2444</span>
+<span class="normal">2445</span>
+<span class="normal">2446</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">extract_fragpipe_localization_probabilities</span><span class="p">(</span><span class="n">localization_entry</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract localization probabilites from a FragPipe &quot;Localization&quot; entry.</span>
 
 <span class="sd">    Args:</span>

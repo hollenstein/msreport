@@ -689,6 +689,11 @@
 
     <div class="doc doc-contents first">
 
+        <p>Functionalities for import and access to protein sequence databases from FASTA files.</p>
+<p>This module serves as an interface to the <code>profasta</code> library, offering a convenient way
+to generate a <code>profasta.db.ProteinDatabase</code> from one or multiple FASTA files. It
+supports custom FASTA header parsing through a configurable header parser.</p>
+
 
 
 
@@ -740,7 +745,10 @@
 
 
 </h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_protein_database</span><span class="p">(</span><span class="n">fasta_path</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">]]],</span> <span class="n">header_parser</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s1">&#39;uniprot&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="profasta.db.ProteinDatabase">ProteinDatabase</span></span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">import_protein_database</span><span class="p">(</span>
+    <span class="n">fasta_path</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a></span><span class="p">],</span>
+    <span class="n">header_parser</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span> <span class="o">=</span> <span class="s2">&quot;uniprot&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="profasta.db.ProteinDatabase">ProteinDatabase</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -764,7 +772,7 @@
                 <code>fasta_path</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a>, <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>[<a class="autorefs autorefs-external" title="typing.Union" href="https://docs.python.org/3/library/typing.html#typing.Union">Union</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>, <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a>]]]</code>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a> | <a class="autorefs autorefs-external" title="typing.Iterable" href="https://docs.python.org/3/library/typing.html#typing.Iterable">Iterable</a>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a> | <a class="autorefs autorefs-external" title="pathlib.Path" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path">Path</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -823,14 +831,7 @@ registry. By default a strict uniprot parser is used.</p>
 
             <details class="quote">
               <summary>Source code in <code>msreport\fasta.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">14</span>
 <span class="normal">15</span>
 <span class="normal">16</span>
 <span class="normal">17</span>
@@ -845,8 +846,15 @@ registry. By default a strict uniprot parser is used.</p>
 <span class="normal">26</span>
 <span class="normal">27</span>
 <span class="normal">28</span>
-<span class="normal">29</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_protein_database</span><span class="p">(</span>
-    <span class="n">fasta_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">]]],</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_protein_database</span><span class="p">(</span>
+    <span class="n">fasta_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">],</span>
     <span class="n">header_parser</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;uniprot&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ProteinDatabase</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a protein database from one or a list of fasta files.</span>

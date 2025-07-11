@@ -291,6 +291,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    API Overview
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -302,6 +315,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#importing-software-results-and-fasta-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Importing Software Results and FASTA Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#high-level-data-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      High-Level Data Interface
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-transformation-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Transformation Classes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auxiliary-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Auxiliary Modules
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview-of-available-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview of available modules
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -611,6 +688,59 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#importing-software-results-and-fasta-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      Importing Software Results and FASTA Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#high-level-data-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      High-Level Data Interface
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-transformation-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Transformation Classes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auxiliary-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Auxiliary Modules
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview-of-available-modules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview of available modules
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -624,8 +754,20 @@
                   
 
 
+  
+  
+
 
 <h1 id="api-overview">API Overview</h1>
+<h2 id="importing-software-results-and-fasta-files">Importing Software Results and FASTA Files</h2>
+<p>The <code>reader</code> and <code>fasta</code> modules allow integrating external data into <code>msreport</code> workflows. The <code>fasta</code> module enables import of protein sequence databases from FASTA files into protein databases. The <code>reader</code> module handles the parsing and standardization of quantitative proteomics output from various software packages, and annotation with FASTA-related metadata, such as information from FASTA headers.</p>
+<h2 id="high-level-data-interface">High-Level Data Interface</h2>
+<p>The <code>qtable</code>, <code>analyze</code>, <code>plot</code>, and <code>export</code> modules form the <strong>high-level interface</strong> for working with quantitative proteomics data in <code>msreport</code>. The <code>qtable</code> module defines the central <code>Qtable</code> data structure itself. Building upon this, the <code>analyze</code> module offers post-processing and statistical analysis capabilities. For tasks like normalization and imputation, it provides functions that can utilize a variety of <strong>transformer classes</strong> available from other <code>msreport</code> modules. The <code>plot</code> module enables data visualization, and the <code>export</code> module provides data conversion to various external formats. By directly operating on <code>Qtable</code> instances, these high-level modules provide a straightforward and effective way for analyzing quantitative proteomics data.</p>
+<h2 id="data-transformation-classes">Data Transformation Classes</h2>
+<p>The <code>impute</code>, <code>normalize</code>, and <code>isobar</code> modules provide a collection of <strong>transformer classes</strong> for processing quantitative proteomics data like imputation or normalization. These transformers follow a consistent "fit-and-transform" pattern, they can be fitted to a training table to learn specific parameters, and then be applied to other tables to perform the transformation.</p>
+<h2 id="auxiliary-modules">Auxiliary Modules</h2>
+<p>These modules provide supplementary functionalities that support various stages of proteomics data processing. The <code>aggregate</code> module offers comprehensive tools for summarizing and reshaping tabular data, including specialized algorithms like MaxLFQ. The <code>peptidoform</code> module defines the core Peptide class for robust representation and manipulation of peptide sequences and modifications. Finally, the <code>helper</code> module  provides various utility and helper functions.</p>
+<h2 id="overview-of-available-modules">Overview of available modules</h2>
 <table>
 <thead>
 <tr>
@@ -636,51 +778,51 @@
 <tbody>
 <tr>
 <td><a href="aggregate/"><code>aggregate</code></a></td>
-<td></td>
+<td>A comprehensive set of tools for aggregating and reshaping tabular proteomics data.</td>
 </tr>
 <tr>
 <td><a href="analyze/"><code>analyze</code></a></td>
-<td>The analyze module contains methods for analysing quantification results.</td>
+<td>Tools for post-processing and statistical analysis of <code>Qtable</code> data.</td>
 </tr>
 <tr>
 <td><a href="export/"><code>export</code></a></td>
-<td>Columns that are not yet present in the amica output at the moment: Index([     'Protein Probability',     'Top Peptide Probability',     'Total peptides',     'Leading proteins',     'Protein entry name',     'Fasta header',     'Protein length',     'iBAQ peptides',     'Sequence coverage', ], dtype='object')</td>
+<td>Exporting of proteomics data from <code>Qtable</code> into external formats.</td>
 </tr>
 <tr>
 <td><a href="fasta/"><code>fasta</code></a></td>
-<td></td>
+<td>Functionalities for import and access to protein sequence databases from FASTA files.</td>
 </tr>
 <tr>
 <td><a href="helper/"><code>helper</code></a></td>
-<td></td>
+<td>A collection of widely used helper and utility functions.</td>
 </tr>
 <tr>
 <td><a href="impute/"><code>impute</code></a></td>
-<td></td>
+<td>Transformer classes for imputing missing values in quantitative proteomics data.</td>
 </tr>
 <tr>
 <td><a href="isobar/"><code>isobar</code></a></td>
-<td></td>
+<td>Provides a transformer class for processing isobarically labeled proteomics data.</td>
 </tr>
 <tr>
 <td><a href="normalize/"><code>normalize</code></a></td>
-<td></td>
+<td>Transformer classes for normalizing and transforming quantitative proteomics data.</td>
 </tr>
 <tr>
 <td><a href="peptidoform/"><code>peptidoform</code></a></td>
-<td></td>
+<td>Defines the <code>Peptide</code> class and associated utilities for handling peptidoforms.</td>
 </tr>
 <tr>
 <td><a href="plot/"><code>plot</code></a></td>
-<td>This module provides various plotting functions for visualizing data within a Qtable.</td>
+<td>Plotting functions for visualizing proteomics data from <code>Qtable</code>.</td>
 </tr>
 <tr>
 <td><a href="qtable/"><code>qtable</code></a></td>
-<td></td>
+<td>Defines the <code>Qtable</code> class, the central container for quantitative proteomics data.</td>
 </tr>
 <tr>
 <td><a href="reader/"><code>reader</code></a></td>
-<td>Module for reading result tables from various MS analysis tools and converting them to a standardized format following the MsReport convention.</td>
+<td>Provides tools for importing and standardizing quantitative proteomics data.</td>
 </tr>
 </tbody>
 </table>
