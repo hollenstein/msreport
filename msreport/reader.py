@@ -39,6 +39,7 @@ from msreport.helper.temp import extract_window_around_position
 class Protein(Protocol):
     """Abstract protein entry"""
 
+    # identifier: str
     header: str
     sequence: str
     header_fields: dict[str, str]
@@ -47,9 +48,9 @@ class Protein(Protocol):
 class ProteinDatabase(Protocol):
     """Abstract protein database"""
 
-    def __getitem__(self, protein_id: str) -> Protein: ...
+    def __getitem__(self, identifier: str) -> Protein: ...
 
-    def __contains__(self, protein_id: str) -> bool: ...
+    def __contains__(self, identifier: str) -> bool: ...
 
 
 class ResultReader:
