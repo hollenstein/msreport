@@ -95,6 +95,51 @@ class TestImportDesign:
         )
         pd.testing.assert_frame_equal(table, expected_design_table)
 
+    def test_import_design_with_literal_nan_values(self, tmp_path):
+        manifest_content = "\t".join(["C:\\rawfile.raw", "nan", "1", "DDA"])
+        expected_design_table = pd.DataFrame(
+            {
+                "Sample": ["nan_1"],
+                "Experiment": ["nan"],
+                "Replicate": ["1"],
+                "Rawfile": ["rawfile.raw"],
+            }
+        )
+        design = self._write_temp_manifest_and_import_with_fragpipereader(tmp_path, manifest_content)  # fmt: skip
+        pd.testing.assert_frame_equal(design, expected_design_table)
+
+    def test_import_design_with_no_experiment_values(self, tmp_path):
+        manifest_content = "\t".join(["C:\\rawfile.raw", "", "1", "DDA"])
+        expected_design_table = pd.DataFrame(
+            {
+                "Sample": ["exp_1"],
+                "Experiment": ["exp"],
+                "Replicate": ["1"],
+                "Rawfile": ["rawfile.raw"],
+            }
+        )
+        design = self._write_temp_manifest_and_import_with_fragpipereader(tmp_path, manifest_content)  # fmt: skip
+        pd.testing.assert_frame_equal(design, expected_design_table)
+
+    def test_import_design_with_no_replicate_values(self, tmp_path):
+        manifest_content = "\t".join(["C:\\rawfile.raw", "Sample", "", "DDA"])
+        expected_design_table = pd.DataFrame(
+            {
+                "Sample": ["Sample"],
+                "Experiment": ["Sample"],
+                "Replicate": [""],
+                "Rawfile": ["rawfile.raw"],
+            }
+        )
+        design = self._write_temp_manifest_and_import_with_fragpipereader(tmp_path, manifest_content)  # fmt: skip
+        pd.testing.assert_frame_equal(design, expected_design_table)
+
+    def _write_temp_manifest_and_import_with_fragpipereader(self, path, manifest_content):  # fmt: skip
+        with open(path / "fragpipe-files.fp-manifest", "w") as tmp:
+            tmp.write(manifest_content)
+        reader = msreport.reader.FragPipeReader(path)
+        return reader.import_design()
+
 
 class TestImportProteins:
     def test_correct_columns_after_renaming(self, test_reader):
