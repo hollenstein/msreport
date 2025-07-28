@@ -9,7 +9,6 @@ processed values, leaving the original table unchanged.
 """
 
 import functools
-from typing import Protocol
 
 import numpy as np
 import pandas as pd
@@ -18,17 +17,6 @@ from typing_extensions import Self
 
 import msreport.helper
 from msreport.errors import NotFittedError
-
-
-class Transformer(Protocol):
-    def fit(self, table: pd.DataFrame) -> Self:
-        """Fits the Transformer and returns a fitted Transformer instance."""
-
-    def is_fitted(self) -> bool:
-        """Returns True if the Transformer has been fitted."""
-
-    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
-        """Transform values in 'table'."""
 
 
 class IsotopeImpurityCorrecter:
