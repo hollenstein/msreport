@@ -91,7 +91,7 @@ class FixedValueNormalizer:
         Raises:
             NotFittedError: If the FixedValueNormalizer has not been fitted yet.
         """
-        confirm_is_fitted(self)
+        _confirm_is_fitted(self)
         return self._sample_fits.copy()
 
     def transform(self, table: pd.DataFrame) -> pd.DataFrame:
@@ -107,7 +107,7 @@ class FixedValueNormalizer:
         Raises:
             NotFittedError: If the FixedValueNormalizer has not been fitted yet.
         """
-        confirm_is_fitted(self)
+        _confirm_is_fitted(self)
 
         _table = table.copy()
         for column in _table.columns:
@@ -207,7 +207,7 @@ class ValueDependentNormalizer:
         Raises:
             NotFittedError: If the ValueDependentNormalizer has not been fitted yet.
         """
-        confirm_is_fitted(self)
+        _confirm_is_fitted(self)
         return self._sample_fits.copy()
 
     def transform(self, table: pd.DataFrame) -> pd.DataFrame:
@@ -223,7 +223,7 @@ class ValueDependentNormalizer:
         Raises:
             NotFittedError: If the ValueDependentNormalizer has not been fitted yet.
         """
-        confirm_is_fitted(self)
+        _confirm_is_fitted(self)
 
         _table = table.copy()
         for column in _table.columns:
@@ -411,7 +411,7 @@ class CategoricalNormalizer:
         Raises:
             NotFittedError: If the CategoricalNormalizer has not been fitted yet.
         """
-        confirm_is_fitted(self)
+        _confirm_is_fitted(self)
         return self._fitted_table.copy()
 
     def get_category_column(self) -> str:
@@ -432,7 +432,7 @@ class CategoricalNormalizer:
                 table.
             NotFittedError: If the CategoricalNormalizer has not been fitted yet.
         """
-        confirm_is_fitted(self)
+        _confirm_is_fitted(self)
 
         original_index = table.index
         table = table.set_index(self.get_category_column(), drop=True, inplace=False)
@@ -542,7 +542,7 @@ class Log2Transformer:
         return pd.DataFrame(np.log2(table.replace({0: np.nan})))
 
 
-def confirm_is_fitted(
+def _confirm_is_fitted(
     normalizer: AbstractTransformer, msg: Optional[str] = None
 ) -> None:
     """Perform is_fitted validation for normalizer instances.

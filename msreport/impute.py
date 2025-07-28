@@ -87,7 +87,7 @@ class FixedValueImputer:
         Returns:
             'table' with imputed missing values.
         """
-        confirm_is_fitted(self)
+        _confirm_is_fitted(self)
 
         _table = table.copy()
         for column in _table.columns:
@@ -142,7 +142,7 @@ class GaussianImputer:
         Returns:
             'table' with imputed missing values.
         """
-        confirm_is_fitted(self)
+        _confirm_is_fitted(self)
         np.random.seed(self.seed)
 
         _table = table.copy()
@@ -231,7 +231,7 @@ class PerseusImputer:
         Returns:
             'table' with imputed missing values.
         """
-        confirm_is_fitted(self)
+        _confirm_is_fitted(self)
         np.random.seed(self.seed)
 
         _table = table.copy()
@@ -247,7 +247,7 @@ class PerseusImputer:
         return _table
 
 
-def confirm_is_fitted(imputer: Any, msg: Optional[str] = None) -> None:
+def _confirm_is_fitted(imputer: Any, msg: Optional[str] = None) -> None:
     """Perform is_fitted validation for imputer instances.
 
     Checks if the imputer is fitted by verifying the presence of fitted attributes
