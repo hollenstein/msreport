@@ -25,6 +25,8 @@ MsReport is a Python library designed to simplify the post-processing and analys
 
 The library supports importing protein and peptide-level quantification results from MaxQuant, FragPipe, and Spectronaut, as well as post-translational modification (PTM) data from MaxQuant and FragPipe. MsReport provides tools for data annotation, normalization and transformation, statistical testing, and data visualization.
 
+The [documentation](https://hollenstein.github.io/msreport/) provides an overview of the library's public API.
+
 ### Key features of MsReport
 
 #### Data Import and Standardization

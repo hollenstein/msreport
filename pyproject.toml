@@ -43,6 +43,7 @@ dynamic = ["version"]
 
 [project.urls]
 homepage = "https://github.com/hollenstein/msreport"
+documentation = "https://hollenstein.github.io/msreport/"
 changelog = "https://github.com/hollenstein/msreport/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
