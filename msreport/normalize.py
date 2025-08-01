@@ -262,6 +262,59 @@ class ValueDependentNormalizer:
             self._sample_fits[sample] = sample_fit
 
 
+class SumNormalizer:
+    """Normalizer that uses the sum of all values in each sample for normalization.
+
+    Expects log2-transformed intensity values. To obtain normalization factors, the sum
+    of non-log2-transformed values is calculated for each sample, then divided by the
+    average of all sample sums and log2-transformed.
+    """
+
+    def __init__(self):
+        """Initializes the SumNormalizer."""
+        self._sample_fits: dict[str, float] = {}
+
+    def fit(self, table: pd.DataFrame) -> Self:
+        """Fits the SumNormalizer and returns a fitted instance.
+
+        Args:
+            table: Dataframe used to calculate normalization values for each column.
+
+        Returns:
+            Returns the instance itself.
+        """
+        _sums = np.power(2, table).sum()
+        _log2_fits = np.log2(_sums.divide(_sums.mean()))
+        self._sample_fits = _log2_fits.to_dict()
+        return self
+
+    def is_fitted(self) -> bool:
+        """Returns True if the Transformer has been fitted."""
+        return True if self._sample_fits else False
+
+    def get_fits(self) -> dict[str, float]:
+        """Returns a dictionary containing the fitted center values per sample.
+
+        Raises:
+            NotFittedError: If the FixedValueNormalizer has not been fitted yet.
+        """
+        _confirm_is_fitted(self)
+        return self._sample_fits.copy()
+
+    def transform(self, table: pd.DataFrame) -> pd.DataFrame:
+        """Transform values in table."""
+        _confirm_is_fitted(self)
+
+        _table = table.copy()
+        for column in _table.columns:
+            column_data = np.array(_table[column], dtype=float)
+            mask = np.isfinite(column_data)
+            column_data[mask] = column_data[mask] - self._sample_fits[column]
+
+            _table[column] = column_data
+        return _table
+
+
 class MedianNormalizer(FixedValueNormalizer):
     """A FixedValueNormalizer that uses the median as the fitting function.
 
@@ -408,11 +461,11 @@ class PercentageScaler:
         return self
 
     def is_fitted(self) -> bool:
-        """Always returns True because the ZscoreScaler does not need to be fitted."""
+        """Always returns True because the Scaler does not need to be fitted."""
         return True
 
     def get_fits(self) -> dict:
-        """Returns a dictionary containing the parameters 'with_mean' and 'with_std'."""
+        """Returns an empty dictionary."""
         return {}
 
     def transform(self, table: pd.DataFrame) -> pd.DataFrame:

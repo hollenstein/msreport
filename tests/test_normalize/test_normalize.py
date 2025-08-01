@@ -135,6 +135,37 @@ class TestNormalizers:
         np.testing.assert_allclose(fitted_A, expected_A, rtol=1e-04)
 
 
+class TestSumNormalizer:
+    def test_calculation_of_correct_fits(self):
+        table = pd.DataFrame({"A": [4, 4, 4, 4], "B": [4, 4, 5, 6]})  # Log2 values
+        normalizer = msreport.normalize.SumNormalizer().fit(table)
+        fitted_A = normalizer.get_fits()["A"]
+        expected_A = -0.584963
+        np.testing.assert_allclose(fitted_A, expected_A, rtol=1e-05, atol=1e-05)
+
+    def test_nan_values_are_ignored_during_fitting(self):
+        table = pd.DataFrame({"A": [4, np.nan, 4, 4, 4], "B": [4, 4, 5, 6, np.nan]})
+        normalizer = msreport.normalize.SumNormalizer().fit(table)
+        fitted_A = normalizer.get_fits()["A"]
+        expected_A = -0.584963
+        np.testing.assert_allclose(fitted_A, expected_A, rtol=1e-05, atol=1e-05)
+
+    def test_column_sums_are_equal_after_transformation(self):
+        table = pd.DataFrame(
+            {
+                "A": [4, 4, 4, np.nan, 4],
+                "B": [np.nan, 4, 4, 5, 6],
+                "C": [np.nan, 3, 3, 3, 3],
+            }
+        )
+        normalizer = msreport.normalize.SumNormalizer().fit(table)
+        table_scaled = normalizer.transform(table)
+        assert np.allclose(
+            np.power(2, table_scaled).sum(),
+            np.power(2, table_scaled).sum().mean(),
+        )
+
+
 class TestPercentageScaler:
     def test_is_always_fitted(self):
         scaler = msreport.normalize.PercentageScaler()
