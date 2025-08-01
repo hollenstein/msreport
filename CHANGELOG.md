@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.0.31 - Transformer and Normalizer update
+Released: 2025-08-01
+
+### Added
+- Add the `normalize.Log2Transformer` class
+- Add the `normalize.SumNormalizer` class for normalizing with sample-wise summed intensities.
+- Add function `analyze.apply_category_transformer` for applying a categorical transformer, such as a site-to-protein normalizer, to a `Qtable` instance.
+- Add function `reader.add_protein_site_identifiers` to add well-formatted protein site identifiers to a table.
+- Add processing of PTM related columns to `reader.SpectronautReader.import_ion_evidence`
+
+### Fixed
+- Handle edge cases when importing the FragPipe manifest file in `reader.FragPipeReader.import_design`, such as when the "Experiment" column is empty or no replicates have been specified.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.30 - FragPipeReader updates
 Released: 2025-06-17
 
