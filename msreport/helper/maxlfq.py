@@ -113,9 +113,9 @@ def calculate_pairwise_mode_log_ratio_matrix(
         ...     ]
         ... )
         >>> calculate_pairwise_mode_log_ratio_matrix(array)
-        array([[ 0.       , -0.0849625, -1.       ],
-               [ 0.0849625,  0.       , -1.       ],
-               [ 1.       ,  1.       ,  0.       ]])
+        array([[ 0.        , -0.08496251, -1.       ],
+               [ 0.08496251,  0.       , -1.       ],
+               [ 1.        ,  1.       ,  0.       ]])
     """
     ratio_marix = _calculate_pairwise_centered_log_ratio_matrix(
         array, msreport.helper.mode, log_transformed=log_transformed

@@ -502,7 +502,7 @@ def _find_covered_region_boundaries(
     Examples:
         >>> coverage_mask = [True, True, False, False, True]
         >>> _find_covered_region_boundaries(coverage_mask)
-        ... [(0, 1), (4, 4)]
+        [(0, 1), (4, 4)]
     """
     start = []
     stop = []
