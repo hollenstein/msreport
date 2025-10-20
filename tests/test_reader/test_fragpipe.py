@@ -300,6 +300,28 @@ class TestImportPsmEvidence:
         assert table.index.nunique() == len(table)
 
 
+def test_add_modification_localization_string_to_psm_evidence(test_reader):
+    psm_table = pd.DataFrame(
+        {
+            "M:15.9949": ["SPESHM(1.0000)R", "M(1.0000)QAGPGSDR", ""],
+            "M:15.9949 Best Localization": [1.0, 1.0, ""],
+            "STY:79.9663": ["S(0.9255)PES(0.0745)HMR", "", ""],
+            "STY:79.9663 Best Localization": [0.925, "", ""],
+            "C:0.0000": [np.nan, np.nan, np.nan],
+            "C:0.0000 Best Localization": ["", "", ""],
+        }
+    )
+    expected_localization_strings = [
+        "15.9949@6:1.000;79.9663@1:0.925,4:0.074",
+        "15.9949@1:1.000",
+        "",
+    ]
+    updated_table = test_reader._add_modification_localization_string_to_psm_evidence(
+        psm_table
+    )
+    assert updated_table["Modification localization string"].tolist() == expected_localization_strings  # fmt: skip
+
+
 class TestExtractFragpipeLocalizationProbabilities:
     def test_extract_single_modification_with_merged_amino_acid_entries(self):
         # Test case for FragPipe before version 22.0

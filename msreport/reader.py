@@ -1034,6 +1034,7 @@ class FragPipeReader(ResultReader):
             )
             df["Modified sequence"] = mod_entries["Modified sequence"]
             df["Modifications"] = mod_entries["Modifications"]
+            df = self._add_modification_localization_string_to_psm_evidence(df)
         return df
 
     def _add_protein_entries(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -1205,6 +1206,66 @@ class FragPipeReader(ResultReader):
                 )
                 localization_strings.append(localization_string)
             new_df[new_column] = localization_strings
+        return new_df
+
+    def _add_modification_localization_string_to_psm_evidence(
+        self, df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Adds a modification localization string column to a PSM evidence table.
+
+        Extracts localization probabilities from all columns in the form
+        f"{aa:modification}", converts them into the standardized modification
+        localization string format used by msreport, and adds a new column
+        "Modification localization string".
+
+        Probabilities are written in the format
+        "Mod1@Site1:Probability1,Site2:Probability2;Mod2@Site3:Probability3",
+        e.g. "15.9949@11:1.000;79.9663@3:0.200,4:0.800". Refer to
+        `msreport.peptidoform.make_localization_string` for details.
+
+        Args:
+            df: A dataframe containing PSM tables from FragPipe.
+
+        Returns:
+            A copy of the input dataframe with the added
+            "Modification localization string" column.
+        """
+        new_df = df.copy()
+        _search_tag = " Best Localization"
+        mod_localization_columns = [
+            c.strip(_search_tag) for c in new_df.columns if c.endswith(_search_tag)
+        ]
+        if not mod_localization_columns:
+            new_df["Modification localization string"] = ""
+            return new_df
+
+        df[mod_localization_columns] = (
+            df[mod_localization_columns].astype(str).replace("nan", "")
+        )
+        row_mod_probabilities: list[dict[str, dict[int, float]]] = [
+            {} for i in range(df.shape[0])
+        ]
+        for mod_localization_column in mod_localization_columns:
+            modification = mod_localization_column.split(":")[1]
+            for modification_probabilities, probability_sequence in zip(
+                row_mod_probabilities, df[mod_localization_column]
+            ):
+                if not probability_sequence:
+                    continue
+                _, probabilities = msreport.peptidoform.parse_modified_sequence(
+                    probability_sequence, "(", ")"
+                )
+                modification_probabilities[modification] = {
+                    site: float(probability) for site, probability in probabilities
+                }
+
+        localization_strings = []
+        for localization_probabilities in row_mod_probabilities:
+            localization_string = msreport.peptidoform.make_localization_string(
+                localization_probabilities
+            )
+            localization_strings.append(localization_string)
+        new_df["Modification localization string"] = localization_strings
         return new_df
 
 
