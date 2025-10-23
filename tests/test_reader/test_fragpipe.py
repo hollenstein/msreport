@@ -79,10 +79,10 @@ class TestFragPipeReader:
         assert mapped_proteins == expected_mapped_proteins
 
 
-class TestImportDesign:
+class TestImportManifest:
     def test_manifest_file_processed_correctly(self, test_reader):
-        table = test_reader.import_design()
-        expected_design_table = pd.DataFrame(
+        table = test_reader.import_manifest()
+        expected_manifest_table = pd.DataFrame(
             {
                 "Sample": ["SampleA_1", "SampleB_1"],
                 "Experiment": ["SampleA", "SampleB"],
@@ -93,11 +93,11 @@ class TestImportDesign:
                 ],
             }
         )
-        pd.testing.assert_frame_equal(table, expected_design_table)
+        pd.testing.assert_frame_equal(table, expected_manifest_table)
 
-    def test_import_design_with_literal_nan_values(self, tmp_path):
+    def test_import_manifest_with_literal_nan_values(self, tmp_path):
         manifest_content = "\t".join(["C:\\rawfile.raw", "nan", "1", "DDA"])
-        expected_design_table = pd.DataFrame(
+        expected_manifest_table = pd.DataFrame(
             {
                 "Sample": ["nan_1"],
                 "Experiment": ["nan"],
@@ -105,12 +105,12 @@ class TestImportDesign:
                 "Rawfile": ["rawfile.raw"],
             }
         )
-        design = self._write_temp_manifest_and_import_with_fragpipereader(tmp_path, manifest_content)  # fmt: skip
-        pd.testing.assert_frame_equal(design, expected_design_table)
+        manifest = self._write_temp_manifest_and_import_with_fragpipereader(tmp_path, manifest_content)  # fmt: skip
+        pd.testing.assert_frame_equal(manifest, expected_manifest_table)
 
-    def test_import_design_with_no_experiment_values(self, tmp_path):
+    def test_import_manifest_with_no_experiment_values(self, tmp_path):
         manifest_content = "\t".join(["C:\\rawfile.raw", "", "1", "DDA"])
-        expected_design_table = pd.DataFrame(
+        expected_manifest_table = pd.DataFrame(
             {
                 "Sample": ["exp_1"],
                 "Experiment": ["exp"],
@@ -118,12 +118,12 @@ class TestImportDesign:
                 "Rawfile": ["rawfile.raw"],
             }
         )
-        design = self._write_temp_manifest_and_import_with_fragpipereader(tmp_path, manifest_content)  # fmt: skip
-        pd.testing.assert_frame_equal(design, expected_design_table)
+        manifest = self._write_temp_manifest_and_import_with_fragpipereader(tmp_path, manifest_content)  # fmt: skip
+        pd.testing.assert_frame_equal(manifest, expected_manifest_table)
 
-    def test_import_design_with_no_replicate_values(self, tmp_path):
+    def test_import_manifest_with_no_replicate_values(self, tmp_path):
         manifest_content = "\t".join(["C:\\rawfile.raw", "Sample", "", "DDA"])
-        expected_design_table = pd.DataFrame(
+        expected_manifest_table = pd.DataFrame(
             {
                 "Sample": ["Sample"],
                 "Experiment": ["Sample"],
@@ -131,14 +131,14 @@ class TestImportDesign:
                 "Rawfile": ["rawfile.raw"],
             }
         )
-        design = self._write_temp_manifest_and_import_with_fragpipereader(tmp_path, manifest_content)  # fmt: skip
-        pd.testing.assert_frame_equal(design, expected_design_table)
+        manifest = self._write_temp_manifest_and_import_with_fragpipereader(tmp_path, manifest_content)  # fmt: skip
+        pd.testing.assert_frame_equal(manifest, expected_manifest_table)
 
     def _write_temp_manifest_and_import_with_fragpipereader(self, path, manifest_content):  # fmt: skip
         with open(path / "fragpipe-files.fp-manifest", "w") as tmp:
             tmp.write(manifest_content)
         reader = msreport.reader.FragPipeReader(path)
-        return reader.import_design()
+        return reader.import_manifest()
 
 
 class TestImportProteins:

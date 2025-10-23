@@ -545,7 +545,12 @@ class FragPipeReader(ResultReader):
     """FragPipe result reader.
 
     Methods:
-        import_design: Reads a "fragpipe-files.fp-manifest" file and returns a
+        import_design: Depending on the quantification strategy, imports either the
+            manifest file or the experiment annotation file and returns a processed
+            design dataframe.
+        import_manifest: Reads a "fragpipe-files.fp-manifest" file and returns a
+            processed design dataframe.
+        import_experiment_annotation: Reads a "experiment_annotation" file and returns a
             processed design dataframe.
         import_proteins: Reads a "combined_protein.tsv" or "protein.tsv" file and
             returns a processed dataframe, conforming to the MsReport naming
@@ -589,12 +594,8 @@ class FragPipeReader(ResultReader):
         "ions": "combined_ion.tsv",
         "ion_evidence": "ion.tsv",
         "psm_evidence": "psm.tsv",
-        "design": "fragpipe-files.fp-manifest",
-    }
-    isobar_filenames: dict[str, str] = {
-        "proteins": "protein.tsv",
-        "peptides": "peptide.tsv",
-        "ions": "ion.tsv",
+        "manifest": "fragpipe-files.fp-manifest",
+        "experiment_annotation": "experiment_annotation.tsv",
     }
     sil_filenames: dict[str, str] = {
         "proteins": "combined_protein_label_quant.tsv",
@@ -675,14 +676,27 @@ class FragPipeReader(ResultReader):
         self._isobar: bool = isobar
         self._sil: bool = sil
         self._contaminant_tag: str = contaminant_tag
-        if isobar:
-            self.filenames = self.isobar_filenames
-        elif sil:
-            self.filenames = self.sil_filenames
-        else:
-            self.filenames = self.default_filenames
 
-    def import_design(
+        self.filenames = self.default_filenames.copy()
+        if sil:
+            self.filenames.update(self.sil_filenames)
+
+    def import_design(self, sort: bool = False) -> pd.DataFrame:
+        """Reads the experimental design file and returns a processed design dataframe.
+
+        Depending on the quantification strategy (isobaric or label-free/sil), either
+        the experiment annotation file or the manifest file is imported.
+
+        Args:
+            sort: If True, the design dataframe is sorted by "Experiment" and
+                "Replicate"; default False.
+        """
+        if self._isobar:
+            return self.import_experiment_annotation(sort=sort)
+        else:
+            return self.import_manifest(sort=sort)
+
+    def import_manifest(
         self, filename: Optional[str] = None, sort: bool = False
     ) -> pd.DataFrame:
         """Read a 'fp-manifest' file and returns a processed design dataframe.
@@ -709,7 +723,7 @@ class FragPipeReader(ResultReader):
             FileNotFoundError: If the specified manifest file does not exist.
         """
         if filename is None:
-            filepath = os.path.join(self.data_directory, self.filenames["design"])
+            filepath = os.path.join(self.data_directory, self.filenames["manifest"])
         else:
             filepath = os.path.join(self.data_directory, filename)
         if not os.path.exists(filepath):
@@ -746,6 +760,63 @@ class FragPipeReader(ResultReader):
         if sort:
             design.sort_values(by=["Experiment", "Replicate"], inplace=True)
             design.reset_index(drop=True, inplace=True)
+        return design
+
+    def import_experiment_annotation(
+        self, filename: Optional[str] = None, sort: bool = False
+    ) -> pd.DataFrame:
+        """Read a 'experiment_annotation' file and returns a processed design dataframe.
+
+        The annotation columns "sample", "channel", and "plex" are mapped to the design
+        table columns "Sample", "Channel", and "Plex". The "Experiment" and "Replicate"
+        columns are extracted from the "Sample" column by splitting at the last
+        underscore, if there is no underscore, "Replicate" is set to an empty string.
+
+        Note that this convention of splitting the "Sample" column does confirm to the
+        FragPipe convention, but FragPipe does not enforce it for the experiment
+        annotation file.
+
+        Args:
+            filename: Allows specifying an alternative filename, otherwise the default
+                filename is used.
+            sort: If True, the design dataframe is sorted by "Experiment" and
+                "Replicate"; default False.
+
+        Returns:
+            A dataframe containing the processed design table with columns:
+            "Sample", "Experiment", "Replicate", "Channel", and "Plex".
+
+        Raises:
+            FileNotFoundError: If the specified manifest file does not exist.
+        """
+        if filename is None:
+            filepath = os.path.join(
+                self.data_directory, self.filenames["experiment_annotation"]
+            )
+        else:
+            filepath = os.path.join(self.data_directory, filename)
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(
+                f"File '{filepath}' does not exist. Please check the file path."
+            )
+
+        annotation = pd.read_csv(filepath, sep="\t")
+
+        design = pd.DataFrame(
+            {
+                "Sample": annotation["sample"],
+                "Experiment": annotation["sample"].str.rsplit("_", n=1).str[0],
+                "Replicate": annotation["sample"].str.rsplit("_", n=1).str[1],
+                "Channel": annotation["channel"],
+                "Plex": annotation["plex"],
+            }
+        )
+        design["Replicate"] = design["Replicate"].fillna("")
+
+        if sort:
+            design.sort_values(by=["Experiment", "Replicate"], inplace=True)
+            design.reset_index(drop=True, inplace=True)
+
         return design
 
     def import_proteins(
