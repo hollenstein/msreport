@@ -203,6 +203,7 @@ def sample_pca(
 def expression_clustermap(
     qtable: Qtable,
     exclude_invalid: bool = True,
+    exclude_missing: bool = False,
     remove_imputation: bool = True,
     mean_center: bool = False,
     cluster_samples: bool = True,
@@ -218,6 +219,7 @@ def expression_clustermap(
         qtable: A `Qtable` instance, which data is used for plotting.
         exclude_invalid: If True, rows are filtered according to the Boolean entries of
             the "Valid" column.
+        exclude_missing: If True, only rows without any missing values are used.
         remove_imputation: If True, imputed values are set to 0 before clustering.
             Defaults to True.
         mean_center: If True, the data is mean-centered before clustering. Defaults to
@@ -242,25 +244,30 @@ def expression_clustermap(
     if len(samples) < 2:
         raise ValueError("At least two samples are required to generate a clustermap.")
 
-    data = qtable.make_expression_table(samples_as_columns=True)
+    data = qtable.make_expression_table(samples_as_columns=True, exclude_invalid=False)
     data = data[samples]
+    data = data.fillna(0)
 
-    for sample in samples:
-        if remove_imputation:
-            data.loc[qtable.data[f"Missing {sample}"], sample] = 0
-        data[sample] = data[sample].fillna(0)
-
-    if not mean_center:
-        # Hide missing values in the heatmap, making them appear white
-        mask_values = qtable.data[
+    if not mean_center:  # Hide missing values in the heatmap, making them appear white
+        hide_values_mask = qtable.data[
             [f"Missing {sample}" for sample in samples]
         ].to_numpy()
     else:
-        mask_values = np.zeros(data.shape, dtype=bool)
+        hide_values_mask = np.zeros(data.shape, dtype=bool)
 
+    if remove_imputation:
+        for sample in samples:
+            data.loc[qtable.data[f"Missing {sample}"], sample] = 0
+
+    inclusion_mask = np.ones(data.shape[0], dtype=bool)
     if exclude_invalid:
-        data = data[qtable.data["Valid"]]
-        mask_values = mask_values[qtable.data["Valid"]]
+        inclusion_mask = inclusion_mask & qtable["Valid"]
+    if exclude_missing:
+        _non_missing_masks = [(qtable[f"Missing {s}"] == 0) for s in samples]
+        inclusion_mask = inclusion_mask & (np.all(_non_missing_masks, axis=0))
+    hide_values_mask = hide_values_mask[inclusion_mask]
+    data = data[inclusion_mask]
+    print(f"Clustermap data shape: {data.shape}")
 
     color_wheel = ColorWheelDict()
     for exp in experiments:
@@ -314,7 +321,7 @@ def expression_clustermap(
         col_cluster=cluster_samples,
         col_colors=sample_colors,
         row_colors=["#000000" for _ in range(len(data))],
-        mask=mask_values,
+        mask=hide_values_mask,
         method=cluster_method,
         metric="euclidean",
         **heatmap_args,
