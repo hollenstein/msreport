@@ -21,6 +21,7 @@ def sample_pca(
     pc_x: str = "PC1",
     pc_y: str = "PC2",
     exclude_invalid: bool = True,
+    exclude_missing: bool = False,
 ) -> tuple[plt.Figure, list[plt.Axes]]:
     """Figure to compare sample similarities with a principle component analysis.
 
@@ -44,11 +45,14 @@ def sample_pca(
             samples.
         exclude_invalid: If True, rows are filtered according to the Boolean entries of
             the "Valid" column.
+        exclude_missing: If True, only rows without any missing values are used.
 
     Returns:
         A matplotlib Figure and a list of Axes objects, containing the PCA plots.
     """
     design = qtable.get_design()
+    samples = qtable.get_samples()
+
     if design.shape[0] < 3:
         fig, ax = plt.subplots(1, 1, figsize=(2, 1.3))
         fig.suptitle(f'PCA of "{tag}" values', y=1.1)
@@ -65,13 +69,22 @@ def sample_pca(
         return fig, np.array([ax])
 
     table = qtable.make_sample_table(
-        tag, samples_as_columns=True, exclude_invalid=exclude_invalid
+        tag, samples_as_columns=True, exclude_invalid=False
     )
+
+    inclusion_mask = np.ones(qtable.data.shape[0], dtype=bool)
+    if exclude_invalid:
+        inclusion_mask = inclusion_mask & qtable["Valid"]
+    if exclude_missing:
+        _non_missing_masks = [(qtable[f"Missing {s}"] == 0) for s in samples]
+        inclusion_mask = inclusion_mask & (np.all(_non_missing_masks, axis=0))
+    table = table[inclusion_mask]
+
     table = table.replace({0: np.nan})
     table = table[np.isfinite(table).sum(axis=1) > 0]
     if not msreport.helper.intensities_in_logspace(table):
         table = np.log2(table)
-    table[table.isna()] = 0
+    table = table.fillna(0)
 
     table = table.transpose()
     sample_index = table.index.tolist()
@@ -267,7 +280,6 @@ def expression_clustermap(
         inclusion_mask = inclusion_mask & (np.all(_non_missing_masks, axis=0))
     hide_values_mask = hide_values_mask[inclusion_mask]
     data = data[inclusion_mask]
-    print(f"Clustermap data shape: {data.shape}")
 
     color_wheel = ColorWheelDict()
     for exp in experiments:
