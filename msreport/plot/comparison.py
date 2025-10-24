@@ -77,9 +77,14 @@ def volcano_ma(
         )
         special_entries = list(special_entries) + list(special_proteins)
 
-    data = qtable.get_data(exclude_invalid=exclude_invalid)
-    if annotation_column not in data.columns:
+    if annotation_column not in qtable.data.columns:
         annotation_column = qtable.id_column
+
+    data = qtable.get_data(exclude_invalid=exclude_invalid)
+    mask = np.ones(data.shape[0], dtype=bool)
+    for tag in [ratio_tag, expression_tag, pvalue_tag]:
+        mask = mask & np.isfinite(data[f"{tag} {comparison_group}"])
+    data = data[mask]
 
     scatter_size = 2 / (max(min(data.shape[0], 10000), 1000) / 1000)
 
