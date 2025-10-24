@@ -1,9 +1,13 @@
+import matplotlib
 import numpy as np
 import pandas as pd
 import pytest
 
 import msreport.plot
 import msreport.qtable
+
+# Use the 'Agg' backend for plotting tests to prevent TclError in headless environments.
+matplotlib.use("Agg")
 
 
 @pytest.fixture
