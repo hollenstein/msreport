@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.0.32 - FragPipeReader PTM isobar support
+Released: pending
+
+### Added
+- Extract modification localization probabilities when importing psm evidence tables with `reader.FragPipeReader.import_psm_evidence`.
+- Added `reader.FragPipeReader.import_manifest` and `reader.FragPipeReader.import_experiment_annotation` methods for importing FragPipe manifest and experimental design tables (which holds the channel to sample mapping information for isobaric quantification).
+- When calling the method `reader.FragPipeReader.import_design` in "isobar" mode, the experimental annotation table is imported. In default mode, the manifest file is imported as before.
+- Added parameter to exclude all rows with missing values from `plot.expression_clustermap` and `plot.sample_pca`.
+
+### Fixed
+- Fixed and edge case that resulted in a different number of data points being plotted in `plot.volcano_ma` when some rows contained ratios but not p-values.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.31 - Transformer and Normalizer update
 Released: 2025-08-01
 
