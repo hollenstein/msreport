@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.0.32 - FragPipeReader PTM isobar support
-Released: pending
+Released: 2025-10-30
 
 ### Added
 - Extract modification localization probabilities when importing psm evidence tables with `reader.FragPipeReader.import_psm_evidence`.
