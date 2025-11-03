@@ -1451,7 +1451,10 @@ class SpectronautReader(ResultReader):
         self._contaminant_tag: str = contaminant_tag
 
     def import_design(
-        self, filename: Optional[str] = None, filetag: Optional[str] = None
+        self,
+        filename: Optional[str] = None,
+        filetag: Optional[str] = None,
+        sort: bool = False,
     ) -> pd.DataFrame:
         """Reads a ConditionSetup file and returns an experimental design table.
 
@@ -1474,6 +1477,8 @@ class SpectronautReader(ResultReader):
             filename: Optional, allows specifying a specific file that will be imported.
             filetag: Optional, can be used to select a file that contains the filetag as
                 a substring, instead of specifying a filename.
+            sort: If True, the design table is sorted by Experiment and Replicate;
+                default False.
 
         Returns:
             A dataframe containing the processed design table.
@@ -1509,6 +1514,9 @@ class SpectronautReader(ResultReader):
                 "Run label": df["Run Label"].astype(str),
             }
         )
+        if sort:
+            df = df.sort_values(by=["Experiment", "Replicate"]).reset_index(drop=True)
+
         return df
 
     def import_proteins(
