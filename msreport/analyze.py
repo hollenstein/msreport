@@ -651,7 +651,7 @@ def calculate_multi_group_limma(
 
     limma_table = pd.DataFrame(index=table.index)
     limma_table = limma_table.join(list(limma_results.values()))
-    limma_table.fillna(np.nan, inplace=True)
+    limma_table = limma_table.astype("float64")
     qtable.add_expression_features(limma_table)
 
     # Average expression from limma is the whole row mean, overwrite with the average
@@ -726,9 +726,10 @@ def calculate_two_group_limma(
 
     # For adding expression features to the qtable it is necessary that the
     # the limma_results have the same number of rows.
-    limma_table = pd.DataFrame(index=table.index, columns=limma_result.columns)
+    limma_table = pd.DataFrame(
+        index=table.index, columns=limma_result.columns, dtype="float64"
+    )
     limma_table[mask] = limma_result
-    limma_table.fillna(np.nan, inplace=True)
 
     comparison_group = comparison_tag.join(experiment_pair)
     mapping = {col: f"{col} {comparison_group}" for col in limma_table.columns}
