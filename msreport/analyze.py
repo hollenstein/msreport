@@ -10,6 +10,8 @@ from typing import Iterable, Optional, Protocol, Sequence
 
 import numpy as np
 import pandas as pd
+import scipy.stats
+import statsmodels.stats.multitest
 from typing_extensions import Self
 
 import msreport.normalize
@@ -735,6 +737,94 @@ def calculate_two_group_limma(
     mapping = {col: f"{col} {comparison_group}" for col in limma_table.columns}
     limma_table.rename(columns=mapping, inplace=True)
     qtable.add_expression_features(limma_table)
+
+
+def calculate_multi_group_ttest(
+    qtable: Qtable,
+    experiment_pairs: Sequence[Iterable[str]],
+    exclude_invalid: bool = True,
+    equal_var: bool = False,
+) -> None:
+    """Calculates t-tests for multiple experiment pairs.
+
+    For each experiment pair specified in 'experiment_pairs' the following new columns
+    are added to the qtable:
+    - "P-value Experiment_1 vs Experiment_2"
+    - "Adjusted p-value Experiment_1 vs Experiment_2"
+
+    Missing values are ommitted and the ttest is calculated only for rows where both
+    experiment groups have at least two quantified values. Adjusted p-values are
+    calculated using the Benjamini-Hochberg (BH) method. Requires that expression
+    columns are set in the qtable.
+
+    Args:
+        qtable: Qtable instance that contains expression values for t-tests.
+        experiment_pairs: A list containing one or multiple experiment pairs for which
+            t-tests should be calculated. The specified experiments must correspond to
+            entries from qtable.design["Experiment"].
+        exclude_invalid: If true, the column "Valid" is used to determine which rows are
+            used for the t-tests; default True.
+        equal_var: If true, the two groups are assumed to have identical variances and
+            a standard independent 2 sample t-test is performed. If false, Welch's
+            t-test is performed; default False.
+
+    Raises:
+        ValueError: If 'experiment_pairs' contains invalid entries. Each experiment pair
+            must have exactly two entries and the two entries must not be the same. All
+            experiments must be present in qtable.design. No duplicate experiment pairs
+            are allowed.
+    """
+    _validate_experiment_pairs(qtable, experiment_pairs)
+
+    table = qtable.make_expression_table(samples_as_columns=True, features=["Valid"])
+    comparison_tag = " vs "
+
+    if exclude_invalid:
+        valid = table["Valid"].to_numpy()
+    else:
+        valid = np.full(table.shape[0], True)
+
+    for experiment_pair in experiment_pairs:
+        group_expressions = []
+        for experiment in experiment_pair:
+            samples = qtable.get_samples(experiment)
+            group_expressions.append(table.loc[valid, samples])
+
+        # implement the at least two values per experiment rule here, set rows to nan
+        # where this is not the case
+        for i in range(2):
+            num_values = np.isfinite(group_expressions[i]).sum(axis=1)
+            insufficient_values = num_values < 2
+            group_expressions[i].loc[insufficient_values, :] = np.nan
+
+        _, pvalues = scipy.stats.ttest_ind(
+            group_expressions[0],
+            group_expressions[1],
+            axis=1,
+            equal_var=equal_var,
+            nan_policy="omit",
+        )
+
+        finite_pvalues = pvalues[np.isfinite(pvalues)]
+        _, finite_adjusted_pvalues, _, _ = statsmodels.stats.multitest.multipletests(
+            finite_pvalues, method="fdr_bh"
+        )
+        adjusted_pvalues = pvalues.copy()
+        adjusted_pvalues[np.isfinite(pvalues)] = finite_adjusted_pvalues
+
+        comparison_group = comparison_tag.join(experiment_pair)
+        comparison_table = pd.DataFrame(
+            {
+                f"P-value {comparison_group}": np.full(table.shape[0], np.nan),
+                f"Adjusted p-value {comparison_group}": np.full(table.shape[0], np.nan),
+            }
+        )
+        comparison_table.loc[valid, f"P-value {comparison_group}"] = pvalues
+        comparison_table.loc[valid, f"Adjusted p-value {comparison_group}"] = (
+            adjusted_pvalues
+        )
+
+        qtable.add_expression_features(comparison_table)
 
 
 def _validate_experiment_pairs(

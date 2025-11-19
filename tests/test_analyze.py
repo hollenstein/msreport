@@ -421,6 +421,21 @@ class TestTwoGroupLimma:
             msreport.analyze.calculate_two_group_limma(example_qtable, experiment_pair)
 
 
+class TestCalculateMultiGroupTtest:
+    @pytest.mark.parametrize(
+        "experiment_pairs",
+        [
+            [("Experiment_A", "Experiment_B", "Experiment_C")],
+            [("Experiment_A", "None")],
+            [("Experiment_A", "Experiment_B"), ("Experiment_A", "Experiment_B")],
+            [("Experiment_A", "Experiment_A")],
+        ],
+    )
+    def test_invalid_experiment_pairs_raises_value_error(self, example_qtable, experiment_pairs):  # fmt: skip
+        with pytest.raises(ValueError):
+            msreport.analyze.calculate_multi_group_ttest(example_qtable, experiment_pairs)  # fmt: skip
+
+
 class TestCreateSiteToProteinNormalizer:
     def test_correct_index_set_in_fits_table(self, example_qtable):
         normalizer = msreport.analyze.create_site_to_protein_normalizer(example_qtable, category_column="Representative protein")  # fmt: skip
