@@ -258,7 +258,6 @@ def expression_clustermap(
         raise ValueError("At least two samples are required to generate a clustermap.")
 
     data = qtable.make_expression_table(samples_as_columns=True, exclude_invalid=False)
-    data = data[samples]
     data = data.fillna(0)
 
     if not mean_center:  # Hide missing values in the heatmap, making them appear white

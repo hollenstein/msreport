@@ -271,8 +271,9 @@ class Qtable:
             A copy of tbhe qtable.data dataframe that only contains expression columns
             and additionally specified columns.
         """
-        columns = []
-        columns.extend(self._expression_columns)
+        expression_tag = "Expression"
+        samples = self.get_samples()
+        columns = helper.find_sample_columns(self.data, expression_tag, samples)
         if features is not None:
             columns.extend(features)
 
