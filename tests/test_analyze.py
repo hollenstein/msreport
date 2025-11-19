@@ -362,11 +362,11 @@ class TestCalculateMultiGroupComparison:
             msreport.analyze.calculate_multi_group_comparison(example_qtable, experiment_pairs)  # fmt: skip
 
 
-class TestTwoGroupComparison:
-    def test_two_group_comparison_is_calculated_correctly(self, example_data, example_qtable):  # fmt: skip
+class TestCalculateTwoGroupComparison:
+    def test_is_calculated_correctly(self, example_data, example_qtable):  # fmt: skip
         experiment_pair = ["Experiment_A", "Experiment_B"]
         exp1, exp2 = experiment_pair
-        msreport.analyze.two_group_comparison(example_qtable, experiment_pair)
+        msreport.analyze.calculate_two_group_comparison(example_qtable, experiment_pair)
 
         qtable_columns = example_qtable.data.columns.to_list()
         for column_tag in ["Average expression", "Ratio [log2]"]:
@@ -387,7 +387,7 @@ class TestTwoGroupComparison:
     )
     def test_invalid_experiment_pair_raises_value_error(self, example_qtable, experiment_pair):  # fmt: skip
         with pytest.raises(ValueError):
-            msreport.analyze.two_group_comparison(example_qtable, experiment_pair)
+            msreport.analyze.calculate_two_group_comparison(example_qtable, experiment_pair)  # fmt: skip
 
 
 @pytest.mark.skipif(not msreport.analyze._rinterface_available, reason="Test requires the R interface")  # fmt: skip

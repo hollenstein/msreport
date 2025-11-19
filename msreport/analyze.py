@@ -533,7 +533,7 @@ def calculate_multi_group_comparison(
         qtable.add_expression_features(comparison_table)
 
 
-def two_group_comparison(
+def calculate_two_group_comparison(
     qtable: Qtable, experiment_pair: Iterable[str], exclude_invalid: bool = True
 ) -> None:
     """Calculates comparison values for two experiments.
@@ -657,7 +657,9 @@ def calculate_multi_group_limma(
     # Average expression from limma is the whole row mean, overwrite with the average
     # expression of the experiment group
     for experiment_pair in experiment_pairs:
-        two_group_comparison(qtable, experiment_pair, exclude_invalid=exclude_invalid)
+        calculate_two_group_comparison(
+            qtable, experiment_pair, exclude_invalid=exclude_invalid
+        )
 
 
 def calculate_two_group_limma(
