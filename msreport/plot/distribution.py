@@ -201,11 +201,11 @@ def experiment_ratios(
     experiment_data = pd.DataFrame(experiment_means)
 
     # Only consider rows with quantitative values in all experiments
-    mask = np.all([(qtable.data[f"Events {exp}"] > 0) for exp in experiments], axis=0)
+    mask = experiment_data.isna().sum(axis=1) == 0
     if exclude_invalid:
-        mask = mask & qtable["Valid"]
+        mask = mask.to_numpy() & qtable["Valid"].to_numpy()
     # Use `mask.to_numpy` to solve issue with different indices of mask and dataframe
-    experiment_data = experiment_data[mask.to_numpy()]
+    experiment_data = experiment_data[mask]
     pseudo_reference = np.nanmean(experiment_data, axis=1)
     ratio_data = experiment_data.subtract(pseudo_reference, axis=0)
 
