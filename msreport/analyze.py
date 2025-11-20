@@ -623,7 +623,7 @@ def calculate_multi_group_limma(
     comparison_tag = " vs "
 
     if exclude_invalid:
-        valid = qtable["Valid"]
+        valid = qtable["Valid"].copy().to_numpy()
     else:
         valid = np.full(table.shape[0], True)
     not_nan = table.isna().sum(axis=1) == 0
@@ -704,7 +704,7 @@ def calculate_two_group_limma(
     comparison_tag = " vs "
 
     if exclude_invalid:
-        valid = qtable["Valid"]
+        valid = qtable["Valid"].copy().to_numpy()
     else:
         valid = np.full(table.shape[0], True)
 
