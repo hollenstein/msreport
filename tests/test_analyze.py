@@ -436,6 +436,16 @@ class TestCalculateMultiGroupTtest:
             msreport.analyze.calculate_multi_group_ttest(example_qtable, experiment_pairs)  # fmt: skip
 
 
+class TestCalculateAnova:
+    def test_invalid_experiment_pairs_raises_value_error(self, example_qtable):
+        with pytest.raises(ValueError):
+            msreport.analyze.calculate_anova(example_qtable, ["Invalid experiment"])
+
+    @pytest.mark.parametrize("experiments", [("Experiment_A", "Experiment_B"), None])
+    def test_valid_experiments_argument_does_not_raise_errors(self, example_qtable, experiments):  # fmt: skip
+        msreport.analyze.calculate_anova(example_qtable, experiments)  # fmt: skip
+
+
 class TestCreateSiteToProteinNormalizer:
     def test_correct_index_set_in_fits_table(self, example_qtable):
         normalizer = msreport.analyze.create_site_to_protein_normalizer(example_qtable, category_column="Representative protein")  # fmt: skip

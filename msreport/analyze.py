@@ -827,6 +827,85 @@ def calculate_multi_group_ttest(
         qtable.add_expression_features(comparison_table)
 
 
+def calculate_anova(
+    qtable: Qtable,
+    experiments: Iterable[str] | None = None,
+    exclude_invalid: bool = True,
+) -> None:
+    """Calculates one-way ANOVA across multiple experiment groups.
+
+    New columns are added to the qtable:
+    - "ANOVA P-value Experiments_Used"
+    - "ANOVA Adjusted p-value Experiments_Used"
+
+    Missing values are omitted, and ANOVA is calculated only for rows where all
+    experiment groups have at least two quantified values. Adjusted p-values are
+    calculated using the Benjamini-Hochberg (BH) method. Requires that expression
+    columns are set in the qtable.
+
+    Args:
+        qtable: Qtable instance that contains expression values for the analysis.
+        experiments: A list of experiment names from qtable.design["Experiment"] to
+            include in the ANOVA. If None, all experiments in the design are used;
+            default None.
+        exclude_invalid: If true, the column "Valid" is used to determine which rows are
+            used for the ANOVA; default True.
+
+    Raises:
+        ValueError: If 'experiments' contains entries not present in qtable.design.
+    """
+    if experiments is not None and any(
+        e not in qtable.design["Experiment"].unique() for e in experiments
+    ):
+        raise ValueError("Some specified experiments are not present in qtable.design.")
+    min_required_values = 2
+    if experiments is None:
+        experiments = qtable.get_experiments()
+
+    table = qtable.make_expression_table(samples_as_columns=True, features=["Valid"])
+    if exclude_invalid:
+        valid = table["Valid"].to_numpy()
+    else:
+        valid = np.full(table.shape[0], True)
+
+    experiment_data = []
+    for experiment in experiments:
+        samples = qtable.get_samples(experiment)
+        experiment_data.append(table[samples].to_numpy())
+    experiment_array = np.array(experiment_data)
+
+    for replicate_data in experiment_data:
+        valid_entries = np.isfinite(replicate_data).sum(axis=1) < min_required_values
+        valid[valid_entries] = False
+
+    anova_pvalues = []
+    for row_data in experiment_array[:, valid, :].swapaxes(0, 1):
+        anova_input = []
+        for values in row_data:
+            anova_input.append(values[~np.isnan(values)])
+        _, pvalue = scipy.stats.f_oneway(*anova_input)
+        anova_pvalues.append(pvalue)
+    _, anova_adjusted_pvalues, _, _ = statsmodels.stats.multitest.multipletests(
+        anova_pvalues, method="fdr_bh"
+    )
+
+    pvalues = np.empty((table.shape[0],))
+    pvalues[:] = np.nan
+    pvalues[valid] = anova_pvalues
+
+    adjusted_pvalues = np.empty((table.shape[0],))
+    adjusted_pvalues[:] = np.nan
+    adjusted_pvalues[valid] = anova_adjusted_pvalues
+
+    comparison_table = pd.DataFrame(
+        {
+            "ANOVA p-value": pvalues,
+            "ANOVA adjusted p-value": adjusted_pvalues,
+        }
+    )
+    qtable.add_expression_features(comparison_table)
+
+
 def _validate_experiment_pairs(
     qtable: Qtable, exp_pairs: Iterable[Iterable[str]]
 ) -> None:
