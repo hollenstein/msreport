@@ -130,6 +130,53 @@ def two_group_limma(
     return limma_result[columns_to_keep].rename(columns=column_mapping)
 
 
+def limma_anova(
+    table: pd.DataFrame,
+    design: pd.DataFrame,
+    batch: bool,
+    trend: bool,
+) -> pd.DataFrame:
+    """Use limma to calculate a one-way moderated ANOVA for multiple groups.
+
+    Args:
+        table: Contains quantitative data for differential expression analysis. Column
+            names must correspond to entries from `design["Sample"]`.
+        design: Dataframe describing the experimental design of the 'table', where each
+            row must correspond to a column in 'table'. The 'Design' must contain the
+            columns "Sample" and "Experiment". If batch correction should be applied,
+            batches must be described in the "Batch" column. Names must be valid R
+            names, for reference see the R function make.names.
+        batch: If true batch effects are considered for the differential expression
+            analysis. Batches must be specified in the design in a "Batch" column.
+        trend: If true an intensity-dependent trend is fitted to the prior variance
+            during calculation of the moderated t-statistics, refer to limma.eBayes for
+            details.
+
+    Returns:
+        A dataframe contain the following columns: "ANOVA p-value", and
+        "ANOVA adjusted p-value".
+    """
+    install_limma_if_missing()
+    rscript_path = _find_rscript_paths()["limma.R"]
+    robjects.r["source"](rscript_path)
+    R_limma_anova = robjects.globalenv[".limma_anova"]
+
+    column_mapping = {
+        "P.Value": "ANOVA p-value",
+        "adj.P.Val": "ANOVA adjusted p-value",
+    }
+    columns_to_keep = column_mapping.keys()
+
+    # `R_limma_anova` expects that the sample order in table and design are equal
+    table = table[design["Sample"]]
+
+    with localconverter(robjects.default_converter + pandas2ri.converter):
+        limma_result = R_limma_anova(table, design, batch, trend)
+    limma_result = limma_result[columns_to_keep].rename(columns=column_mapping)
+    limma_result.index = table.index
+    return limma_result
+
+
 def _find_rscript_paths() -> dict[str, str]:
     """Returns a mapping for filepaths from the msreport.rinterface.rscripts folder.
 

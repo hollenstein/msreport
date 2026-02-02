@@ -12,7 +12,6 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 import statsmodels.stats.multitest
-from matplotlib import table
 from typing_extensions import Self
 
 import msreport.normalize
@@ -764,6 +763,111 @@ def calculate_two_group_limma(
     comparison_group = comparison_tag.join(experiment_pair)
     mapping = {col: f"{col} {comparison_group}" for col in limma_table.columns}
     limma_table.rename(columns=mapping, inplace=True)
+    qtable.add_expression_features(limma_table)
+
+
+def calculate_anova_limma(
+    qtable: Qtable,
+    experiments: Iterable[str] | None = None,
+    exclude_invalid: bool = True,
+    batch: bool = False,
+    limma_trend: bool = True,
+) -> None:
+    """Calculates one-way moderated ANOVA using LIMMA across multiple experiment groups.
+
+    New columns are added to the qtable:
+    - "ANOVA p-value"
+    - "ANOVA adjusted p-value"
+
+    ANOVA is calculated only for rows where no missing values are present in any of the
+    experiments. Experiments with fewer than two replicates are excluded. At least two
+    valid experiments with two or more replicates are required to perform the ANOVA.
+    Adjusted p-values are calculated using the Benjamini-Hochberg (BH) method. Requires
+    that expression columns are set in the qtable.
+
+    Args:
+        qtable: Qtable instance that contains expression values for the analysis.
+        experiments: A list of experiment names from qtable.design["Experiment"] to
+            include in the ANOVA. If None, all experiments in the design are used;
+            default None.
+        exclude_invalid: If true, the column "Valid" is used to determine which rows are
+            used for the ANOVA; default True.
+        batch: If true batch effects are considered for the differential expression
+            analysis. Batches must be specified in the design in a "Batch" column.
+        limma_trend: If true, an intensity-dependent trend is fitted to the prior
+            variances; default True.
+
+    Raises:
+        KeyError: If the "Batch" column is not present in the qtable.design when
+            'batch' is set to True.
+        ValueError: If 'experiments' contains entries not present in qtable.design.
+        ValueError: If less than two experiments with two or more replicates are present
+            for calculating the ANOVA.
+    """
+    if not _rinterface_available:
+        raise OptionalDependencyError(_rinterface_error)
+
+    # TODO: not tested #
+    if batch and "Batch" not in qtable.get_design():
+        raise KeyError(
+            'When using calculate_anova_limma(batch=True) a "Batch" column must be '
+            "present in qtable.design"
+        )
+    if batch and qtable.get_design()["Batch"].nunique() == 1:
+        raise ValueError(
+            "When using calculate_anova_limma(batch=True), not all values from"
+            ' qtable.design["Batch"] are allowed to be identical.'
+        )
+
+    if experiments is not None and any(
+        e not in qtable.design["Experiment"].unique() for e in experiments
+    ):
+        raise ValueError("Some specified experiments are not present in qtable.design.")
+    if experiments is None:
+        experiments = qtable.get_experiments()
+
+    min_required_values = 2
+    valid_experiments = []
+    for experiment in experiments:
+        if len(qtable.get_samples(experiment)) >= min_required_values:
+            valid_experiments.append(experiment)
+    if len(valid_experiments) < 2:
+        raise ValueError(
+            "At least two experiments with two or more replicates are required for "
+            "calculating ANOVA."
+        )
+
+    design = qtable.get_design()
+    design = design[design["Experiment"].isin(valid_experiments)]
+
+    table = qtable.make_expression_table(samples_as_columns=True)
+    table = table[design["Sample"]]
+
+    if exclude_invalid:
+        valid = qtable["Valid"].to_numpy()
+    else:
+        valid = np.full(table.shape[0], True)
+    not_nan = (table.isna().sum(axis=1) == 0).to_numpy()
+    mask = valid & not_nan
+
+    # Exchange experiment names with names that are guaranteed to be valid in R
+    experiment_to_r = {}
+    for i, experiment in enumerate(design["Experiment"].unique()):
+        experiment_to_r[experiment] = f".EXPERIMENT__{i:04d}"
+    r_to_experiment = {v: k for k, v in experiment_to_r.items()}
+
+    design = design.replace({"Experiment": experiment_to_r})
+
+    limma_result = msreport.rinterface.limma.limma_anova(
+        table[mask], design, batch, limma_trend
+    )
+
+    # For adding expression features to the qtable it is necessary that the
+    # the limma_results have the same number of rows.
+    limma_table = pd.DataFrame(
+        index=table.index, columns=limma_result.columns, dtype="float64"
+    )
+    limma_table[mask] = limma_result
     qtable.add_expression_features(limma_table)
 
 

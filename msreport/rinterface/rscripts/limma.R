@@ -121,3 +121,45 @@ library(limma)
   limma_results <- cbind(id = rownames(limma_results), limma_results)
   return(limma_results)
 }
+
+
+#' Performs a one-way moderated ANOVA for multiple groups using limma
+#'
+#' @param data_frame A matrix-like data object containing log-expression values
+#'    for a series of samples.
+#' @param experimental_design A matrix-like data object describing the
+#'    experimental design of the data_frame. Must contain a column "Experiment".
+#' @param batch Logical, if true batch effects are considered for the
+#'    differential expression analysis. Batches must be specified in the
+#'    experimental_design in a "Batch" column.
+#' @param trend Logical, if true an intensity-dependent trend is fitted to the
+#'    prior variance (refer to limma::eBayes).
+#' @return A dataframe containing the results of the ANOVA-style F-test.
+.limma_anova <- function(
+    data_frame,
+    experimental_design,
+    batch = FALSE,
+    trend = FALSE) {
+  group <- as.factor(experimental_design[["Experiment"]])
+
+  if (batch) {
+    batch_factor <- factor(experimental_design[["Batch"]])
+    design <- model.matrix(~ group + batch_factor)
+  } else {
+    design <- model.matrix(~ group)
+  }
+
+  fit <- lmFit(data_frame, design)
+  fit <- eBayes(fit, trend = trend)
+  group_indices <- grep("^group", colnames(design))
+
+  anova_results <- topTable(
+    fit,
+    coef = group_indices,
+    number = Inf,
+    adjust.method = "BH",
+    sort.by = "none"
+  )
+
+  return(anova_results)
+}
