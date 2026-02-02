@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats
 import statsmodels.stats.multitest
+from matplotlib import table
 from typing_extensions import Self
 
 import msreport.normalize
@@ -668,6 +669,7 @@ def calculate_two_group_limma(
     qtable: Qtable,
     experiment_pair: Sequence[str],
     exclude_invalid: bool = True,
+    batch: bool = False,
     limma_trend: bool = True,
 ) -> None:
     """Uses limma to perform a differential expression analysis of two experiments.
@@ -688,17 +690,33 @@ def calculate_two_group_limma(
             experiments must be present in qtable.design
         exclude_invalid: If true, the column "Valid" is used to determine which rows are
             used for the differential expression analysis; default True.
+        batch: If true batch effects are considered for the differential expression
+            analysis. Batches must be specified in the design in a "Batch" column.
         limma_trend: If true, an intensity-dependent trend is fitted to the prior
             variances; default True.
     Raises:
         ValueError: If 'experiment_pair' contains invalid entries. The experiment pair
             must have exactly two entries and the two entries must not be the same. Both
             experiments must be present in qtable.design.
+        KeyError: If the "Batch" column is not present in the qtable.design when
+            'batch' is set to True.
+        ValueError: If all values from qtable.design["Batch"] are identical when 'batch'
+            is set to True.
     """
     if not _rinterface_available:
         raise OptionalDependencyError(_rinterface_error)
 
     _validate_experiment_pair(qtable, experiment_pair)
+    if batch and "Batch" not in qtable.get_design():
+        raise KeyError(
+            "When using calculate_two_group_limma(batch=True) a"
+            ' "Batch" column must be present in qtable.design'
+        )
+    if batch and qtable.get_design()["Batch"].nunique() == 1:
+        raise ValueError(
+            "When using calculate_two_group_limma(batch=True), not all values from"
+            ' qtable.design["Batch"] are allowed to be identical.'
+        )
     # TODO: LIMMA function not tested #
     table = qtable.make_expression_table(samples_as_columns=True)
     comparison_tag = " vs "
@@ -719,11 +737,21 @@ def calculate_two_group_limma(
     not_nan = table.isna().sum(axis=1) == 0
 
     mask = np.all([valid, not_nan], axis=0)
-    experiments = list(samples_to_experiment.values())
+    groups = [samples_to_experiment[s] for s in table.columns]
+
+    batch_groups = None
+    if batch:
+        design_df = qtable.get_design().set_index("Sample")
+        batch_groups = [str(design_df.loc[s, "Batch"]) for s in table.columns]
 
     # Note that the order of experiments for calling limma is reversed
     limma_result = msreport.rinterface.two_group_limma(
-        table[mask], experiments, experiment_pair[1], experiment_pair[0], limma_trend
+        table[mask],
+        groups,
+        experiment_pair[1],
+        experiment_pair[0],
+        limma_trend,
+        batch_groups,
     )
 
     # For adding expression features to the qtable it is necessary that the

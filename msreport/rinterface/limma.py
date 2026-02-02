@@ -1,11 +1,14 @@
 """Python interface to the 'limma.R' script."""
 
 import os
+from typing import Sequence
 
 import pandas as pd
 import rpy2.robjects as robjects
+from pyparsing import Optional
 from rpy2.robjects import numpy2ri, pandas2ri
 from rpy2.robjects.conversion import localconverter
+from rpy2.robjects.vectors import StrVector
 
 from .rinstaller import install_limma_if_missing
 
@@ -76,7 +79,12 @@ def multi_group_limma(
 
 
 def two_group_limma(
-    table: pd.DataFrame, groups: list[str], group1: str, group2: str, trend: bool
+    table: pd.DataFrame,
+    groups: Sequence[str],
+    group1: str,
+    group2: str,
+    trend: bool,
+    batch_groups: Sequence[str] | None = None,
 ) -> pd.DataFrame:
     """Use limma to calculate differential expression analysis of two groups.
 
@@ -84,11 +92,14 @@ def two_group_limma(
         table: Contains quantitative data for differential expression analysis.
         groups: A list that contains a group name for each column. List entries must
             be equal to 'group1' or 'group2'.
-        group1: Experimental group 1
+        group1: Experimental group 1, used as the reference.
         group2: Experimental group 2, used as the coefficient
         trend: If true an intensity-dependent trend is fitted to the prior variance
             during calculation of the moderated t-statistics, refer to limma.eBayes for
             details.
+        batch_groups: Optional, a list that contains a batch name for each column. If
+            provided, batch effects are considered for the differential expression
+            analysis.
 
     Returns:
         A dataframe containing "Average expression", "Ratio [log2]", "P-value", and
@@ -100,7 +111,14 @@ def two_group_limma(
     R_two_group_limma = robjects.globalenv[".two_group_limma"]
 
     with localconverter(robjects.default_converter + pandas2ri.converter):
-        limma_result = R_two_group_limma(table, groups, group1, group2, trend)
+        limma_result = R_two_group_limma(
+            table,
+            StrVector(groups),
+            group1,
+            group2,
+            trend,
+            StrVector(batch_groups) if batch_groups is not None else StrVector([]),
+        )
 
     column_mapping = {
         "AveExpr": "Average expression",
