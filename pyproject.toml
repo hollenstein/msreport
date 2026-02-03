@@ -1,7 +1,3 @@
-[build-system]
-requires = ["setuptools>=61.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "msreport"
 description = "Post processing and analysis of quantitative proteomics data"
@@ -65,23 +61,24 @@ test = [
     "pytest>=8.3.5",
 ]
 
-[tool.setuptools]
-packages = [
-  "msreport",
-  "msreport.aggregate",
-  "msreport.helper",
-  "msreport.plot",
-  "msreport.plot.style_sheets",
-  "msreport.rinterface",
-  "msreport.rinterface.rscripts",
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["msreport"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "msreport",
+    "tests",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE.txt",
 ]
 
-[tool.setuptools.package-data]
-"msreport.rinterface.rscripts" = ["*.r", "*.R"]
-"msreport.plot.style_sheets" = ["*.mplstyle"]
-
-[tool.setuptools.dynamic]
-version = { attr = "msreport.__version__" }
+[tool.hatch.version]
+path = "msreport/__init__.py"
 
 [tool.ruff]
 line-length = 88
