@@ -963,6 +963,7 @@ def calculate_anova(
     qtable: Qtable,
     experiments: Iterable[str] | None = None,
     exclude_invalid: bool = True,
+    equal_var: bool = False,
 ) -> None:
     """Calculates one-way ANOVA across multiple experiment groups.
 
@@ -982,6 +983,9 @@ def calculate_anova(
             default None.
         exclude_invalid: If true, the column "Valid" is used to determine which rows are
             used for the ANOVA; default True.
+        equal_var: If true, the groups are assumed to have identical variances and a
+            standard one-way ANOVA is performed. If false, Welch's ANOVA is performed;
+            default False.
 
     Raises:
         ValueError: If 'experiments' contains entries not present in qtable.design.
@@ -1015,7 +1019,7 @@ def calculate_anova(
         anova_input = []
         for values in row_data:
             anova_input.append(values[~np.isnan(values)])
-        _, pvalue = scipy.stats.f_oneway(*anova_input)
+        _, pvalue = scipy.stats.f_oneway(*anova_input, equal_var=equal_var)
         anova_pvalues.append(pvalue)
     _, anova_adjusted_pvalues, _, _ = statsmodels.stats.multitest.multipletests(
         anova_pvalues, method="fdr_bh"
