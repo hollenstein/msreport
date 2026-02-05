@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.0.33 - Enhanced Statistics
+Released: PENDING
+
+### Added
+- Add `analysis.calculate_anova_limma`, `analysis.calculate_anova` and `analysis.calculate_multi_group_ttest` functions to complete the existing LIMMA statistics suite.
+- (!) Allow custom `min_replicates` threshold for all LIMMA-based tests (two-group, multi-group, and ANOVA) to provide more flexibility in handling missing data. This replaces the previous hardcoded behaviour of ignoring all rows with any missing values.
+- Add batch effect support to two-group limma analysis for feature parity with the multi-group limma analysis.
+- Add sort argument to `reader.SpectronautReader.import_design`.
+
+### Fixed
+- Fix `make_expression_table` not respecting the temporary design.
+- Fix `experiment_ratios` not respecting the temporary design.
+
+### Changed
+- (!) Renamed `analysis.two_group_comparison` to `analysis.calculate_two_group_comparison` to ensure consistent naming conventions.
+- (!) `analysis.calculate_two_group_limma` and `analysis.calculate_multi_group_limma` no longer exclude rows with any missing values.
+
+### Dependencies
+- Dropped Python 3.10 support, now requires Python 3.11 or higher.
+- Added Python 3.14 support.
+- Bumped minimum required version of scipy to 1.16.0 and pandas to 2.0.0
+- Pinned pandas to < 3.0.0 until migration is complete.
+- Revisited and bumped up minimum required versions for all dependencies.
+
+### Internal
+- Migrate build backend to hatchling.
+- Update GitHub actions to use astral uv for building and testing.
+- Update uv lock file to use minimal supported versions for all dependencies.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.32 - FragPipeReader PTM isobar support
 Released: 2025-10-30
 
