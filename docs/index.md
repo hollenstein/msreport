@@ -9,7 +9,7 @@ Currently, only the [[api/index.md|API]] documentation and [installation instruc
 
 ## Installation
 
-If you do not already have a Python installation, we recommend installing the [Anaconda distribution](https://www.anaconda.com/download) or [Miniconda](https://docs.anaconda.com/free/miniconda/index.html) distribution from Continuum Analytics, which already contains a large number of popular Python packages for Data Science. Alternatively, you can also get Python from the [Python homepage](https://www.python.org/downloads/windows). Note that MsReport requires Python version 3.10 or higher.
+If you do not already have a Python installation, we recommend installing the [Anaconda distribution](https://www.anaconda.com/download) or [Miniconda](https://docs.anaconda.com/free/miniconda/index.html) distribution from Continuum Analytics, which already contains a large number of popular Python packages for Data Science. Alternatively, you can also get Python from the [Python homepage](https://www.python.org/downloads/windows). Note that MsReport requires Python version 3.11 or higher.
 
 The following command will install MsReport and its dependencies by using a wheel file.
 
