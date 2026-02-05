@@ -562,19 +562,23 @@ def calculate_multi_group_limma(
     exclude_invalid: bool = True,
     batch: bool = False,
     limma_trend: bool = True,
+    min_replicates: int = 2,
 ) -> None:
     """Uses limma to perform a differential expression analysis of multiple experiments.
 
     For each experiment pair specified in 'experiment_pairs' the following new columns
     are added to the qtable:
-    - "P-value Experiment_1 vs Experiment_2"
-    - "Adjusted p-value Experiment_1 vs Experiment_2"
-    - "Average expression Experiment_1 vs Experiment_2"
-    - "Ratio [log2] Experiment_1 vs Experiment_2"
+    - "P-value 'Experiment_1' vs 'Experiment_2'"
+    - "Adjusted p-value 'Experiment_1' vs 'Experiment_2'"
+    - "Average expression 'Experiment_1' vs 'Experiment_2'"
+    - "Ratio [log2] 'Experiment_1' vs 'Experiment_2'"
 
-    Requires that expression columns are set, and expression values are log2 transformed
-    All rows with missing values are ignored, impute missing values to allow
-    differential expression analysis of all rows.
+    Requires that the Qtable has defined expression columns, and expression values are
+    log2 transformed. For each experiment and row, if the number of non-missing values
+    is below 'min_replicates', all values for that experiment and row are set to NaN for
+    the LIMMA calculation. As a result, p-values are only calculated for rows where both
+    experiments have at least 'min_replicates' non-missing values. Adjusted p-values are
+    calculated using the Benjamini-Hochberg (BH) method.
 
     Args:
         qtable: Qtable instance that contains expression values for differential
@@ -590,8 +594,12 @@ def calculate_multi_group_limma(
         limma_trend: If true, an intensity-dependent trend is fitted to the prior
             variance during calculation of the moderated t-statistics, refer to
             limma.eBayes for details; default True.
+        min_replicates: Minimum number of non-missing values required in the row of any
+            experiment to be included in the analysis; default 2.
 
     Raises:
+        OptionalDependencyError: If the R interface is not available, which is required
+            for using LIMMA.
         ValueError: If 'experiment_pairs' contains invalid entries. Each experiment pair
             must have exactly two entries and the two entries must not be the same. All
             experiments must be present in qtable.design. No duplicate experiment pairs
@@ -622,12 +630,27 @@ def calculate_multi_group_limma(
     table.index = table.index.astype(str)  # It appears that a string is required for R
     comparison_tag = " vs "
 
+    # Apply min_replicates filter
+    for experiment in qtable.get_experiments():
+        samples = qtable.get_samples(experiment)
+        counts = table[samples].notna().sum(axis=1)
+        table.loc[counts < min_replicates, samples] = np.nan
+
     if exclude_invalid:
-        valid = qtable["Valid"].copy().to_numpy()
+        mask = qtable["Valid"].copy().to_numpy() & (table.notna().sum(axis=1) > 0)
     else:
-        valid = np.full(table.shape[0], True)
-    not_nan = table.isna().sum(axis=1) == 0
-    mask = np.all([valid, not_nan], axis=0)
+        mask = table.notna().sum(axis=1) > 0
+
+    # At least one row with one condition with two values are required for LIMMA
+    valid_exp_rows = []
+    for exp in qtable.get_experiments():
+        samples = qtable.get_samples(exp)
+        valid_exp_rows.append(table.loc[mask, samples].notna().sum(axis=1) >= 2)
+    if np.array(valid_exp_rows).any(axis=0).sum() == 0:
+        raise ValueError(
+            "No rows with sufficient data for differential expression analysis remain"
+            " after applying 'min_replicates' and 'exclude_invalid' filters."
+        )
 
     # Exchange experiment names with names that are guaranteed to be valid in R
     experiment_to_r = {}
@@ -639,7 +662,7 @@ def calculate_multi_group_limma(
     for exp1, exp2 in experiment_pairs:
         r_experiment_pairs.append(f"{experiment_to_r[exp1]}-{experiment_to_r[exp2]}")
 
-    design.replace({"Experiment": experiment_to_r}, inplace=True)
+    design = design.replace({"Experiment": experiment_to_r})
 
     # Run limma and join results for all comparison groups
     limma_results = msreport.rinterface.multi_group_limma(
@@ -649,7 +672,7 @@ def calculate_multi_group_limma(
         experiment_pair = [r_to_experiment[s] for s in r_comparison_group.split("-")]
         comparison_group = comparison_tag.join(experiment_pair)
         mapping = {col: f"{col} {comparison_group}" for col in limma_result.columns}
-        limma_result.rename(columns=mapping, inplace=True)
+        limma_result = limma_result.rename(columns=mapping)
 
     limma_table = pd.DataFrame(index=table.index)
     limma_table = limma_table.join(list(limma_results.values()))
@@ -670,17 +693,22 @@ def calculate_two_group_limma(
     exclude_invalid: bool = True,
     batch: bool = False,
     limma_trend: bool = True,
+    min_replicates: int = 2,
 ) -> None:
     """Uses limma to perform a differential expression analysis of two experiments.
 
-    Adds new columns "P-value Experiment_1 vs Experiment_2",
-    "Adjusted p-value Experiment_1 vs Experiment_2",
-    "Average expression Experiment_1 vs Experiment_2", and
-    "Ratio [log2] Experiment_1 vs Experiment_2" to the qtable.
+    New columns that are added to the qtable:
+    - "P-value 'Experiment_1' vs 'Experiment_2'"
+    - "Adjusted p-value 'Experiment_1' vs 'Experiment_2'"
+    - "Average expression 'Experiment_1' vs 'Experiment_2'"
+    - "Ratio [log2] 'Experiment_1' vs 'Experiment_2'"
 
-    Requires that expression columns are set, and expression values are log2
-    transformed. All rows with missing values are ignored, impute missing values to
-    allow differential expression analysis of all rows.
+    Requires that the Qtable has defined expression columns, and expression values are
+    log2 transformed. For each experiment and row, if the number of non-missing values
+    is below 'min_replicates', all values for that experiment and row are set to NaN for
+    the LIMMA calculation. As a result, p-values are only calculated for rows where both
+    experiments have at least 'min_replicates' non-missing values. Adjusted p-values are
+    calculated using the Benjamini-Hochberg (BH) method.
 
     Args:
         qtable: Qtable instance that contains expression values for differential
@@ -693,14 +721,21 @@ def calculate_two_group_limma(
             analysis. Batches must be specified in the design in a "Batch" column.
         limma_trend: If true, an intensity-dependent trend is fitted to the prior
             variances; default True.
+        min_replicates: Minimum number of non-missing values required in both
+            experiments to include a row in the analysis; default 2.
+
     Raises:
+        OptionalDependencyError: If the R interface is not available, which is required
+            for using LIMMA.
+        KeyError: If the "Batch" column is not present in the qtable.design when
+            'batch' is set to True.
         ValueError: If 'experiment_pair' contains invalid entries. The experiment pair
             must have exactly two entries and the two entries must not be the same. Both
             experiments must be present in qtable.design.
-        KeyError: If the "Batch" column is not present in the qtable.design when
-            'batch' is set to True.
         ValueError: If all values from qtable.design["Batch"] are identical when 'batch'
             is set to True.
+        ValueError: If no rows with sufficient data for differential expression analysis
+            remain after applying 'min_replicates' and 'exclude_invalid' filters.
     """
     if not _rinterface_available:
         raise OptionalDependencyError(_rinterface_error)
@@ -720,29 +755,42 @@ def calculate_two_group_limma(
     table = qtable.make_expression_table(samples_as_columns=True)
     comparison_tag = " vs "
 
-    if exclude_invalid:
-        valid = qtable["Valid"].copy().to_numpy()
-    else:
-        valid = np.full(table.shape[0], True)
-
     samples_to_experiment = {}
-    for experiment in experiment_pair:
-        mapping = dict.fromkeys(qtable.get_samples(experiment), experiment)
-        samples_to_experiment.update(mapping)
+    for exp in experiment_pair:
+        samples_to_experiment.update(dict.fromkeys(qtable.get_samples(exp), exp))
 
     # Keep only samples that are present in the 'experiment_pair'
     table = table[samples_to_experiment.keys()]
     table.index = table.index.astype(str)  # It appears that a string is required for R
-    not_nan = table.isna().sum(axis=1) == 0
-
-    mask = np.all([valid, not_nan], axis=0)
     groups = [samples_to_experiment[s] for s in table.columns]
+
+    # Apply min_replicates filter
+    for experiment in experiment_pair:
+        samples = qtable.get_samples(experiment)
+        counts = table[samples].notna().sum(axis=1)
+        table.loc[counts < min_replicates, samples] = np.nan
+
+    if exclude_invalid:
+        mask = qtable["Valid"].copy().to_numpy() & (table.notna().sum(axis=1) > 0)
+    else:
+        mask = table.notna().sum(axis=1) > 0
+
+    # At least one row with one condition with two values are required for LIMMA
+    valid_exp_rows = []
+    for exp in experiment_pair:
+        samples = qtable.get_samples(exp)
+        valid_exp_rows.append(table.loc[mask, samples].notna().sum(axis=1) >= 2)
+    if np.array(valid_exp_rows).any(axis=0).sum() == 0:
+        raise ValueError(
+            "No rows with sufficient data for differential expression analysis remain"
+            " after applying 'min_replicates' and 'exclude_invalid' filters."
+        )
 
     batch_groups = None
     if batch:
         design_df = qtable.get_design().set_index("Sample")
         batch_groups = [str(design_df.loc[s, "Batch"]) for s in table.columns]
-
+    print(table[mask])
     # Note that the order of experiments for calling limma is reversed
     limma_result = msreport.rinterface.two_group_limma(
         table[mask],
@@ -762,7 +810,7 @@ def calculate_two_group_limma(
 
     comparison_group = comparison_tag.join(experiment_pair)
     mapping = {col: f"{col} {comparison_group}" for col in limma_table.columns}
-    limma_table.rename(columns=mapping, inplace=True)
+    limma_table = limma_table.rename(columns=mapping)
     qtable.add_expression_features(limma_table)
 
 
@@ -772,18 +820,20 @@ def calculate_anova_limma(
     exclude_invalid: bool = True,
     batch: bool = False,
     limma_trend: bool = True,
+    min_replicates: int = 2,
 ) -> None:
     """Calculates one-way moderated ANOVA using LIMMA across multiple experiment groups.
 
-    New columns are added to the qtable:
+    New columns that are added to the qtable:
     - "ANOVA p-value"
     - "ANOVA adjusted p-value"
 
-    ANOVA is calculated only for rows where no missing values are present in any of the
-    experiments. Experiments with fewer than two replicates are excluded. At least two
-    valid experiments with two or more replicates are required to perform the ANOVA.
-    Adjusted p-values are calculated using the Benjamini-Hochberg (BH) method. Requires
-    that expression columns are set in the qtable.
+    Requires that the Qtable has defined expression columns, and expression values are
+    log2 transformed. ANOVA is calculated for rows where at least two experiments meet
+    the 'min_replicates' threshold of non-missing values. For a given row, an experiment
+    group failing this threshold is treated as missing data for the calculation. At
+    least two valid experiments must remain for a p-value to be generated. Adjusted
+    p-values are calculated using the Benjamini-Hochberg (BH) method.
 
     Args:
         qtable: Qtable instance that contains expression values for the analysis.
@@ -796,13 +846,17 @@ def calculate_anova_limma(
             analysis. Batches must be specified in the design in a "Batch" column.
         limma_trend: If true, an intensity-dependent trend is fitted to the prior
             variances; default True.
+        min_replicates: Minimum number of non-missing values required per experiment to
+            include that experiment's data for a given row; default 2.
 
     Raises:
+        OptionalDependencyError: If the R interface is not available, which is required
+            for using LIMMA.
         KeyError: If the "Batch" column is not present in the qtable.design when
             'batch' is set to True.
         ValueError: If 'experiments' contains entries not present in qtable.design.
-        ValueError: If less than two experiments with two or more replicates are present
-            for calculating the ANOVA.
+        ValueError: If less than two experiments with at least 'min_replicates' are
+            are present in the qtable.design when performing the ANOVA.
     """
     if not _rinterface_available:
         raise OptionalDependencyError(_rinterface_error)
@@ -826,15 +880,14 @@ def calculate_anova_limma(
     if experiments is None:
         experiments = qtable.get_experiments()
 
-    min_required_values = 2
     valid_experiments = []
     for experiment in experiments:
-        if len(qtable.get_samples(experiment)) >= min_required_values:
+        if len(qtable.get_samples(experiment)) >= min_replicates:
             valid_experiments.append(experiment)
     if len(valid_experiments) < 2:
         raise ValueError(
-            "At least two experiments with two or more replicates are required for "
-            "calculating ANOVA."
+            f"At least two experiments with {min_replicates} or more replicates are "
+            "required for calculating moderated ANOVA statistics with LIMMA."
         )
 
     design = qtable.get_design()
@@ -843,18 +896,31 @@ def calculate_anova_limma(
     table = qtable.make_expression_table(samples_as_columns=True)
     table = table[design["Sample"]]
 
+    for experiment in valid_experiments:
+        samples = qtable.get_samples(experiment)
+        counts = table[samples].notna().sum(axis=1)
+        table.loc[counts < min_replicates, samples] = np.nan
+
     if exclude_invalid:
-        valid = qtable["Valid"].to_numpy()
+        mask = qtable["Valid"].to_numpy() & (table.notna().sum(axis=1) > 0)
     else:
-        valid = np.full(table.shape[0], True)
-    not_nan = (table.isna().sum(axis=1) == 0).to_numpy()
-    mask = valid & not_nan
+        mask = table.notna().sum(axis=1) > 0
+
+    # At least one row with one condition with two values are required for LIMMA
+    valid_exp_rows = []
+    for exp in valid_experiments:
+        samples = qtable.get_samples(exp)
+        valid_exp_rows.append(table.loc[mask, samples].notna().sum(axis=1) >= 2)
+    if np.array(valid_exp_rows).any(axis=0).sum() == 0:
+        raise ValueError(
+            "No rows with sufficient data for ANOVA analysis remain"
+            " after applying 'min_replicates' and 'exclude_invalid' filters."
+        )
 
     # Exchange experiment names with names that are guaranteed to be valid in R
     experiment_to_r = {}
     for i, experiment in enumerate(design["Experiment"].unique()):
         experiment_to_r[experiment] = f".EXPERIMENT__{i:04d}"
-    r_to_experiment = {v: k for k, v in experiment_to_r.items()}
 
     design = design.replace({"Experiment": experiment_to_r})
 
@@ -907,6 +973,7 @@ def calculate_multi_group_ttest(
             are allowed.
     """
     _validate_experiment_pairs(qtable, experiment_pairs)
+    min_required_values = 2
 
     table = qtable.make_expression_table(samples_as_columns=True, features=["Valid"])
     comparison_tag = " vs "
@@ -926,7 +993,7 @@ def calculate_multi_group_ttest(
         # where this is not the case
         for i in range(2):
             num_values = np.isfinite(group_expressions[i]).sum(axis=1)
-            insufficient_values = num_values < 2
+            insufficient_values = num_values < min_required_values
             group_expressions[i].loc[insufficient_values, :] = np.nan
 
         _, pvalues = scipy.stats.ttest_ind(

@@ -421,6 +421,29 @@ class TestTwoGroupLimma:
             msreport.analyze.calculate_two_group_limma(example_qtable, experiment_pair)
 
 
+@pytest.mark.skipif(not msreport.analyze._rinterface_available, reason="Test requires the R interface")  # fmt: skip
+class TestCalculateAnovaLimma:
+    @pytest.mark.parametrize(
+        "experiments",
+        [
+            ["Invalid_Exp"],
+            ["Experiment_A"],  # Only one valid experiment
+        ],
+    )
+    def test_invalid_experiments_raises_value_error(self, example_qtable, experiments):
+        with pytest.raises(ValueError):
+            msreport.analyze.calculate_anova_limma(example_qtable, experiments)
+
+    def test_batch_missing_raises_key_error(self, example_qtable):
+        """Verify batch=True requirement logic."""
+        design = example_qtable.get_design().copy()
+        if "Batch" in design.columns:
+            example_qtable.design = design.drop(columns=["Batch"])
+
+        with pytest.raises(KeyError):
+            msreport.analyze.calculate_anova_limma(example_qtable, batch=True)
+
+
 class TestCalculateMultiGroupTtest:
     @pytest.mark.parametrize(
         "experiment_pairs",
@@ -444,6 +467,9 @@ class TestCalculateAnova:
     @pytest.mark.parametrize("experiments", [("Experiment_A", "Experiment_B"), None])
     def test_valid_experiments_argument_does_not_raise_errors(self, example_qtable, experiments):  # fmt: skip
         msreport.analyze.calculate_anova(example_qtable, experiments)  # fmt: skip
+
+    def test_using_unequal_variance_does_not_raise_errors(self, example_qtable):
+        msreport.analyze.calculate_anova(example_qtable)
 
 
 class TestCreateSiteToProteinNormalizer:
