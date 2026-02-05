@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.0.33 - Enhanced Statistics
-Released: PENDING
+Released: 2026-02-05
 
 ### Added
 - Add `analysis.calculate_anova_limma`, `analysis.calculate_anova` and `analysis.calculate_multi_group_ttest` functions to complete the existing LIMMA statistics suite.
