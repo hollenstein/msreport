@@ -1,5 +1,15 @@
 # Changelog
 
+----------------------------------------------------------------------------------------
+
+## 0.0.34 - Hotfix: Multi-group LIMMA
+Released: 2026-02-05
+
+### Fixed
+- Fix `analysis.calculate_multi_group_limma` output columns to correctly include comparison pairs (e.g., "P-value exp1 vs exp2") instead of generic metric names.
+
+----------------------------------------------------------------------------------------
+
 ## 0.0.33 - Enhanced Statistics
 Released: 2026-02-05
 
