@@ -672,7 +672,7 @@ def calculate_multi_group_limma(
         experiment_pair = [r_to_experiment[s] for s in r_comparison_group.split("-")]
         comparison_group = comparison_tag.join(experiment_pair)
         mapping = {col: f"{col} {comparison_group}" for col in limma_result.columns}
-        limma_result = limma_result.rename(columns=mapping)
+        limma_results[r_comparison_group] = limma_result.rename(columns=mapping)
 
     limma_table = pd.DataFrame(index=table.index)
     limma_table = limma_table.join(list(limma_results.values()))
@@ -790,7 +790,7 @@ def calculate_two_group_limma(
     if batch:
         design_df = qtable.get_design().set_index("Sample")
         batch_groups = [str(design_df.loc[s, "Batch"]) for s in table.columns]
-    print(table[mask])
+
     # Note that the order of experiments for calling limma is reversed
     limma_result = msreport.rinterface.two_group_limma(
         table[mask],
