@@ -1747,7 +1747,7 @@ class SpectronautReader(ResultReader):
         "Potential contaminant" contains Boolean values.
 
         Args:
-            df: Dataframe containing a FragPipe result table.
+            df: Dataframe containing a Spectronaut result table.
 
         Returns:
             A copy of the input dataframe with updated columns.
