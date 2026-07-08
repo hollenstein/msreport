@@ -272,7 +272,8 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
     Returns:
         A dataframe which columns are in the amica data table format. Note that only
         intensity columns are included from samples that are present in the qtable
-        design.
+        design. Dashes in column names are replaced with underscores to ensure
+        compatibility with AMICA.
     """
     filter_columns = ["Valid", "Potential contaminant"]
     amica_column_mapping = {
@@ -336,7 +337,8 @@ def _amica_table_from(qtable: Qtable) -> pd.DataFrame:
     amica_columns = [
         col for col in amica_column_mapping.values() if col in amica_table.columns
     ]
-    return amica_table[amica_columns]
+    result = amica_table[amica_columns]
+    return result.rename(columns=lambda col: col.replace("-", "_"))
 
 
 def _amica_design_from(qtable: Qtable) -> pd.DataFrame:
@@ -346,11 +348,15 @@ def _amica_design_from(qtable: Qtable) -> pd.DataFrame:
         design: A dataframe that must contain the columns "Sample" and "Experiment".
 
     Returns:
-        A dataframe which columns are in the amica design table format.
+        A dataframe which columns are in the amica design table format. Dashes in
+        sample and group names are replaced with underscores to ensure compatibility
+        with AMICA.
     """
     design = qtable.get_design()
     amica_design_columns = {"Sample": "samples", "Experiment": "groups"}
     amica_design = design.rename(columns=amica_design_columns)
+    amica_design["samples"] = amica_design["samples"].str.replace("-", "_", regex=False)
+    amica_design["groups"] = amica_design["groups"].str.replace("-", "_", regex=False)
     return amica_design
 
 

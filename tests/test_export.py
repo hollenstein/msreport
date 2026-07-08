@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 import msreport.export
-
+from msreport.qtable import Qtable
 
 """
 class TestValidateProteins:
@@ -26,6 +26,28 @@ class TestValidateProteins:
         )
         assert expected_valid == self.qtable.data["Valid"].sum()
 """
+
+
+@pytest.fixture
+def amica_qtable():
+    return Qtable(
+        data=pd.DataFrame(
+            {
+                "Representative protein": ["P1"],
+                "Expression sample-1": [20.0],
+                "Expression sample-2": [22.0],
+                "P-value sample-1 vs sample-2": [0.05],
+            }
+        ),
+        design=pd.DataFrame(
+            {
+                "Sample": ["sample-1", "sample-2"],
+                "Experiment": ["group-A", "group-A"],
+                "Replicate": ["1", "2"],
+            }
+        ),
+        id_column="Representative protein",
+    )
 
 
 def test_generate_html_sequence_map():
@@ -52,6 +74,20 @@ def test_generate_html_sequence_map():
         "</FONT>"
     )
     assert html_string == expected
+
+
+def test_amica_design_from_replaces_dashes(amica_qtable):
+    result = msreport.export._amica_design_from(amica_qtable)
+    assert list(result["samples"]) == ["sample_1", "sample_2"]
+    assert list(result["groups"]) == ["group_A", "group_A"]
+
+
+def test_amica_table_from_replaces_dashes_in_column_names(amica_qtable):
+    result = msreport.export._amica_table_from(amica_qtable)
+    assert "ImputedIntensity_sample_1" in result.columns
+    assert "ImputedIntensity_sample_2" in result.columns
+    assert "P.Value_sample_1__vs__sample_2" in result.columns
+    assert not any("-" in col for col in result.columns)
 
 
 @pytest.mark.parametrize(
